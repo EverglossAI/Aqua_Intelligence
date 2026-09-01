@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8" />
   <meta name="viewport" content="width=device-width,initial-scale=1" />
-  <title>Aqua Intelligence — NRW Strategy Engine</title>
+  <title>Aqua Intelligence — NRW Decision Platform</title>
 
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
         integrity="sha256-p4NxAoJBhIINfQ3yPs8pGNkkmZXYJsJmY0Qy4PqLw=" crossorigin="" />
@@ -23,10 +23,10 @@
     </div>
 
     <nav>
-      <button class="nav-item">⌂ <span>Overview</span></button>
-      <button class="nav-item active">◫ <span>DMA Strategy</span></button>
-      <button class="nav-item">◎ <span>Campaigns</span></button>
-      <button class="nav-item">◉ <span>Sensors</span></button>
+      <button class="nav-item nav-scroll" data-target="portfolioSection">⌂ <span>Portfolio</span></button>
+      <button class="nav-item active nav-scroll" data-target="strategySection">◫ <span>DMA Strategy</span></button>
+      <button class="nav-item nav-scroll" data-target="campaignSection">◎ <span>Campaigns</span></button>
+      <button class="nav-item nav-scroll" data-target="noiseSection">◉ <span>AI Leak Noise</span></button>
       <button class="nav-item">▤ <span>Data Explorer</span></button>
       <button class="nav-item">⚠ <span>Alerts</span><b class="badge">12</b></button>
       <button class="nav-item">▧ <span>Reports</span></button>
@@ -50,7 +50,37 @@
       </div>
     </header>
 
-    <section class="main-grid">
+
+    <section class="wide-section panel portfolio-section" id="portfolioSection">
+      <div class="panel-header">
+        <div>
+          <h2>DMA Portfolio Prioritisation</h2>
+          <span class="subtle">Rank where engineering effort and budget should go first</span>
+        </div>
+        <div class="header-actions">
+          <button class="link-btn" id="refreshPortfolioBtn">Re-score Portfolio</button>
+        </div>
+      </div>
+      <div class="portfolio-kpis">
+        <div><span>DMAs Assessed</span><strong>8</strong></div>
+        <div><span>Very High Priority</span><strong id="portfolioHighCount">3</strong></div>
+        <div><span>Indicative Recoverable Flow</span><strong id="portfolioRecovery">1,940 m³/day</strong></div>
+        <div><span>12-Month Programme</span><strong id="portfolioBudget">$1.18m</strong></div>
+      </div>
+      <div class="portfolio-table-wrap">
+        <table class="portfolio-table">
+          <thead>
+            <tr>
+              <th>Rank</th><th>DMA</th><th>NRW</th><th>MNF Ratio</th><th>Pressure</th>
+              <th>Bursts</th><th>Risk</th><th>Recommended Strategy</th><th></th>
+            </tr>
+          </thead>
+          <tbody id="portfolioBody"></tbody>
+        </table>
+      </div>
+    </section>
+
+    <section class="main-grid" id="strategySection">
 
       <section class="dma-panel panel">
         <div class="panel-header">
@@ -206,6 +236,30 @@
         <div class="decision-path" id="decisionPath"></div>
       </section>
 
+
+      <section class="ask-panel panel">
+        <div class="panel-header">
+          <div>
+            <h2>Ask the DMA</h2>
+            <span class="subtle">Explain the data, recommendation, uncertainty, or next action</span>
+          </div>
+          <span class="pill blue">AI Mode</span>
+        </div>
+        <div class="ask-suggestions">
+          <button data-q="Why are you recommending this strategy?">Why this strategy?</button>
+          <button data-q="What worries you most about this DMA?">What worries you most?</button>
+          <button data-q="Is the data good enough to act?">Is the data good enough?</button>
+          <button data-q="What should the field team do next?">What should field team do?</button>
+        </div>
+        <div class="chat-log" id="chatLog">
+          <div class="chat-msg ai">Ask a question about the current DMA. I will answer using the visible pressure, flow, burst, asset, and strategy data.</div>
+        </div>
+        <div class="chat-input-row">
+          <input id="chatInput" placeholder="e.g. Why not use permanent sensors everywhere?" />
+          <button class="primary compact" id="askBtn">Ask</button>
+        </div>
+      </section>
+
       <section class="comparison panel">
         <div class="panel-header"><h2>12-Month Strategy Comparison</h2><span class="subtle">Indicative planning model</span></div>
         <div class="compare-grid">
@@ -274,6 +328,69 @@
         </div>
         <div id="pipeDetails" class="pipe-details">
           Select a pipe segment to view its length, material, age, burst score and recommended action.
+        </div>
+      </section>
+
+
+      <section class="roi-panel panel">
+        <div class="panel-header">
+          <div><h2>ROI & Payback</h2><span class="subtle">Turn engineering strategy into a management case</span></div>
+          <span class="pill green" id="paybackBadge">9.4 months</span>
+        </div>
+        <div class="roi-inputs">
+          <div><label>Estimated Recoverable Leakage (m³/day)</label><input id="recoverableInput" type="number" value="520"></div>
+          <div><label>Value of Water ($/m³)</label><input id="waterValueInput" type="number" step=".01" value="1.35"></div>
+          <div><label>Programme Cost ($)</label><input id="programmeCostInput" type="number" value="198000"></div>
+          <div><label>Expected Recovery Success (%)</label><input id="successRateInput" type="number" value="78"></div>
+        </div>
+        <div class="roi-results">
+          <div><span>Annual Water Value Recovered</span><strong id="annualRecoveryValue">$199,692</strong></div>
+          <div><span>Net First-Year Benefit</span><strong id="netBenefit">$1,692</strong></div>
+          <div><span>Simple Payback</span><strong id="paybackText">11.9 months</strong></div>
+        </div>
+      </section>
+
+      <section class="campaign-panel panel" id="campaignSection">
+        <div class="panel-header">
+          <div><h2>Leak Detection Campaign</h2><span class="subtle">Convert strategy into an executable field programme</span></div>
+          <button class="link-btn" id="generateCampaignBtn">Generate from Strategy</button>
+        </div>
+        <div class="campaign-meta">
+          <div><span>Campaign</span><strong id="campaignName">DMA-24 Priority Survey</strong></div>
+          <div><span>Team</span><strong>2 technicians</strong></div>
+          <div><span>Duration</span><strong id="campaignDuration">5 days</strong></div>
+          <div><span>Status</span><strong class="status-running">Planned</strong></div>
+        </div>
+        <div class="campaign-list" id="campaignList"></div>
+      </section>
+
+      <section class="noise-panel panel" id="noiseSection">
+        <div class="panel-header">
+          <div>
+            <h2>AI Leak Noise Classification</h2>
+            <span class="subtle">Upload a recording for prototype acoustic screening</span>
+          </div>
+          <span class="pill amber">Prototype Classifier</span>
+        </div>
+        <div class="noise-layout">
+          <div class="noise-upload">
+            <label class="drop-zone" id="audioDrop">
+              <input id="audioInput" type="file" accept="audio/*" hidden>
+              <b>Drop leak-noise audio here</b>
+              <span>or click to choose WAV / MP3 / M4A</span>
+            </label>
+            <audio id="audioPlayer" controls></audio>
+            <canvas id="waveCanvas" width="700" height="130"></canvas>
+          </div>
+          <div class="noise-result" id="noiseResult">
+            <div class="noise-placeholder">
+              <b>No recording analysed</b>
+              <span>The demo analyses basic waveform and spectral features locally in your browser, then produces an explainable prototype classification.</span>
+            </div>
+          </div>
+        </div>
+        <div class="noise-disclaimer">
+          Demo only: this is not a trained production leak classifier. A real implementation should use labelled utility recordings, sensor metadata, pipe material, pressure and confirmed leak/no-leak outcomes.
         </div>
       </section>
 

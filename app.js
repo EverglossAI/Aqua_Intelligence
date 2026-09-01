@@ -414,6 +414,208 @@ $("exportBtn").addEventListener("click",()=>{
 });
 
 
+
+const portfolioDMAs = [
+  {dma:"DMA-12",nrw:34.8,mnf:.55,pressure:57,bursts:13,risk:91,strategy:"Hybrid",recoverable:410},
+  {dma:"DMA-07",nrw:31.6,mnf:.51,pressure:52,bursts:10,risk:85,strategy:"Permanent",recoverable:335},
+  {dma:"DMA-24",nrw:24.7,mnf:.44,pressure:42,bursts:8,risk:72,strategy:"Hybrid",recoverable:275},
+  {dma:"DMA-19",nrw:27.2,mnf:.39,pressure:46,bursts:7,risk:68,strategy:"Lift & Shift",recoverable:245},
+  {dma:"DMA-31",nrw:18.9,mnf:.26,pressure:36,bursts:4,risk:49,strategy:"Lift & Shift",recoverable:180},
+  {dma:"DMA-03",nrw:21.4,mnf:.31,pressure:41,bursts:3,risk:47,strategy:"Lift & Shift",recoverable:165},
+  {dma:"DMA-16",nrw:15.8,mnf:.22,pressure:38,bursts:2,risk:35,strategy:"Routine",recoverable:120},
+  {dma:"DMA-28",nrw:13.9,mnf:.19,pressure:35,bursts:1,risk:27,strategy:"Routine",recoverable:95}
+];
+
+function renderPortfolio(){
+  const sorted=[...portfolioDMAs].sort((a,b)=>b.risk-a.risk);
+  $("portfolioBody").innerHTML=sorted.map((d,i)=>`
+    <tr>
+      <td>#${i+1}</td><td><b>${d.dma}</b></td><td>${d.nrw.toFixed(1)}%</td><td>${Math.round(d.mnf*100)}%</td>
+      <td>${d.pressure} m</td><td>${d.bursts}</td>
+      <td><span class="risk-chip ${d.risk>=75?"high":d.risk>=50?"med":"low"}">${d.risk}</span></td>
+      <td>${d.strategy}</td>
+      <td><button onclick="openPortfolioDMA('${d.dma}')">Open</button></td>
+    </tr>`).join("");
+  $("portfolioHighCount").textContent=sorted.filter(x=>x.risk>=75).length;
+  $("portfolioRecovery").textContent=`${sorted.reduce((s,x)=>s+x.recoverable,0).toLocaleString()} m³/day`;
+}
+
+function openPortfolioDMA(name){
+  const mapping={"DMA-12":"DMA-12","DMA-24":"DMA-24","DMA-31":"DMA-31"};
+  if(mapping[name]){
+    $("dmaSelect").value=mapping[name];
+    $("dmaSelect").dispatchEvent(new Event("change"));
+  }else{
+    const p=portfolioDMAs.find(x=>x.dma===name);
+    if(p){
+      $("pressureInput").value=p.pressure;
+      $("flowInput").value=(p.mnf*42).toFixed(1);
+      $("inletInput").value=42;
+      $("burstsInput").value=p.bursts;
+      $("nrwKpi").textContent=p.nrw.toFixed(1)+"%";
+      runAnalysis();
+    }
+  }
+  document.getElementById("strategySection").scrollIntoView({behavior:"smooth"});
+}
+
+function assistantAnswer(q){
+  const m=window.latestModel||scoreModel();
+  const query=q.toLowerCase();
+  const why=[];
+  if(m.nightRatio>.42) why.push(`minimum-night-flow is high at ${Math.round(m.nightRatio*100)}% of inlet flow`);
+  if(m.pressure>50) why.push(`average pressure is high at ${m.pressure} m`);
+  if(m.bursts>=8) why.push(`${m.bursts} bursts were recorded in 12 months`);
+  if(["CI","AC"].includes(m.material)||m.age>=45) why.push(`the asset profile is higher risk (${m.material}, ${m.age} years)`);
+  if(m.acoustic<60) why.push(`acoustic suitability is only ${m.acoustic}%`);
+  if(!why.length) why.push("there is no single dominant risk driver");
+
+  if(query.includes("why") && (query.includes("strategy")||query.includes("recommend"))){
+    return `I am recommending <b>${m.effective}</b> because ${why.slice(0,3).join(", ")}. The current intervention intensity is ${m.aggr}/10 and data confidence is ${m.confidence}%.`;
+  }
+  if(query.includes("worr")||query.includes("risk")||query.includes("concern")){
+    return `The biggest concerns are: ${why.slice(0,4).join("; ")}. The overall DMA risk score is <b>${m.risk}/100</b>.`;
+  }
+  if(query.includes("data")||query.includes("confidence")||query.includes("trust")){
+    return `Current data-quality score is <b>${m.dataQuality}%</b> and recommendation confidence is <b>${m.confidence}%</b>. ${m.dataQuality<75?"I would improve the weak data streams before committing major CAPEX.":"This is adequate for prioritisation, but not enough by itself to approve excavation."}`;
+  }
+  if(query.includes("next")||query.includes("field")||query.includes("do")){
+    return `Next action: execute the ${m.effective} programme, prioritise the highest-risk pipes, verify suspicious points with correlation / ground listening, and only then raise excavation work. Review outcomes after ${m.review}.`;
+  }
+  if(query.includes("permanent") && query.includes("every")){
+    return `Permanent sensors everywhere would maximise coverage but may be poor value. This DMA scores ${m.permSuit}% for permanent monitoring versus ${m.hybSuit}% for hybrid. I would reserve fixed sensors for repeat-risk sections and use mobile surveys elsewhere.`;
+  }
+  if(query.includes("pressure")){
+    return `Average pressure is ${m.pressure} m. ${m.pressure>50?"That is high enough to investigate pressure-dependent leakage and pressure management.":"Pressure is not currently the strongest risk driver, but pressure logging still improves interpretation."}`;
+  }
+  if(query.includes("night")||query.includes("flow")){
+    return `Minimum-night-flow is ${m.flow.toFixed(1)} L/s against ${m.inlet.toFixed(1)} L/s inlet flow, a ratio of ${Math.round(m.nightRatio*100)}%. ${m.nightRatio>.42?"That is a strong leakage-screening signal.":"It is not extreme, so I would combine it with burst and asset evidence."}`;
+  }
+  return `For this DMA, the main picture is: risk ${m.risk}/100, confidence ${m.confidence}%, acoustic suitability ${m.acoustic}%, and recommended strategy <b>${m.effective}</b>. Ask me about pressure, night flow, data confidence, strategy choice, or field actions.`;
+}
+
+function addChat(role,html){
+  const d=document.createElement("div");
+  d.className=`chat-msg ${role}`;
+  d.innerHTML=html;
+  $("chatLog").appendChild(d);
+  $("chatLog").scrollTop=$("chatLog").scrollHeight;
+}
+
+function runROI(){
+  const leakage=Number($("recoverableInput").value)||0;
+  const value=Number($("waterValueInput").value)||0;
+  const cost=Number($("programmeCostInput").value)||0;
+  const success=(Number($("successRateInput").value)||0)/100;
+  const annual=leakage*value*365*success;
+  const net=annual-cost;
+  const months=annual>0?(cost/annual*12):0;
+  $("annualRecoveryValue").textContent="$"+Math.round(annual).toLocaleString();
+  $("netBenefit").textContent=(net<0?"−$":"$")+Math.abs(Math.round(net)).toLocaleString();
+  $("paybackText").textContent=months.toFixed(1)+" months";
+  $("paybackBadge").textContent=months.toFixed(1)+" months";
+}
+
+function generateCampaign(){
+  const m=window.latestModel||scoreModel();
+  $("campaignName").textContent=`${$("dmaSelect").value} ${m.effective} Survey`;
+  $("campaignDuration").textContent=m.aggr>=8?"7–10 days":m.aggr>=5?"4–6 days":"2–3 days";
+  const tasks=[
+    ["Validate DMA inlet meter & pressure loggers","Day 1","Confirm timestamps, units and data quality before field deployment."],
+    ["Review GIS & rank pipe sections","Day 1","Prioritise older, burst-prone and high-risk sections."],
+    [m.rs>0?`Deploy ${m.rs} fixed acoustic sensors`:"Prepare lift & shift logger set","Day 2","Record exact logger location and asset ID."],
+    [m.rc>0?`Run ${m.rc} lift & shift campaign(s)`:"Continuous alarm review","Days 2–5","Move sensors based on alarms and subzone evidence."],
+    ["Correlate strongest suspects","Days 3–6","Use pipe material, diameter and distance assumptions explicitly."],
+    ["Ground-confirm before excavation","Before repair","No excavation based on AI/acoustic alarm alone."],
+    ["Capture confirmed leak / no-leak outcome","After repair","Feed outcome back into the learning dataset."]
+  ];
+  $("campaignList").innerHTML=tasks.map((t,i)=>`
+    <label class="campaign-task">
+      <input type="checkbox" ${i<2?"checked":""}>
+      <div><b>${t[0]}</b><span>${t[2]}</span></div><em>${t[1]}</em>
+    </label>`).join("");
+}
+
+async function analyseAudioFile(file){
+  $("audioPlayer").src=URL.createObjectURL(file);
+  const buf=await file.arrayBuffer();
+  const ctx=new (window.AudioContext||window.webkitAudioContext)();
+  let audio;
+  try{ audio=await ctx.decodeAudioData(buf.slice(0)); }
+  catch(e){
+    $("noiseResult").innerHTML=`<div class="noise-placeholder"><b>Unable to decode this audio</b><span>Try WAV, MP3 or M4A supported by this browser.</span></div>`;
+    return;
+  }
+  const data=audio.getChannelData(0);
+  const sampleRate=audio.sampleRate;
+  const maxSamples=Math.min(data.length,sampleRate*20);
+  const step=Math.max(1,Math.floor(maxSamples/40000));
+  let sum=0,zero=0,peak=0,prev=data[0]||0,n=0;
+  const sampled=[];
+  for(let i=0;i<maxSamples;i+=step){
+    const v=data[i]; sampled.push(v); sum+=v*v; peak=Math.max(peak,Math.abs(v));
+    if((v>=0)!=(prev>=0)) zero++; prev=v;n++;
+  }
+  const rms=Math.sqrt(sum/Math.max(1,n));
+  const zcr=zero/Math.max(1,n);
+  const crest=peak/Math.max(rms,.0001);
+
+  // Simple spectral centroid on a short segment using a lightweight DFT sample.
+  const N=512, seg=new Float32Array(N);
+  const start=Math.max(0,Math.floor(maxSamples/2-N/2));
+  for(let i=0;i<N;i++) seg[i]=data[start+i]||0;
+  let magSum=0,weighted=0;
+  for(let k=1;k<N/2;k+=4){
+    let re=0,im=0;
+    for(let t=0;t<N;t+=2){
+      const ang=2*Math.PI*k*t/N;
+      re+=seg[t]*Math.cos(ang);im-=seg[t]*Math.sin(ang);
+    }
+    const mag=Math.sqrt(re*re+im*im);
+    const freq=k*sampleRate/N;
+    magSum+=mag; weighted+=freq*mag;
+  }
+  const centroid=magSum?weighted/magSum:0;
+
+  let leakScore=45;
+  leakScore += rms>.035?14:rms>.015?7:-5;
+  leakScore += zcr>.05 && zcr<.22?12:-2;
+  leakScore += centroid>500 && centroid<4500?16:-3;
+  leakScore += crest<8?8:-4;
+  leakScore=Math.max(5,Math.min(96,Math.round(leakScore)));
+
+  let classification,explanation;
+  if(leakScore>=76){classification="Probable Leak Noise"; explanation="Persistent broadband energy and waveform characteristics are consistent with a leak-like signal. Confirm with repeat recording, correlation and ground listening.";}
+  else if(leakScore>=56){classification="Possible Leak / Review"; explanation="Some features are leak-like but not decisive. Compare against adjacent points and time-of-day recordings.";}
+  else{classification="Low Leak Likelihood"; explanation="The analysed features are less consistent with a steady leak signature. Mechanical, traffic or intermittent background noise may dominate.";}
+
+  const canvas=$("waveCanvas"),g=canvas.getContext("2d");
+  g.clearRect(0,0,canvas.width,canvas.height);
+  g.strokeStyle="#2f7cff";g.lineWidth=1;g.beginPath();
+  const mid=canvas.height/2;
+  for(let x=0;x<canvas.width;x++){
+    const idx=Math.floor(x/canvas.width*sampled.length);
+    const y=mid-(sampled[idx]||0)*mid*.9;
+    if(x===0)g.moveTo(x,y);else g.lineTo(x,y);
+  }
+  g.stroke();
+  g.strokeStyle="rgba(255,255,255,.12)";g.beginPath();g.moveTo(0,mid);g.lineTo(canvas.width,mid);g.stroke();
+
+  $("noiseResult").innerHTML=`
+    <div class="noise-confidence">AI screening confidence ${leakScore}%</div>
+    <div class="noise-class">${classification}</div>
+    <div class="feature-grid">
+      <div><small>RMS Energy</small><b>${rms.toFixed(4)}</b></div>
+      <div><small>Peak / Crest</small><b>${crest.toFixed(1)}</b></div>
+      <div><small>Zero Crossing</small><b>${zcr.toFixed(3)}</b></div>
+      <div><small>Spectral Centroid</small><b>${Math.round(centroid)} Hz</b></div>
+      <div><small>Duration</small><b>${audio.duration.toFixed(1)} s</b></div>
+      <div><small>Sample Rate</small><b>${sampleRate} Hz</b></div>
+    </div>
+    <div class="noise-explain">${explanation}</div>`;
+  try{ctx.close();}catch(e){}
+}
+
 const demoProfiles = [
   {
     name:"High leakage metallic DMA",
@@ -571,3 +773,42 @@ $("dmaSelect").addEventListener("change",()=>{
 ["propertiesInput","pipeLengthInput","spacingInput","repairCostInput"].forEach(id=>{
   $(id).addEventListener("change",runAnalysis);
 });
+
+renderPortfolio();
+runROI();
+generateCampaign();
+
+document.querySelectorAll(".nav-scroll").forEach(btn=>{
+  btn.addEventListener("click",()=>{
+    const el=document.getElementById(btn.dataset.target);
+    if(el) el.scrollIntoView({behavior:"smooth",block:"start"});
+    document.querySelectorAll(".nav-scroll").forEach(x=>x.classList.remove("active"));
+    btn.classList.add("active");
+  });
+});
+
+$("refreshPortfolioBtn").addEventListener("click",()=>{
+  portfolioDMAs.forEach(d=>{
+    d.risk=Math.max(20,Math.min(96,d.risk+Math.round((Math.random()-.5)*8)));
+  });
+  renderPortfolio();
+});
+
+$("askBtn").addEventListener("click",()=>{
+  const q=$("chatInput").value.trim();if(!q)return;
+  addChat("user",q);$("chatInput").value="";
+  setTimeout(()=>addChat("ai",assistantAnswer(q)),180);
+});
+$("chatInput").addEventListener("keydown",e=>{if(e.key==="Enter")$("askBtn").click();});
+document.querySelectorAll(".ask-suggestions button").forEach(b=>b.addEventListener("click",()=>{
+  const q=b.dataset.q;addChat("user",q);setTimeout(()=>addChat("ai",assistantAnswer(q)),150);
+}));
+
+["recoverableInput","waterValueInput","programmeCostInput","successRateInput"].forEach(id=>$(id).addEventListener("input",runROI));
+$("generateCampaignBtn").addEventListener("click",generateCampaign);
+$("runBtn").addEventListener("click",()=>{setTimeout(()=>{generateCampaign();runROI();},0);});
+
+$("audioInput").addEventListener("change",e=>{const f=e.target.files?.[0];if(f)analyseAudioFile(f);});
+["dragenter","dragover"].forEach(ev=>$("audioDrop").addEventListener(ev,e=>{e.preventDefault();$("audioDrop").style.borderColor="#2f7cff";}));
+["dragleave","drop"].forEach(ev=>$("audioDrop").addEventListener(ev,e=>{e.preventDefault();$("audioDrop").style.borderColor="#375983";}));
+$("audioDrop").addEventListener("drop",e=>{const f=e.dataTransfer.files?.[0];if(f)analyseAudioFile(f);});

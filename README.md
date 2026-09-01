@@ -68,3 +68,40 @@ The scoring model is intentionally transparent and simplified. A production impl
   - average repair cost
 - Demo profiles populate realistic fake utility data
 - Additional fields participate in scenario export and sensor-count logic
+
+
+## v5 platform additions
+
+### DMA portfolio
+Ranks a sample portfolio of DMAs by risk, MNF ratio, pressure, bursts and recommended strategy.
+
+### Ask the DMA
+Interactive engineering Q&A over the current scenario. It explains:
+- why a strategy was selected
+- what data is concerning
+- whether confidence is sufficient
+- what field teams should do next
+
+The GitHub demo uses transparent client-side logic. A production version can connect this interface to an LLM and retrieval layer.
+
+### ROI and payback
+Editable:
+- recoverable leakage
+- value of water
+- programme cost
+- success rate
+
+### Campaign workflow
+Generates a field campaign from the current strategy and provides a checklist through verification and outcome capture.
+
+### AI leak noise classification
+Upload an audio recording. The browser analyses:
+- RMS energy
+- crest factor
+- zero-crossing behaviour
+- approximate spectral centroid
+- duration / sample rate
+
+It then produces a prototype leak-likelihood classification and explanation.
+
+This is deliberately labelled as a prototype classifier. A real classifier should be trained/calibrated on labelled sensor recordings and confirmed field outcomes.
