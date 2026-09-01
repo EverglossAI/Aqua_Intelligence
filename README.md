@@ -1,52 +1,64 @@
-# Aqua Intelligence v9 HARDENED
+# Aqua Intelligence v10 — Real GIS Sensor Deployment Optimiser
 
-This build fixes the JavaScript crash visible in the v7/v8 screenshots:
+This version replaces the invented demo pipe network with geometry extracted from the four GIS packages supplied for the prototype.
 
-`Cannot read properties of null (reading 'addEventListener')`
+## Included source datasets
 
-## Root cause
+- Lambay Island
+- Keelung
+- Changhua
+- Pingtung
 
-The tabbed application removed several panels from the DOM, but older JavaScript still referenced controls belonging to those panels. A missing control could stop the entire script before Leaflet initialised.
+The application embeds pipe geometry and available access assets (valves / hydrants / meters where present) directly into the single-file GitHub Pages build.
 
-That is why the map area was blank and no pipes were drawn.
+## What the planner does
 
-## v9 fix
+1. Select a utility area.
+2. Display the real GIS pipe network.
+3. Colour pipe segments using an illustrative risk score.
+4. Inspect individual pipe attributes.
+5. Select Permanent / Lift & Shift / Hybrid / Auto.
+6. Set available sensors, target spacing and intervention intensity.
+7. Optionally add pressure and night-flow information.
+8. Optimise sensor deployment.
+9. Rank candidate valve/hydrant access positions.
+10. Plot recommended fixed sensors or campaign rounds.
 
-- Missing optional DOM elements now use a safe inert shim instead of throwing.
-- Map startup is isolated from the optional Portfolio / ROI / AI / report modules.
-- A failure in a secondary module can no longer prevent GIS startup.
-- Leaflet map startup is wrapped independently.
-- Repeated map size recalculation remains enabled.
-- Coloured pipeline overlays remain visible even if the OpenStreetMap basemap cannot load.
-- Interactive Leaflet SVG features explicitly accept pointer events.
-- A visible map status label confirms the v9 GIS code is loaded.
-- A runtime warning specifically detects if Leaflet zoom controls did not initialise.
+## Current sensor scoring
 
-There are still 49 references to controls that are intentionally absent from the compact Strategy tab. In v9 these are safely ignored instead of terminating the application.
+Candidate points are ranked from:
+- nearby pipe risk
+- pipe material / age proxy
+- acoustic suitability
+- pipe diameter
+- access asset type
+- optional pressure / night-flow signals
+
+This is a prototype rule engine, not a validated optimisation model.
+
+## GIS handling
+
+Projected Taiwan TWD97 / TM2-121 geometry is converted to WGS84 for Leaflet display.
+Pingtung layers supplied in WGS84 are used directly.
+
+## Production next steps
+
+A production deployment planner should add:
+- graph topology / network connectivity
+- true shortest-path / coverage calculations
+- hydraulic zones
+- DMA boundaries
+- valve operability
+- accessibility / road constraints
+- historical confirmed leak locations
+- logger signal history
+- pressure-dependent acoustic range
+- sensor model-specific spacing rules
+- optimisation objectives (max coverage, max risk reduction, fixed sensor budget)
+- campaign sequencing and route planning
 
 ## Publish
 
-Replace **only `index.html`** in the GitHub repository root.
+Replace the GitHub Pages root `index.html` with this file.
 
-After GitHub Pages rebuilds, perform:
-
-**Ctrl + Shift + R**
-
-The top prototype banner must say:
-
-**v9 HARDENED**
-
-If it still says v7 or v8, GitHub/browser cache is serving the previous file.
-
-## Expected map behaviour
-
-On DMA Strategy you should see:
-
-- OpenStreetMap basemap (if the tile service is reachable)
-- Leaflet +/- zoom buttons
-- DMA boundary
-- coloured water-main linework
-- pressure / flow markers
-- clickable pipe sections
-
-Even if OSM tiles are unavailable, the dark grid fallback and coloured mains should remain visible.
+The app remains a single-file prototype; Leaflet and OpenStreetMap tiles are loaded online.
