@@ -1,72 +1,122 @@
-# Aqua Intelligence v11 — AI Leak Susceptibility Zones
+# Aqua Intelligence v12 — Operational GIS Data
 
-This version adds GIS-based **AI Leak Susceptibility Zones** to the real GIS sensor-deployment prototype.
+v12 adds positioned operational evidence to the real GIS leak-susceptibility and sensor-deployment prototype.
 
-## Important terminology
+## New GIS point types
 
-The system does **not** claim that GIS alone can detect an active leak.
+Users can now place directly on the map:
 
-The new layer identifies **areas that are more susceptible to leakage / more valuable to survey** based on the available network attributes.
+- pressure loggers
+- flow meters
+- confirmed leak repairs
+- bursts
 
-## Inputs used in v11
+Each point stores location plus relevant values.
+
+### Pressure logger fields
+
+- ID/name
+- date
+- average pressure
+- minimum pressure
+- coordinates
+
+### Flow meter fields
+
+- ID/name
+- date
+- average flow
+- minimum night flow
+- coordinates
+
+### Failure history
+
+- leak / burst / joint failure / service leak
+- date
+- confirmed / unconfirmed
+- estimated water loss
+- coordinates
+
+## Map entry workflow
+
+Choose the point type in the left panel, then click the map.
+
+A form appears for the associated readings.
+
+## Import
+
+Operational data can also be imported as:
+
+- GeoJSON Point features
+- CSV
+
+Typical CSV columns:
+
+```text
+type,id,lat,lng,date,pressure,min_pressure,flow,mnf,failure_type,loss,confirmed
+pressure,PL-01,22.62,120.48,2026-08-20,53,43,,,,,
+flow,FM-01,22.61,120.47,2026-08-20,,,42.5,19.2,,,
+leak,LR-17,22.60,120.49,2025-11-14,,,,,Leak,95,true
+```
+
+## Susceptibility-model improvement
+
+AI Leak Susceptibility Zones now combine:
 
 - pipe material
-- inferred pipe age from burial date where available
-- pipe diameter
-- existing per-pipe risk score
-- concentration of high-risk pipes
-- density of older mains
-- optional average pressure
-- optional minimum/night-flow signal
+- inferred pipe age
+- diameter
+- GIS pipe risk
+- clustering of high-risk mains
+- confirmed historical failures within 450 m
+- nearby pressure logger readings
+- nearby minimum-night-flow readings
+- optional DMA-level pressure / night-flow values
 
-## Output
+Historical failures and high local pressure can materially increase a zone's priority score.
 
-The application clusters the network spatially and identifies the highest-priority zones.
+## Sensor optimiser improvement
 
-Each zone receives:
-- susceptibility score
-- pipe count
-- average risk
-- average inferred pipe age
-- dominant material
-- high-risk pipe count
-- primary reason for the flag
+Sensor candidate ranking now also considers:
 
-High-priority zones are shown as translucent magenta/orange circles on the GIS.
+- proximity to confirmed failures
+- high local pressure
+- AI susceptibility-zone score
 
-Click a zone to inspect why it was flagged.
+This creates the workflow:
 
-## Integration with sensor optimisation
+```text
+Pipe GIS
++ failure history
++ pressure logger positions
++ flow meter / MNF positions
+↓
+spatial susceptibility analysis
+↓
+candidate access points
+↓
+sensor optimisation
+↓
+field campaign
+```
 
-If AI susceptibility zones have been calculated before `Optimise Deployment`, candidate valve/hydrant sensor positions inside high-priority zones receive a modest priority boost.
+## Demo data
 
-This makes the workflow:
+A **Load Demo Operational Data** button adds sample pressure, flow, leak and burst points to the currently selected GIS area so the interaction can be demonstrated without a telemetry export.
 
-GIS
-→ asset susceptibility
-→ hotspot zones
-→ accessible sensor positions
-→ spacing constraints
-→ deployment plan
+The demo values are explicitly simulated.
 
-## Production enhancement
+## Production direction
 
-The susceptibility model becomes substantially stronger when combined with:
-- historical confirmed leaks
-- previous burst locations
-- minimum-night-flow trend
-- pressure history
+A production version should replace manual point readings with time-series ingestion and calculate:
+
+- rolling minimum-night-flow changes
 - pressure transients
-- soil / road loading
-- pipe joint type
-- acoustic logger alarms
-- repair outcomes
-- leak frequency per km/year
+- pressure/leakage relationships
+- burst density per km/year
+- repeat-failure clusters
+- leak repair recurrence
+- change-point detection
+- acoustic alarm coincidence
 
-At that point the system can evolve from GIS susceptibility scoring into a calibrated leak-risk model.
-
-## Publish
-
-Replace the GitHub Pages root `index.html` with the v11 file.
-
-The build remains a single-file browser prototype using Leaflet and OpenStreetMap.
+The result would be a continuously updated leakage-risk surface rather than a static risk map.
