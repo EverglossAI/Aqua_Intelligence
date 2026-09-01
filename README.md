@@ -1,64 +1,72 @@
-# Aqua Intelligence v10 — Real GIS Sensor Deployment Optimiser
+# Aqua Intelligence v11 — AI Leak Susceptibility Zones
 
-This version replaces the invented demo pipe network with geometry extracted from the four GIS packages supplied for the prototype.
+This version adds GIS-based **AI Leak Susceptibility Zones** to the real GIS sensor-deployment prototype.
 
-## Included source datasets
+## Important terminology
 
-- Lambay Island
-- Keelung
-- Changhua
-- Pingtung
+The system does **not** claim that GIS alone can detect an active leak.
 
-The application embeds pipe geometry and available access assets (valves / hydrants / meters where present) directly into the single-file GitHub Pages build.
+The new layer identifies **areas that are more susceptible to leakage / more valuable to survey** based on the available network attributes.
 
-## What the planner does
+## Inputs used in v11
 
-1. Select a utility area.
-2. Display the real GIS pipe network.
-3. Colour pipe segments using an illustrative risk score.
-4. Inspect individual pipe attributes.
-5. Select Permanent / Lift & Shift / Hybrid / Auto.
-6. Set available sensors, target spacing and intervention intensity.
-7. Optionally add pressure and night-flow information.
-8. Optimise sensor deployment.
-9. Rank candidate valve/hydrant access positions.
-10. Plot recommended fixed sensors or campaign rounds.
-
-## Current sensor scoring
-
-Candidate points are ranked from:
-- nearby pipe risk
-- pipe material / age proxy
-- acoustic suitability
+- pipe material
+- inferred pipe age from burial date where available
 - pipe diameter
-- access asset type
-- optional pressure / night-flow signals
+- existing per-pipe risk score
+- concentration of high-risk pipes
+- density of older mains
+- optional average pressure
+- optional minimum/night-flow signal
 
-This is a prototype rule engine, not a validated optimisation model.
+## Output
 
-## GIS handling
+The application clusters the network spatially and identifies the highest-priority zones.
 
-Projected Taiwan TWD97 / TM2-121 geometry is converted to WGS84 for Leaflet display.
-Pingtung layers supplied in WGS84 are used directly.
+Each zone receives:
+- susceptibility score
+- pipe count
+- average risk
+- average inferred pipe age
+- dominant material
+- high-risk pipe count
+- primary reason for the flag
 
-## Production next steps
+High-priority zones are shown as translucent magenta/orange circles on the GIS.
 
-A production deployment planner should add:
-- graph topology / network connectivity
-- true shortest-path / coverage calculations
-- hydraulic zones
-- DMA boundaries
-- valve operability
-- accessibility / road constraints
-- historical confirmed leak locations
-- logger signal history
-- pressure-dependent acoustic range
-- sensor model-specific spacing rules
-- optimisation objectives (max coverage, max risk reduction, fixed sensor budget)
-- campaign sequencing and route planning
+Click a zone to inspect why it was flagged.
+
+## Integration with sensor optimisation
+
+If AI susceptibility zones have been calculated before `Optimise Deployment`, candidate valve/hydrant sensor positions inside high-priority zones receive a modest priority boost.
+
+This makes the workflow:
+
+GIS
+→ asset susceptibility
+→ hotspot zones
+→ accessible sensor positions
+→ spacing constraints
+→ deployment plan
+
+## Production enhancement
+
+The susceptibility model becomes substantially stronger when combined with:
+- historical confirmed leaks
+- previous burst locations
+- minimum-night-flow trend
+- pressure history
+- pressure transients
+- soil / road loading
+- pipe joint type
+- acoustic logger alarms
+- repair outcomes
+- leak frequency per km/year
+
+At that point the system can evolve from GIS susceptibility scoring into a calibrated leak-risk model.
 
 ## Publish
 
-Replace the GitHub Pages root `index.html` with this file.
+Replace the GitHub Pages root `index.html` with the v11 file.
 
-The app remains a single-file prototype; Leaflet and OpenStreetMap tiles are loaded online.
+The build remains a single-file browser prototype using Leaflet and OpenStreetMap.
