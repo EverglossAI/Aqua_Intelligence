@@ -1,20 +1,52 @@
-# Aqua Intelligence v8 — Map Fixed
+# Aqua Intelligence v9 HARDENED
 
-This build fixes the map initialization failure in v7.
+This build fixes the JavaScript crash visible in the v7/v8 screenshots:
+
+`Cannot read properties of null (reading 'addEventListener')`
 
 ## Root cause
 
-v7 removed several panels while retaining JavaScript event bindings to their controls. The first missing control stopped JavaScript execution before Leaflet `initMap()` ran. As a result there were no Leaflet controls, tiles, GIS overlays or pipelines.
+The tabbed application removed several panels from the DOM, but older JavaScript still referenced controls belonging to those panels. A missing control could stop the entire script before Leaflet initialised.
 
-## Fixes
+That is why the map area was blank and no pipes were drawn.
 
-- missing optional UI elements can no longer crash the whole application
-- Leaflet map initializes normally
-- OpenStreetMap uses the direct tile endpoint
-- DMA view automatically fits the network boundary and pipeline geometry
-- six simulated water mains are always drawn over the basemap
-- pipes are clickable and show asset/risk information directly on the map
-- tile-loading failure is reported separately from GIS overlay rendering
-- Strategy tab still refreshes Leaflet when reopened
+## v9 fix
 
-Replace only `index.html` in the GitHub Pages repository.
+- Missing optional DOM elements now use a safe inert shim instead of throwing.
+- Map startup is isolated from the optional Portfolio / ROI / AI / report modules.
+- A failure in a secondary module can no longer prevent GIS startup.
+- Leaflet map startup is wrapped independently.
+- Repeated map size recalculation remains enabled.
+- Coloured pipeline overlays remain visible even if the OpenStreetMap basemap cannot load.
+- Interactive Leaflet SVG features explicitly accept pointer events.
+- A visible map status label confirms the v9 GIS code is loaded.
+- A runtime warning specifically detects if Leaflet zoom controls did not initialise.
+
+There are still 49 references to controls that are intentionally absent from the compact Strategy tab. In v9 these are safely ignored instead of terminating the application.
+
+## Publish
+
+Replace **only `index.html`** in the GitHub repository root.
+
+After GitHub Pages rebuilds, perform:
+
+**Ctrl + Shift + R**
+
+The top prototype banner must say:
+
+**v9 HARDENED**
+
+If it still says v7 or v8, GitHub/browser cache is serving the previous file.
+
+## Expected map behaviour
+
+On DMA Strategy you should see:
+
+- OpenStreetMap basemap (if the tile service is reachable)
+- Leaflet +/- zoom buttons
+- DMA boundary
+- coloured water-main linework
+- pressure / flow markers
+- clickable pipe sections
+
+Even if OSM tiles are unavailable, the dark grid fallback and coloured mains should remain visible.
