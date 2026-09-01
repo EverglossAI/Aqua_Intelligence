@@ -105,7 +105,7 @@ label{color:var(--muted);font-size:10px}
 .noise-explain{font-size:10px;color:#cbd6e5;line-height:1.45;margin-top:10px}.noise-disclaimer{margin:0 12px 12px;padding:8px;border-radius:6px;background:rgba(242,174,61,.05);border:1px solid #6b572c;color:#bcae90;font-size:9px}
 @media(max-width:900px){.portfolio-kpis,.campaign-meta{grid-template-columns:1fr 1fr}.noise-layout{grid-template-columns:1fr}.roi-panel,.campaign-panel,.noise-panel,.ask-panel{grid-column:1/-1}}
 
-/* v7 app-tabs hardening */
+/* v8 map-fixed hardening */
 html,body{width:100%;min-height:100%;overflow-x:hidden}
 .workspace{position:relative;z-index:1}
 .map-panel{height:520px!important;min-height:520px!important;overflow:hidden!important}
@@ -236,12 +236,26 @@ body{overflow:hidden!important}
   .module-grid{grid-template-columns:1fr}
 }
 
+
+/* ===== v8 map reliability ===== */
+.map-pipe-info{
+  position:absolute;z-index:850;left:12px;bottom:12px;max-width:340px;
+  padding:10px 12px;border-radius:7px;background:rgba(8,17,29,.94);
+  border:1px solid var(--line);pointer-events:none;box-shadow:0 8px 20px rgba(0,0,0,.25)
+}
+.map-pipe-info b{display:block;font-size:11px;margin-bottom:3px}.map-pipe-info span{display:block;color:var(--muted);font-size:9px;line-height:1.4}
+.map-pipe-info .pipe-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:5px;margin-top:7px}.map-pipe-info .pipe-grid div{background:#0a1420;border:1px solid var(--line);border-radius:4px;padding:5px}.map-pipe-info small{display:block;color:var(--muted);font-size:8px}.map-pipe-info strong{font-size:9px}
+#map .leaflet-control-zoom{border:1px solid #53657e!important}
+#map .leaflet-control-zoom a{background:#0e1b2b!important;color:#dce8f8!important;border-color:#31435d!important}
+#map .leaflet-control-attribution{background:rgba(8,17,29,.8)!important;color:#91a7c2!important}
+#map .leaflet-control-attribution a{color:#70a7ff!important}
+
 </style>
 </head>
 <body>
 <div id="runtimeStatus" class="runtime-status"></div>
 <div class="prototype-banner">
-  <b>INTERACTIVE PROTOTYPE</b><span class="version-chip">v7 app-tabs</span>
+  <b>INTERACTIVE PROTOTYPE</b><span class="version-chip">v8 map-fixed</span>
   <span>Demo data only — engineering logic is illustrative and requires field validation.</span>
   <button id="methodologyBtn">Methodology</button>
 </div>
@@ -362,6 +376,10 @@ body{overflow:hidden!important}
             <span><i class="dot acoustic-dot"></i>Acoustic</span>
             <span><i class="dot candidate-dot"></i>Candidate</span>
           </div>
+        </div>
+        <div class="map-pipe-info" id="mapPipeInfo">
+          <b>Demo water network</b>
+          <span>Coloured mains are clickable. Red = highest risk, amber = elevated risk, blue = lower risk.</span>
         </div>
       </section>
 <section class="planner panel">
@@ -589,7 +607,23 @@ const pipeTemplates = [
   {id:"P-106", material:"HDPE", age:9, dia:250, length:520, bursts:0, risk:22, coords:[[1.3552,103.8134],[1.3574,103.8201],[1.3541,103.8266]]}
 ];
 
-const $ = id => document.getElementById(id);
+const __missingElements = new Map();
+function __missingElement(id){
+  if(__missingElements.has(id)) return __missingElements.get(id);
+  const noop=()=>{};
+  const dummyClassList={add:noop,remove:noop,toggle:()=>false,contains:()=>false};
+  const target={
+    id, value:"", textContent:"", innerHTML:"", checked:false, files:[], style:{}, classList:dummyClassList,
+    addEventListener:noop, removeEventListener:noop, appendChild:noop, removeChild:noop,
+    dispatchEvent:()=>false, click:noop, focus:noop, blur:noop,
+    getContext:()=>null, getBoundingClientRect:()=>({width:0,height:0,top:0,left:0,right:0,bottom:0}),
+    querySelector:()=>null, querySelectorAll:()=>[], setAttribute:noop, removeAttribute:noop,
+    scrollIntoView:noop
+  };
+  const proxy=new Proxy(target,{set:(o,k,v)=>{o[k]=v;return true;},get:(o,k)=>k in o?o[k]:undefined});
+  __missingElements.set(id,proxy);return proxy;
+}
+const $ = id => document.getElementById(id) || __missingElement(id);
 let selectedStrategy = "Permanent";
 let selectedPipe = null;
 let map, dmaLayer, pipeLayers=[], sensorLayers=[], boundaryLayer, importedGeoLayer=null;
@@ -603,10 +637,20 @@ function riskColor(risk){
 function initMap(){
   map = L.map("map",{zoomControl:true,preferCanvas:true}).setView(dmaData["DMA-24"].center,14);
 
-  L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
+  const baseTiles=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{
     maxZoom:19,
+    updateWhenIdle:true,
+    keepBuffer:4,
     attribution:'&copy; OpenStreetMap contributors'
   }).addTo(map);
+  let tileErrors=0;
+  baseTiles.on("tileerror",()=>{
+    tileErrors++;
+    if(tileErrors===4){
+      const info=$("mapPipeInfo");
+      info.innerHTML='<b>Basemap tiles are not loading</b><span>The demo GIS and water mains will still work. Check internet/firewall access to tile.openstreetmap.org.</span>';
+    }
+  });
 
   drawDMA("DMA-24");
 
@@ -655,6 +699,13 @@ function drawDMA(dmaName){
   const p1=L.circleMarker([c[0]+.003,c[1]+.004],{radius:8,color:"#2f7cff",fillColor:"#2f7cff",fillOpacity:1}).addTo(map).bindTooltip("Pressure Logger");
   const p2=L.circleMarker([c[0]-.004,c[1]-.001],{radius:8,color:"#2f7cff",fillColor:"#2f7cff",fillOpacity:1}).addTo(map).bindTooltip("Pressure Logger");
   sensorLayers.push(flow,p1,p2);
+
+  // Always frame the actual GIS rather than relying on a hard-coded zoom.
+  let bounds=L.latLngBounds(boundary);
+  pipeLayers.forEach(line=>bounds.extend(line.getBounds()));
+  map.invalidateSize({pan:false,animate:false});
+  map.fitBounds(bounds,{padding:[34,34],animate:false,maxZoom:15});
+  setTimeout(()=>map.invalidateSize({pan:false,animate:false}),120);
 }
 
 function selectPipe(pipe,layer){
@@ -668,6 +719,16 @@ function selectPipe(pipe,layer){
     : pipe.risk>=60 ? "Include in next lift & shift campaign or fixed monitoring priority"
     : pipe.risk>=40 ? "Routine survey / watchlist"
     : "No special intervention";
+
+  const mapInfo=$("mapPipeInfo");
+  mapInfo.innerHTML=`
+    <b>${pipe.id} · ${pipe.material} · ${pipe.dia} mm</b>
+    <span>${action}</span>
+    <div class="pipe-grid">
+      <div><small>Age</small><strong>${pipe.age} yr</strong></div>
+      <div><small>Bursts</small><strong>${pipe.bursts}</strong></div>
+      <div><small>Risk</small><strong>${pipe.risk}/100</strong></div>
+    </div>`;
 
   $("pipeDetails").innerHTML=`
     <b>${pipe.id}</b>
@@ -1290,6 +1351,9 @@ function ensureMapSize(){
 }
 
 initMap();
+if(map){
+  $("mapPipeInfo").innerHTML='<b>DMA-24 demo network loaded</b><span>Six simulated mains are shown over the live OpenStreetMap basemap. Click a coloured main to inspect it.</span>';
+}
 ensureMapSize();
 populateCurrentDemo();
 renderPortfolio();
@@ -1418,7 +1482,7 @@ $("audioDrop").addEventListener("drop",e=>{const f=e.dataTransfer.files?.[0];if(
 window.addEventListener("load",()=>{
   ensureMapSize();
   document.body.dataset.aquaReady="true";
-  console.log("Aqua Intelligence v6 ready");
+  console.log("Aqua Intelligence v8 ready");
 });
 
 </script>

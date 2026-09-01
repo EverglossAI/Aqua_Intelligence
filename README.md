@@ -1,34 +1,20 @@
-# Aqua Intelligence v7 — Compact App Layout
+# Aqua Intelligence v8 — Map Fixed
 
-This version fixes the very long scrolling dashboard from v6.
+This build fixes the map initialization failure in v7.
 
-## What changed
+## Root cause
 
-- True application navigation: only one module is visible at a time.
-- Default screen is **DMA Strategy**.
-- Separate modules:
-  - Portfolio
-  - DMA Strategy
-  - Campaigns
-  - AI Leak Noise
-  - Data Explorer
-  - Reports
-  - GIS Layers
-- DMA Strategy is now a compact three-column working screen:
-  - DMA / asset information
-  - interactive GIS
-  - strategy planner
-- The map receives a resize refresh whenever the Strategy tab is opened.
-- Portfolio no longer sits permanently above the strategy screen.
-- Campaign and acoustic analysis no longer add dozens of screens of vertical content.
+v7 removed several panels while retaining JavaScript event bindings to their controls. The first missing control stopped JavaScript execution before Leaflet `initMap()` ran. As a result there were no Leaflet controls, tiles, GIS overlays or pipelines.
 
-## GitHub Pages
+## Fixes
 
-Replace the repository root `index.html` with the v7 file.
+- missing optional UI elements can no longer crash the whole application
+- Leaflet map initializes normally
+- OpenStreetMap uses the direct tile endpoint
+- DMA view automatically fits the network boundary and pipeline geometry
+- six simulated water mains are always drawn over the basemap
+- pipes are clickable and show asset/risk information directly on the map
+- tile-loading failure is reported separately from GIS overlay rendering
+- Strategy tab still refreshes Leaflet when reopened
 
-The build remains single-file to avoid stale CSS/JS asset caching.
-
-## Prototype
-
-All utility information is simulated and engineering logic is illustrative.
-Field verification is required before excavation.
+Replace only `index.html` in the GitHub Pages repository.
