@@ -10,6 +10,11 @@
   <link rel="stylesheet" href="styles.css" />
 </head>
 <body>
+<div class="prototype-banner">
+  <b>INTERACTIVE PROTOTYPE</b>
+  <span>Demo data only — engineering logic is illustrative and requires field validation.</span>
+  <button id="methodologyBtn">Methodology</button>
+</div>
 <div class="app-shell">
   <aside class="sidebar">
     <div class="brand">
@@ -104,7 +109,35 @@
       </section>
 
       <section class="planner panel">
-        <div class="panel-header"><h2>Strategy Planner</h2><button class="link-btn" id="resetBtn">Reset</button></div>
+        <div class="panel-header">
+          <h2>Strategy Planner</h2>
+          <div class="header-actions">
+            <button class="link-btn" id="saveBtn">Save</button>
+            <button class="link-btn" id="loadBtn">Load</button>
+            <button class="link-btn" id="resetBtn">Reset</button>
+          </div>
+        </div>
+
+        <div class="quick-grid">
+          <div>
+            <label>Demo Scenario</label>
+            <select id="scenarioSelect">
+              <option value="custom">Custom</option>
+              <option value="high_nrw">High NRW / High Pressure</option>
+              <option value="aged">Aged Metallic Network</option>
+              <option value="poor_acoustic">Low Acoustic Suitability</option>
+              <option value="healthy">Good Performing DMA</option>
+            </select>
+          </div>
+          <div>
+            <label>Cost Posture</label>
+            <select id="costPosture">
+              <option value="capex">Capex Sensitive</option>
+              <option value="balanced" selected>Balanced</option>
+              <option value="max">Maximum Detection</option>
+            </select>
+          </div>
+        </div>
 
         <label>Detection Strategy</label>
         <div class="strategy-tabs">
@@ -115,7 +148,7 @@
         </div>
 
         <div class="field-row">
-          <label>Aggressiveness <span id="aggrLabel">7 / 10</span></label>
+          <label>Intervention Intensity <span id="aggrLabel">7 / 10</span></label>
           <input id="aggressiveness" type="range" min="1" max="10" value="7" />
           <div class="range-hints"><span>Economy</span><span>Maximum intervention</span></div>
         </div>
@@ -131,6 +164,20 @@
           <div><label>Repair Response</label>
             <select id="repairResponse"><option value="fast">Same / next day</option><option value="normal" selected>2–5 days</option><option value="slow">&gt; 5 days</option></select>
           </div>
+        </div>
+
+        <div class="quality-row">
+          <label>Data Quality</label>
+          <div class="quality-controls">
+            <select id="flowQuality"><option value="good">Flow: Good</option><option value="fair">Flow: Fair</option><option value="poor">Flow: Poor</option></select>
+            <select id="pressureQuality"><option value="good">Pressure: Good</option><option value="fair">Pressure: Fair</option><option value="poor">Pressure: Poor</option></select>
+            <select id="gisQuality"><option value="good">GIS: Good</option><option value="fair">GIS: Fair</option><option value="poor">GIS: Poor</option></select>
+          </div>
+        </div>
+
+        <div class="import-row">
+          <label class="file-btn">＋ Import GeoJSON<input id="geojsonInput" type="file" accept=".geojson,.json,application/geo+json,application/json" hidden></label>
+          <button class="secondary ghost mini" id="clearGeoBtn">Clear Imported GIS</button>
         </div>
 
         <button class="primary" id="runBtn">▶ Run Strategy Analysis</button>
@@ -188,10 +235,28 @@
           <div><span>Permanent Sensors</span><strong id="recSensors">4</strong></div>
           <div><span>Lift & Shift Campaigns</span><strong id="recCampaigns">2</strong></div>
           <div><span>Review Cycle</span><strong id="reviewCycle">90 days</strong></div>
+          <div><span>Indicative Manpower</span><strong id="manpowerText">2 technicians</strong></div>
+          <div><span>Survey Duration</span><strong id="durationText">3–5 days</strong></div>
         </div>
+
+        <div class="why-box">
+          <h3>Why this recommendation?</h3>
+          <ul id="whyList"></ul>
+        </div>
+
         <ol id="recommendationList"></ol>
+
+        <div class="verification-gate">
+          <b>Field verification gate</b>
+          <span>Correlation / ground confirmation is required before excavation approval.</span>
+        </div>
         <button class="secondary" id="applyBtn">◎ Show Recommended Deployment</button>
         <button class="secondary ghost" id="exportBtn">⇩ Export Strategy JSON</button>
+      </section>
+
+      <section class="technology-panel panel">
+        <div class="panel-header"><h2>Technology Suitability</h2><span class="subtle">Indicative fit for this DMA</span></div>
+        <div class="tech-grid" id="techGrid"></div>
       </section>
 
       <section class="pipe-panel panel">
@@ -211,6 +276,23 @@
 
     </section>
   </main>
+</div>
+
+<div class="modal hidden" id="methodologyModal">
+  <div class="modal-card">
+    <div class="panel-header">
+      <div>
+        <h2>Prototype Methodology</h2>
+        <span class="subtle">Explainable engineering decision support</span>
+      </div>
+      <button class="link-btn" id="closeMethodology">Close</button>
+    </div>
+    <div class="modal-body">
+      <p>This prototype combines DMA balance indicators, pressure, burst history, asset condition, acoustic suitability, operational response, data quality and intervention intensity.</p>
+      <p>The scores are intentionally simplified and transparent. A production engine should be calibrated against confirmed leak/no-leak outcomes, recovered volume, sensor performance, hydraulic model outputs and utility-specific engineering rules.</p>
+      <p><b>Important:</b> the system recommends where and how to investigate. It does not replace field confirmation or authorize excavation.</p>
+    </div>
+  </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"

@@ -17,7 +17,7 @@ const pipeTemplates = [
 const $ = id => document.getElementById(id);
 let selectedStrategy = "Permanent";
 let selectedPipe = null;
-let map, dmaLayer, pipeLayers=[], sensorLayers=[], boundaryLayer;
+let map, dmaLayer, pipeLayers=[], sensorLayers=[], boundaryLayer, importedGeoLayer=null;
 
 function riskColor(risk){
   if(risk>=80) return "#ef6262";
@@ -94,7 +94,12 @@ function selectPipe(pipe,layer){
       <div><small>Recent Bursts</small>${pipe.bursts}</div>
       <div><small>Pipe Risk</small>${pipe.risk}/100</div>
     </div>
-    <p><small>Recommended action</small>${action}</p>`;
+    <p><small>Recommended action</small>${action}</p>
+    <button class="analyze-btn" id="analyzePipeBtn">Analyse this section</button>`;
+  setTimeout(()=>{
+    const b=document.getElementById("analyzePipeBtn");
+    if(b) b.onclick=()=>analyzeSelectedPipe();
+  },0);
 }
 
 function setStrategy(name){
@@ -123,6 +128,60 @@ $("dmaSelect").addEventListener("change",e=>{
   runAnalysis();
 });
 
+
+function qualityScore(){
+  const weights={good:1,fair:.72,poor:.42};
+  const f=weights[$("flowQuality").value]||1;
+  const p=weights[$("pressureQuality").value]||1;
+  const g=weights[$("gisQuality").value]||1;
+  return Math.round((f*.4+p*.35+g*.25)*100);
+}
+
+function scenarioApply(name){
+  if(name==="custom") return;
+  const presets={
+    high_nrw:{pressure:58,flow:26.5,inlet:44.0,bursts:11,material:"DI",age:"25",bg:"high",response:"normal",aggr:8},
+    aged:{pressure:46,flow:19.8,inlet:39.5,bursts:9,material:"CI",age:"45",bg:"medium",response:"normal",aggr:7},
+    poor_acoustic:{pressure:34,flow:16.2,inlet:41.0,bursts:6,material:"HDPE",age:"10",bg:"medium",response:"fast",aggr:6},
+    healthy:{pressure:38,flow:9.8,inlet:43.5,bursts:2,material:"PVC",age:"10",bg:"low",response:"fast",aggr:3}
+  };
+  const x=presets[name]; if(!x) return;
+  $("pressureInput").value=x.pressure;$("flowInput").value=x.flow;$("inletInput").value=x.inlet;$("burstsInput").value=x.bursts;
+  $("materialInput").value=x.material;$("ageInput").value=x.age;$("backgroundLeakage").value=x.bg;$("repairResponse").value=x.response;
+  $("aggressiveness").value=x.aggr;$("aggrLabel").textContent=`${x.aggr} / 10`;
+  runAnalysis();
+}
+
+function analyzeSelectedPipe(){
+  if(!selectedPipe) return;
+  const risk=selectedPipe.risk;
+  const acoustic=["CI","DI"].includes(selectedPipe.material)?"Good":["AC"].includes(selectedPipe.material)?"Moderate":"Challenging";
+  const msg = `
+    <b>${selectedPipe.id} engineering review</b><br><br>
+    Priority is <b>${risk}/100</b> because the asset is ${selectedPipe.age} years old, ${selectedPipe.material}, with ${selectedPipe.bursts} recent bursts.<br><br>
+    Acoustic propagation is expected to be <b>${acoustic}</b>. ${
+      risk>=80 ? "Recommended approach: investigate immediately using acoustic logging plus correlation / ground confirmation." :
+      risk>=60 ? "Recommended approach: include in the next targeted survey and consider temporary or permanent monitoring." :
+      "Recommended approach: routine surveillance is sufficient unless new evidence appears."
+    }
+  `;
+  L.popup().setLatLng(map.getCenter()).setContent(msg).openOn(map);
+}
+
+function renderImportedGeoJSON(geojson){
+  if(importedGeoLayer) map.removeLayer(importedGeoLayer);
+  importedGeoLayer=L.geoJSON(geojson,{
+    style:()=>({color:"#9a67ff",weight:3,fillColor:"#9a67ff",fillOpacity:.05}),
+    pointToLayer:(feature,latlng)=>L.circleMarker(latlng,{radius:6,color:"#9a67ff",fillColor:"#9a67ff",fillOpacity:1}),
+    onEachFeature:(feature,layer)=>{
+      const props=feature.properties||{};
+      const rows=Object.entries(props).slice(0,8).map(([k,v])=>`<b>${k}</b>: ${v}`).join("<br>");
+      if(rows) layer.bindPopup(rows);
+    }
+  }).addTo(map);
+  try{map.fitBounds(importedGeoLayer.getBounds(),{padding:[20,20]});}catch(e){}
+}
+
 function scoreModel(){
   const aggr=Number($("aggressiveness").value);
   const pressure=Number($("pressureInput").value)||0;
@@ -133,6 +192,8 @@ function scoreModel(){
   const age=Number($("ageInput").value);
   const bg=$("backgroundLeakage").value;
   const response=$("repairResponse").value;
+  const costPosture=$("costPosture").value;
+  const dataQuality=qualityScore();
 
   const nightRatio=Math.min(flow/inlet,1);
   let risk=10;
@@ -163,14 +224,15 @@ function scoreModel(){
   else if(risk<50) auto="LiftShift";
   else auto="Hybrid";
 
-  const sensors=Math.max(3,Math.round(2+risk/14+aggr/3));
-  const campaigns=Math.max(1,Math.round(1+aggr/3+(risk>=75?1:0)));
+  let postureFactor=costPosture==="capex"?.82:costPosture==="max"?1.2:1;
+  const sensors=Math.max(3,Math.round((2+risk/14+aggr/3)*postureFactor));
+  const campaigns=Math.max(1,Math.round((1+aggr/3+(risk>=75?1:0))*postureFactor));
   const hybridSensors=Math.max(2,Math.round(sensors*.55));
   const hybridCampaigns=Math.max(1,campaigns-1);
 
-  const confidence=Math.min(94,Math.round(58 + Math.min(18,Math.abs(inlet-flow)/inlet*15) + (pressure>0?7:0) + (bursts>=0?5:0) + (selectedPipe?4:0)));
+  const confidence=Math.min(94,Math.round((58 + Math.min(18,Math.abs(inlet-flow)/inlet*15) + (pressure>0?7:0) + (bursts>=0?5:0) + (selectedPipe?4:0))*(dataQuality/100)));
 
-  return {aggr,pressure,flow,inlet,bursts,material,age,bg,response,nightRatio,risk,acoustic,permSuit,lsSuit,hybSuit,auto,sensors,campaigns,hybridSensors,hybridCampaigns,confidence};
+  return {aggr,pressure,flow,inlet,bursts,material,age,bg,response,costPosture,dataQuality,nightRatio,risk,acoustic,permSuit,lsSuit,hybSuit,auto,sensors,campaigns,hybridSensors,hybridCampaigns,confidence};
 }
 
 function runAnalysis(){
@@ -216,6 +278,42 @@ function runAnalysis(){
   $("recSensors").textContent=rs;
   $("recCampaigns").textContent=rc;
   $("reviewCycle").textContent=review;
+
+  let manpower = strategyKey==="Permanent" ? Math.max(2,Math.ceil(rs/6))
+                : strategyKey==="LiftShift" ? Math.max(2,Math.ceil(rc/2)+1)
+                : Math.max(2,Math.ceil((rs+rc)/5)+1);
+  let duration = m.aggr>=8 ? "5–10 days" : m.aggr>=5 ? "3–5 days" : "1–3 days";
+  $("manpowerText").textContent=`${manpower} technician${manpower>1?"s":""}`;
+  $("durationText").textContent=duration;
+
+  const why=[];
+  if(m.nightRatio>.42) why.push(`High minimum-night-flow ratio (${Math.round(m.nightRatio*100)}% of inlet flow)`);
+  if(m.pressure>50) why.push(`High average pressure (${m.pressure} m) increases leakage sensitivity`);
+  if(["CI","AC"].includes(m.material)||m.age>=45) why.push(`Older / higher-risk asset profile (${m.material}, ${m.age} years)`);
+  if(m.bursts>=8) why.push(`Repeated burst history (${m.bursts} in 12 months)`);
+  if(m.acoustic<60) why.push(`Lower acoustic suitability (${m.acoustic}%) favours targeted campaign methods`);
+  if(m.response==="slow") why.push("Slow repair response reduces value of ultra-fast detection");
+  if(m.dataQuality<75) why.push(`Data quality is only ${m.dataQuality}%, so recommendation confidence is reduced`);
+  if(!why.length) why.push("No single dominant risk driver; use proportionate monitoring");
+  $("whyList").innerHTML=why.slice(0,5).map(x=>`<li>${x}</li>`).join("");
+
+  const techScores=[
+    ["Acoustic loggers",m.acoustic,"Best for repeated screening where pipe acoustics are favourable."],
+    ["Correlator",Math.max(40,Math.min(96,m.acoustic+8)),"High value after a suspected leak is narrowed to a section."],
+    ["Hydrophone",["HDPE","PVC"].includes(m.material)?78:64,"Useful where water-borne signal transmission is stronger than pipe-borne vibration."],
+    ["Pressure logging",Math.min(95,55+Math.max(0,m.pressure-35)),"Supports pressure-leakage interpretation and transient / zone behaviour."],
+    ["Step testing",Math.min(94,52+(m.nightRatio*55)),"Strong option when night flow is elevated and subzone isolation is practical."],
+    ["Transient monitoring",Math.min(90,45+m.bursts*3),"Useful where recurring bursts or abnormal valve/pump events are suspected."],
+    ["Satellite screening",m.risk>=70?62:45,"Supplementary prioritisation tool; field confirmation remains necessary."],
+    ["Ground microphone",Math.max(45,m.acoustic-5),"Final localisation aid after screening / correlation."]
+  ];
+  $("techGrid").innerHTML=techScores.map(([name,score,desc])=>`
+    <div class="tech-card">
+      <b>${name}</b>
+      <div class="score">${Math.round(score)}%</div>
+      <small>${desc}</small>
+      <div class="tech-meter"><i style="width:${Math.round(score)}%"></i></div>
+    </div>`).join("");
 
   const decision = [
     ["NRW / Night Flow", `${Math.round(m.nightRatio*100)}% MNF ratio`, m.nightRatio>.42?"high":m.nightRatio>.30?"warn":"good"],
@@ -310,3 +408,58 @@ $("exportBtn").addEventListener("click",()=>{
 
 initMap();
 runAnalysis();
+
+
+$("scenarioSelect").addEventListener("change",e=>scenarioApply(e.target.value));
+$("costPosture").addEventListener("change",runAnalysis);
+["flowQuality","pressureQuality","gisQuality"].forEach(id=>$(id).addEventListener("change",runAnalysis));
+
+$("geojsonInput").addEventListener("change",async e=>{
+  const file=e.target.files?.[0]; if(!file) return;
+  try{
+    const data=JSON.parse(await file.text());
+    renderImportedGeoJSON(data);
+    $("gisQuality").value="good";
+    runAnalysis();
+  }catch(err){
+    alert("Unable to read GeoJSON. Please check that the file contains valid GeoJSON.");
+  }
+});
+
+$("clearGeoBtn").addEventListener("click",()=>{
+  if(importedGeoLayer){map.removeLayer(importedGeoLayer);importedGeoLayer=null;}
+  $("geojsonInput").value="";
+});
+
+$("saveBtn").addEventListener("click",()=>{
+  const state={
+    dma:$("dmaSelect").value,strategy:selectedStrategy,aggr:$("aggressiveness").value,
+    pressure:$("pressureInput").value,flow:$("flowInput").value,inlet:$("inletInput").value,bursts:$("burstsInput").value,
+    material:$("materialInput").value,age:$("ageInput").value,bg:$("backgroundLeakage").value,response:$("repairResponse").value,
+    costPosture:$("costPosture").value,flowQuality:$("flowQuality").value,pressureQuality:$("pressureQuality").value,gisQuality:$("gisQuality").value
+  };
+  localStorage.setItem("aqua-intelligence-scenario",JSON.stringify(state));
+  alert("Scenario saved in this browser.");
+});
+
+$("loadBtn").addEventListener("click",()=>{
+  const raw=localStorage.getItem("aqua-intelligence-scenario");
+  if(!raw){alert("No saved scenario found in this browser.");return;}
+  const s=JSON.parse(raw);
+  $("dmaSelect").value=s.dma||"DMA-24";$("dmaSelect").dispatchEvent(new Event("change"));
+  setStrategy(s.strategy||"Permanent");
+  $("aggressiveness").value=s.aggr||7;$("aggrLabel").textContent=`${$("aggressiveness").value} / 10`;
+  ["pressure","flow","inlet","bursts"].forEach(k=>{
+    const id={pressure:"pressureInput",flow:"flowInput",inlet:"inletInput",bursts:"burstsInput"}[k];
+    if(s[k]!=null) $(id).value=s[k];
+  });
+  if(s.material)$("materialInput").value=s.material;if(s.age)$("ageInput").value=s.age;
+  if(s.bg)$("backgroundLeakage").value=s.bg;if(s.response)$("repairResponse").value=s.response;
+  if(s.costPosture)$("costPosture").value=s.costPosture;
+  if(s.flowQuality)$("flowQuality").value=s.flowQuality;if(s.pressureQuality)$("pressureQuality").value=s.pressureQuality;if(s.gisQuality)$("gisQuality").value=s.gisQuality;
+  runAnalysis();
+});
+
+$("methodologyBtn").addEventListener("click",()=>$("methodologyModal").classList.remove("hidden"));
+$("closeMethodology").addEventListener("click",()=>$("methodologyModal").classList.add("hidden"));
+$("methodologyModal").addEventListener("click",e=>{if(e.target===$("methodologyModal"))$("methodologyModal").classList.add("hidden");});

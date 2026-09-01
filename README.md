@@ -1,84 +1,57 @@
-# Aqua Intelligence v2 — NRW Strategy Engine
+# Aqua Intelligence v3 — NRW Strategy Engine Prototype
 
-Interactive GitHub-ready front-end prototype for water-utility DMA leakage strategy planning.
+Final pre-publish interactive prototype for DMA leakage strategy planning.
 
-## What changed in v2
+## Highlights
 
-- Real web map using **Leaflet + OpenStreetMap**
-- Interactive DMA boundary
-- Clickable water-main / pipe segments
-- Pipe risk visualisation
-- Pressure, flow and sensor markers
-- Recommended sensor deployment overlay
-- Strategy choices:
-  - Permanent acoustic sensors
-  - Lift & Shift
-  - Hybrid
-  - Auto Select
-- 1–10 strategy aggressiveness control
-- Inputs for:
-  - DMA pressure
-  - minimum night flow
-  - inlet flow
-  - burst history
-  - pipe material
-  - pipe age
-  - background leakage
-  - repair response time
-- Explainable engineering decision path
-- Strategy suitability scoring
-- Pipe-specific recommended action
-- Export strategy result as JSON
+- Real Leaflet + OpenStreetMap basemap
+- Clickable DMA pipes / subzones
+- Pipe-level risk and "Analyse this section"
+- Permanent / Lift & Shift / Hybrid / Auto Select
+- Intervention Intensity slider
+- Demo scenario presets
+- Cost posture: Capex Sensitive / Balanced / Maximum Detection
+- Pressure, flow, MNF, burst, asset age/material inputs
+- Data quality / confidence scoring
+- Explainable "Why this recommendation?"
+- Manpower and survey-duration estimates
+- Technology suitability matrix:
+  - acoustic loggers
+  - correlator
+  - hydrophone
+  - pressure logging
+  - step testing
+  - transient monitoring
+  - satellite screening
+  - ground microphone
+- Field verification gate before excavation
+- GeoJSON import for real DMA / pipe GIS
+- Save / load scenario using browser localStorage
+- Export strategy to JSON
+- Methodology / engineering disclaimer modal
 
-## Run
+## Publish on GitHub Pages
 
-Open `index.html` or serve the folder:
+1. Upload `index.html`, `styles.css`, `app.js`, `README.md`.
+2. Go to **Settings → Pages**.
+3. Choose **Deploy from a branch**.
+4. Select `main` and `/root`.
 
-```bash
-python -m http.server 8080
-```
+## Map services
 
-## GitHub Pages
+The demo uses OpenStreetMap public raster tiles through Leaflet.
 
-Upload all files to a repository and enable:
-
-**Settings → Pages → Deploy from branch → main / root**
-
-## Actual map services
-
-This prototype uses:
-
-- Leaflet for map interaction
-- OpenStreetMap raster tiles for the basemap
-
-No API key is required for this demo.
-
-### Production options
-
-The map layer can later be changed to:
-
+For a production utility deployment, replace or augment the basemap / GIS with:
+- ArcGIS
 - Mapbox
 - MapTiler
-- Esri ArcGIS
+- MapLibre vector tiles
 - GeoServer WMS / WMTS
-- Utility-hosted GIS tiles
-- Vector tiles via MapLibre
-- Custom GeoJSON / shapefile-converted network data
+- utility-hosted GIS
+- GeoJSON / vector tiles generated from the utility asset network
 
-For a real utility deployment, the water network should normally come from the utility's GIS rather than being drawn manually.
+## Important
 
-## Engineering disclaimer
+This is a concept prototype, not a validated hydraulic or leakage model.
 
-This is a UX/product prototype, not a validated leakage/hydraulic model.
-
-The scoring logic is intentionally transparent and simplified. A production system should use:
-
-- verified DMA balance data
-- hydraulic model outputs where available
-- actual asset condition history
-- confirmed leak / no-leak outcomes
-- sensor performance history
-- repair response and recovered-volume data
-- utility-specific engineering rules
-
-The product should recommend **where and how to investigate**, not automatically authorize excavation.
+The scoring model is intentionally transparent and simplified. A production implementation should be calibrated using utility data, confirmed leak / no-leak outcomes, recovered volume, sensor hit-rate, asset condition, hydraulic model outputs, and repair-response performance.
