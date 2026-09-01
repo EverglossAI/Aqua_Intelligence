@@ -1,122 +1,100 @@
-# Aqua Intelligence v12 — Operational GIS Data
+# Aqua Intelligence v13 — Engineer-Controlled GIS Deployment
 
-v12 adds positioned operational evidence to the real GIS leak-susceptibility and sensor-deployment prototype.
+v13 keeps the v12 Real GIS + Operational Data layout and adds engineer control over the optimiser.
 
-## New GIS point types
+## New engineer GIS modes
 
-Users can now place directly on the map:
+### Inspect
+Normal click-to-inspect mode.
 
-- pressure loggers
-- flow meters
-- confirmed leak repairs
-- bursts
+### Include Point
+Marks a valve/hydrant/access point as a preferred candidate.
 
-Each point stores location plus relevant values.
+### Exclude Point
+Prevents the optimiser from using the selected GIS point.
 
-### Pressure logger fields
+### Pin Sensor
+Creates an engineer-selected sensor position that the optimiser must retain.
 
-- ID/name
-- date
-- average pressure
-- minimum pressure
-- coordinates
+### Not Accessible
+Marks a GIS access point as unsuitable for field deployment.
 
-### Flow meter fields
+### Prioritise Pipe
+Click a pipe to give nearby sensor candidates additional priority.
 
-- ID/name
-- date
-- average flow
-- minimum night flow
-- coordinates
+## Selected-points-only optimisation
 
-### Failure history
+Enable:
 
-- leak / burst / joint failure / service leak
-- date
-- confirmed / unconfirmed
-- estimated water loss
-- coordinates
+`Optimise using selected/included points only`
 
-## Map entry workflow
+to constrain the optimiser to engineer-approved access locations.
 
-Choose the point type in the left panel, then click the map.
+## Coverage view
 
-A form appears for the associated readings.
+After optimisation the pipe network is recoloured:
 
-## Import
+- Green — strong sensor coverage
+- Amber — marginal / practical coverage
+- Red — under-covered
 
-Operational data can also be imported as:
+The right panel reports:
 
-- GeoJSON Point features
-- CSV
+- strong coverage %
+- practical coverage %
+- priority-pipe coverage %
+- average pipe-to-sensor distance
 
-Typical CSV columns:
+## Manual vs AI
+
+Engineers can pin/include their preferred sensor locations and then click:
+
+`Compare Manual vs AI`
+
+The system compares:
+
+- number of sensors
+- overall spatial coverage
+- high-risk / priority-pipe coverage
+
+This does not imply the AI plan is automatically better. Field accessibility and engineering judgement can justify a manual override.
+
+## Sensor budget what-if
+
+The plan also evaluates indicative coverage for:
+
+- 10 sensors
+- 20 sensors
+- 30 sensors
+- 40 sensors
+
+This is intended to support budget discussions.
+
+## Existing v12 capabilities retained
+
+- four real GIS datasets
+- valves / hydrants / mains
+- leak susceptibility zones
+- manually positioned pressure loggers
+- manually positioned flow meters
+- historical leaks and bursts
+- CSV / GeoJSON operational data import
+- AI zone scoring
+- Permanent / Lift & Shift / Hybrid / Auto
+- sensor deployment optimisation
+
+## Engineering principle
+
+The intended workflow is:
 
 ```text
-type,id,lat,lng,date,pressure,min_pressure,flow,mnf,failure_type,loss,confirmed
-pressure,PL-01,22.62,120.48,2026-08-20,53,43,,,,,
-flow,FM-01,22.61,120.47,2026-08-20,,,42.5,19.2,,,
-leak,LR-17,22.60,120.49,2025-11-14,,,,,Leak,95,true
+AI recommendation
+        +
+GIS evidence
+        +
+Engineer overrides
+        ↓
+Final deployment plan
 ```
 
-## Susceptibility-model improvement
-
-AI Leak Susceptibility Zones now combine:
-
-- pipe material
-- inferred pipe age
-- diameter
-- GIS pipe risk
-- clustering of high-risk mains
-- confirmed historical failures within 450 m
-- nearby pressure logger readings
-- nearby minimum-night-flow readings
-- optional DMA-level pressure / night-flow values
-
-Historical failures and high local pressure can materially increase a zone's priority score.
-
-## Sensor optimiser improvement
-
-Sensor candidate ranking now also considers:
-
-- proximity to confirmed failures
-- high local pressure
-- AI susceptibility-zone score
-
-This creates the workflow:
-
-```text
-Pipe GIS
-+ failure history
-+ pressure logger positions
-+ flow meter / MNF positions
-↓
-spatial susceptibility analysis
-↓
-candidate access points
-↓
-sensor optimisation
-↓
-field campaign
-```
-
-## Demo data
-
-A **Load Demo Operational Data** button adds sample pressure, flow, leak and burst points to the currently selected GIS area so the interaction can be demonstrated without a telemetry export.
-
-The demo values are explicitly simulated.
-
-## Production direction
-
-A production version should replace manual point readings with time-series ingestion and calculate:
-
-- rolling minimum-night-flow changes
-- pressure transients
-- pressure/leakage relationships
-- burst density per km/year
-- repeat-failure clusters
-- leak repair recurrence
-- change-point detection
-- acoustic alarm coincidence
-
-The result would be a continuously updated leakage-risk surface rather than a static risk map.
+The engineer remains in control.
