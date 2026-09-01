@@ -55,3 +55,16 @@ For a production utility deployment, replace or augment the basemap / GIS with:
 This is a concept prototype, not a validated hydraulic or leakage model.
 
 The scoring model is intentionally transparent and simplified. A production implementation should be calibrated using utility data, confirmed leak / no-leak outcomes, recovered volume, sensor hit-rate, asset condition, hydraulic model outputs, and repair-response performance.
+
+
+## v4 polish
+
+- Fixed Leaflet tile sizing with explicit map sizing + `invalidateSize()`
+- Added demo data population and random scenario generation
+- Added editable:
+  - DMA properties
+  - pipe length
+  - target logger spacing
+  - average repair cost
+- Demo profiles populate realistic fake utility data
+- Additional fields participate in scenario export and sensor-count logic

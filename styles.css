@@ -65,3 +65,9 @@ label{color:var(--muted);font-size:10px}
 .modal{position:fixed;inset:0;background:rgba(0,0,0,.62);z-index:2000;display:flex;align-items:center;justify-content:center;padding:20px}.modal.hidden{display:none}.modal-card{width:min(620px,95vw);background:#0f1a29;border:1px solid var(--line);border-radius:9px}.modal-body{padding:0 16px 16px;color:#cbd6e5;font-size:12px;line-height:1.55}
 .leaflet-popup-content-wrapper,.leaflet-popup-tip{background:#0f1a29;color:#eaf1fb}.leaflet-popup-content{font-size:11px}
 @media(max-width:780px){.technology-panel{display:block}.tech-grid,.quality-controls,.quick-grid{grid-template-columns:1fr}.prototype-banner span{display:none}}
+
+#map{width:100%!important;height:100%!important;min-height:390px!important}
+.leaflet-container img{max-width:none!important}
+.map-panel{min-width:0}
+.demo-actions{display:grid;grid-template-columns:1fr 1fr;gap:7px;padding:0 14px 10px}
+.demo-actions .secondary{width:auto;margin:0}

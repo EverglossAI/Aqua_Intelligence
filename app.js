@@ -194,6 +194,10 @@ function scoreModel(){
   const response=$("repairResponse").value;
   const costPosture=$("costPosture").value;
   const dataQuality=qualityScore();
+  const properties=Number($("propertiesInput").value)||0;
+  const pipeKm=Number($("pipeLengthInput").value)||0;
+  const spacing=Number($("spacingInput").value)||250;
+  const repairCost=Number($("repairCostInput").value)||0;
 
   const nightRatio=Math.min(flow/inlet,1);
   let risk=10;
@@ -225,19 +229,22 @@ function scoreModel(){
   else auto="Hybrid";
 
   let postureFactor=costPosture==="capex"?.82:costPosture==="max"?1.2:1;
-  const sensors=Math.max(3,Math.round((2+risk/14+aggr/3)*postureFactor));
+  const baseSpacingCount = pipeKm>0 && spacing>0 ? Math.ceil((pipeKm*1000)/spacing*0.08) : 3;
+  const sensors=Math.max(3,Math.round((baseSpacingCount+risk/18+aggr/4)*postureFactor));
   const campaigns=Math.max(1,Math.round((1+aggr/3+(risk>=75?1:0))*postureFactor));
   const hybridSensors=Math.max(2,Math.round(sensors*.55));
   const hybridCampaigns=Math.max(1,campaigns-1);
 
   const confidence=Math.min(94,Math.round((58 + Math.min(18,Math.abs(inlet-flow)/inlet*15) + (pressure>0?7:0) + (bursts>=0?5:0) + (selectedPipe?4:0))*(dataQuality/100)));
 
-  return {aggr,pressure,flow,inlet,bursts,material,age,bg,response,costPosture,dataQuality,nightRatio,risk,acoustic,permSuit,lsSuit,hybSuit,auto,sensors,campaigns,hybridSensors,hybridCampaigns,confidence};
+  return {aggr,pressure,flow,inlet,bursts,material,age,bg,response,costPosture,dataQuality,properties,pipeKm,spacing,repairCost,nightRatio,risk,acoustic,permSuit,lsSuit,hybSuit,auto,sensors,campaigns,hybridSensors,hybridCampaigns,confidence};
 }
 
 function runAnalysis(){
   const m=scoreModel();
   $("pressureKpi").textContent=`${m.pressure.toFixed(0)} m`;
+  $("propVal").textContent=Math.round(m.properties).toLocaleString();
+  $("pipeVal").textContent=`${m.pipeKm.toFixed(1)} km`;
   $("flowKpi").textContent=`${m.flow.toFixed(1)} L/s`;
   $("nightRatioText").textContent=`${Math.round(m.nightRatio*100)}% of inlet flow`;
   $("riskKpi").textContent=`${m.risk} / 100`;
@@ -396,7 +403,7 @@ $("exportBtn").addEventListener("click",()=>{
     selectedStrategy,
     recommendedStrategy:m.effective,
     aggressiveness:m.aggr,
-    data:{averagePressure_m:m.pressure,nightMinimumFlow_Ls:m.flow,inletFlow_Ls:m.inlet,recentBursts:m.bursts,material:m.material,averagePipeAge_years:m.age},
+    data:{averagePressure_m:m.pressure,nightMinimumFlow_Ls:m.flow,inletFlow_Ls:m.inlet,recentBursts:m.bursts,material:m.material,averagePipeAge_years:m.age,properties:m.properties,pipeLength_km:m.pipeKm,targetLoggerSpacing_m:m.spacing,averageRepairCost:m.repairCost},
     scores:{risk:m.risk,acousticSuitability:m.acoustic,confidence:m.confidence,permanentSuitability:m.permSuit,liftShiftSuitability:m.lsSuit,hybridSuitability:m.hybSuit},
     programme:{permanentSensors:m.rs,liftShiftCampaigns:m.rc,reviewCycle:m.review},
     selectedPipe:selectedPipe
@@ -406,7 +413,90 @@ $("exportBtn").addEventListener("click",()=>{
   a.href=url;a.download=`${plan.dma.toLowerCase()}-nrw-strategy.json`;a.click();URL.revokeObjectURL(url);
 });
 
+
+const demoProfiles = [
+  {
+    name:"High leakage metallic DMA",
+    pressure:58, flow:26.8, inlet:44.2, bursts:12, material:"CI", age:"45",
+    bg:"high", response:"normal", props:3650, pipeKm:72.4, spacing:180, repairCost:4200,
+    flowQ:"good", pressureQ:"good", gisQ:"good", posture:"balanced", aggr:9
+  },
+  {
+    name:"Moderate NRW mixed network",
+    pressure:43, flow:17.2, inlet:41.8, bursts:6, material:"DI", age:"25",
+    bg:"medium", response:"fast", props:2980, pipeKm:61.2, spacing:250, repairCost:3200,
+    flowQ:"good", pressureQ:"fair", gisQ:"good", posture:"balanced", aggr:6
+  },
+  {
+    name:"Low acoustic plastic network",
+    pressure:34, flow:15.4, inlet:42.0, bursts:4, material:"HDPE", age:"10",
+    bg:"medium", response:"fast", props:4100, pipeKm:77.5, spacing:140, repairCost:2800,
+    flowQ:"fair", pressureQ:"good", gisQ:"fair", posture:"capex", aggr:5
+  },
+  {
+    name:"Stable low-risk DMA",
+    pressure:38, flow:9.6, inlet:43.7, bursts:1, material:"PVC", age:"10",
+    bg:"low", response:"fast", props:2250, pipeKm:49.8, spacing:300, repairCost:2500,
+    flowQ:"good", pressureQ:"good", gisQ:"good", posture:"capex", aggr:3
+  }
+];
+
+function applyDemoProfile(p){
+  $("pressureInput").value=p.pressure;
+  $("flowInput").value=p.flow;
+  $("inletInput").value=p.inlet;
+  $("burstsInput").value=p.bursts;
+  $("materialInput").value=p.material;
+  $("ageInput").value=p.age;
+  $("backgroundLeakage").value=p.bg;
+  $("repairResponse").value=p.response;
+  $("propertiesInput").value=p.props;
+  $("pipeLengthInput").value=p.pipeKm;
+  $("spacingInput").value=p.spacing;
+  $("repairCostInput").value=p.repairCost;
+  $("flowQuality").value=p.flowQ;
+  $("pressureQuality").value=p.pressureQ;
+  $("gisQuality").value=p.gisQ;
+  $("costPosture").value=p.posture;
+  $("aggressiveness").value=p.aggr;
+  $("aggrLabel").textContent=`${p.aggr} / 10`;
+  runAnalysis();
+}
+
+function populateCurrentDemo(){
+  const idx={"DMA-24":0,"DMA-12":1,"DMA-31":2}[$("dmaSelect").value] ?? 0;
+  applyDemoProfile(demoProfiles[idx]);
+}
+
+function randomiseScenario(){
+  const materials=["DI","CI","AC","PVC","HDPE"];
+  const ages=["10","25","45"];
+  $("pressureInput").value=Math.round(32+Math.random()*28);
+  $("flowInput").value=(8+Math.random()*22).toFixed(1);
+  $("inletInput").value=(35+Math.random()*18).toFixed(1);
+  $("burstsInput").value=Math.round(Math.random()*14);
+  $("materialInput").value=materials[Math.floor(Math.random()*materials.length)];
+  $("ageInput").value=ages[Math.floor(Math.random()*ages.length)];
+  $("backgroundLeakage").value=["low","medium","high"][Math.floor(Math.random()*3)];
+  $("repairResponse").value=["fast","normal","slow"][Math.floor(Math.random()*3)];
+  $("propertiesInput").value=Math.round(1800+Math.random()*3200);
+  $("pipeLengthInput").value=(40+Math.random()*50).toFixed(1);
+  $("spacingInput").value=Math.round(120+Math.random()*260);
+  $("repairCostInput").value=Math.round(2200+Math.random()*3800);
+  const aggr=Math.round(2+Math.random()*8);
+  $("aggressiveness").value=aggr;
+  $("aggrLabel").textContent=`${aggr} / 10`;
+  runAnalysis();
+}
+
+function ensureMapSize(){
+  setTimeout(()=>{ if(map) map.invalidateSize(true); },250);
+  setTimeout(()=>{ if(map) map.invalidateSize(true); },800);
+}
+
 initMap();
+ensureMapSize();
+populateCurrentDemo();
 runAnalysis();
 
 
@@ -436,7 +526,7 @@ $("saveBtn").addEventListener("click",()=>{
     dma:$("dmaSelect").value,strategy:selectedStrategy,aggr:$("aggressiveness").value,
     pressure:$("pressureInput").value,flow:$("flowInput").value,inlet:$("inletInput").value,bursts:$("burstsInput").value,
     material:$("materialInput").value,age:$("ageInput").value,bg:$("backgroundLeakage").value,response:$("repairResponse").value,
-    costPosture:$("costPosture").value,flowQuality:$("flowQuality").value,pressureQuality:$("pressureQuality").value,gisQuality:$("gisQuality").value
+    costPosture:$("costPosture").value,flowQuality:$("flowQuality").value,pressureQuality:$("pressureQuality").value,gisQuality:$("gisQuality").value,properties:$("propertiesInput").value,pipeKm:$("pipeLengthInput").value,spacing:$("spacingInput").value,repairCost:$("repairCostInput").value
   };
   localStorage.setItem("aqua-intelligence-scenario",JSON.stringify(state));
   alert("Scenario saved in this browser.");
@@ -456,6 +546,10 @@ $("loadBtn").addEventListener("click",()=>{
   if(s.material)$("materialInput").value=s.material;if(s.age)$("ageInput").value=s.age;
   if(s.bg)$("backgroundLeakage").value=s.bg;if(s.response)$("repairResponse").value=s.response;
   if(s.costPosture)$("costPosture").value=s.costPosture;
+  if(s.properties!=null)$("propertiesInput").value=s.properties;
+  if(s.pipeKm!=null)$("pipeLengthInput").value=s.pipeKm;
+  if(s.spacing!=null)$("spacingInput").value=s.spacing;
+  if(s.repairCost!=null)$("repairCostInput").value=s.repairCost;
   if(s.flowQuality)$("flowQuality").value=s.flowQuality;if(s.pressureQuality)$("pressureQuality").value=s.pressureQuality;if(s.gisQuality)$("gisQuality").value=s.gisQuality;
   runAnalysis();
 });
@@ -463,3 +557,17 @@ $("loadBtn").addEventListener("click",()=>{
 $("methodologyBtn").addEventListener("click",()=>$("methodologyModal").classList.remove("hidden"));
 $("closeMethodology").addEventListener("click",()=>$("methodologyModal").classList.add("hidden"));
 $("methodologyModal").addEventListener("click",e=>{if(e.target===$("methodologyModal"))$("methodologyModal").classList.add("hidden");});
+
+window.addEventListener("load",ensureMapSize);
+window.addEventListener("resize",ensureMapSize);
+
+$("populateDemoBtn").addEventListener("click",populateCurrentDemo);
+$("randomiseBtn").addEventListener("click",randomiseScenario);
+
+$("dmaSelect").addEventListener("change",()=>{
+  ensureMapSize();
+});
+
+["propertiesInput","pipeLengthInput","spacingInput","repairCostInput"].forEach(id=>{
+  $(id).addEventListener("change",runAnalysis);
+});

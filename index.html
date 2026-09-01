@@ -164,6 +164,10 @@
           <div><label>Repair Response</label>
             <select id="repairResponse"><option value="fast">Same / next day</option><option value="normal" selected>2–5 days</option><option value="slow">&gt; 5 days</option></select>
           </div>
+          <div><label>DMA Properties</label><input id="propertiesInput" type="number" value="3275" /></div>
+          <div><label>Pipe Length (km)</label><input id="pipeLengthInput" type="number" step=".1" value="68" /></div>
+          <div><label>Logger Spacing Target (m)</label><input id="spacingInput" type="number" value="250" /></div>
+          <div><label>Average Leak Repair Cost</label><input id="repairCostInput" type="number" value="3500" /></div>
         </div>
 
         <div class="quality-row">
@@ -180,6 +184,10 @@
           <button class="secondary ghost mini" id="clearGeoBtn">Clear Imported GIS</button>
         </div>
 
+        <div class="demo-actions">
+          <button class="secondary ghost mini" id="populateDemoBtn">Populate Demo Data</button>
+          <button class="secondary ghost mini" id="randomiseBtn">Randomise Scenario</button>
+        </div>
         <button class="primary" id="runBtn">▶ Run Strategy Analysis</button>
       </section>
 
