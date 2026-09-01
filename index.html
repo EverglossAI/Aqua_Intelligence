@@ -105,7 +105,7 @@ label{color:var(--muted);font-size:10px}
 .noise-explain{font-size:10px;color:#cbd6e5;line-height:1.45;margin-top:10px}.noise-disclaimer{margin:0 12px 12px;padding:8px;border-radius:6px;background:rgba(242,174,61,.05);border:1px solid #6b572c;color:#bcae90;font-size:9px}
 @media(max-width:900px){.portfolio-kpis,.campaign-meta{grid-template-columns:1fr 1fr}.noise-layout{grid-template-columns:1fr}.roi-panel,.campaign-panel,.noise-panel,.ask-panel{grid-column:1/-1}}
 
-/* v6 single-file hardening */
+/* v7 app-tabs hardening */
 html,body{width:100%;min-height:100%;overflow-x:hidden}
 .workspace{position:relative;z-index:1}
 .map-panel{height:520px!important;min-height:520px!important;overflow:hidden!important}
@@ -135,12 +135,113 @@ button,select,input,label,.nav-item{pointer-events:auto!important}
 .version-chip{margin-left:6px;padding:2px 6px;border-radius:999px;background:#173e7e;color:#a7cbff;font-size:9px}
 @media(max-width:1200px){.map-panel{height:460px!important;min-height:460px!important}}
 
+
+/* ===== v7 application layout ===== */
+body{overflow:hidden!important}
+.app-shell{height:calc(100vh - 34px)!important;min-height:0!important}
+.sidebar{height:100%!important;overflow-y:auto}
+.workspace{
+  height:100%!important;
+  overflow:hidden!important;
+  display:flex!important;
+  flex-direction:column!important;
+}
+.topbar{flex:0 0 54px}
+.module-host{
+  flex:1 1 auto;
+  min-height:0;
+  overflow:hidden;
+  position:relative;
+}
+.app-module{
+  display:none!important;
+  height:100%!important;
+  overflow:auto!important;
+  padding:12px!important;
+}
+.app-module.active{
+  display:block!important;
+}
+#module-strategy.active{
+  display:grid!important;
+  grid-template-columns:210px minmax(520px,1.5fr) minmax(350px,.9fr)!important;
+  gap:12px!important;
+  align-items:start!important;
+}
+#module-portfolio .portfolio-section,
+#module-campaign .campaign-panel,
+#module-noise .noise-panel,
+#module-data .data-module,
+#module-reports .reports-module,
+#module-gis .gis-module{
+  margin:0!important;
+  width:100%!important;
+}
+#module-strategy .kpi-row,
+#module-strategy .decision-panel,
+#module-strategy .ask-panel,
+#module-strategy .technology-panel,
+#module-strategy .insights,
+#module-strategy .noise-panel,
+#module-strategy .campaign-panel,
+#module-strategy .roi-panel{
+  display:none!important;
+}
+#module-strategy .map-panel{
+  height:calc(100vh - 110px)!important;
+  min-height:560px!important;
+  position:sticky!important;
+  top:0!important;
+}
+#module-strategy .dma-panel,
+#module-strategy .planner{
+  max-height:calc(100vh - 110px)!important;
+  overflow:auto!important;
+}
+.module-titlebar{
+  display:flex;align-items:center;justify-content:space-between;
+  margin-bottom:12px;padding:0 2px
+}
+.module-titlebar h1{font-size:20px;margin:0}
+.module-titlebar p{margin:3px 0 0;color:var(--muted);font-size:11px}
+.module-grid{
+  display:grid;grid-template-columns:1fr 1fr;gap:12px
+}
+.module-card{
+  background:linear-gradient(180deg,var(--panel2),var(--panel));
+  border:1px solid var(--line);border-radius:8px;padding:14px
+}
+.data-table{width:100%;border-collapse:collapse;font-size:11px}
+.data-table th,.data-table td{padding:9px;border-top:1px solid var(--line);text-align:left}
+.data-table th{color:var(--muted)}
+.report-card{display:flex;justify-content:space-between;align-items:center;border:1px solid var(--line);border-radius:7px;padding:12px;margin-bottom:8px;background:#0a1420}
+.report-card small{display:block;color:var(--muted);margin-top:3px}
+.gis-actions{display:flex;gap:8px;flex-wrap:wrap;margin-bottom:12px}
+.nav-item.active{background:#153f86!important;color:#fff!important}
+@media(max-width:1100px){
+  #module-strategy.active{grid-template-columns:190px 1fr!important}
+  #module-strategy .planner{grid-column:1/3}
+  #module-strategy .map-panel{height:520px!important;min-height:520px!important;position:relative!important}
+}
+@media(max-width:780px){
+  body{overflow:auto!important}
+  .app-shell{height:auto!important}
+  .workspace{height:auto!important;overflow:visible!important}
+  .module-host{overflow:visible!important}
+  .app-module{height:auto!important;overflow:visible!important}
+  #module-strategy.active{display:block!important}
+  #module-strategy .map-panel,
+  #module-strategy .dma-panel,
+  #module-strategy .planner{max-height:none!important;height:auto!important;position:relative!important}
+  .module-grid{grid-template-columns:1fr}
+}
+
 </style>
 </head>
 <body>
 <div id="runtimeStatus" class="runtime-status"></div>
 <div class="prototype-banner">
-  <b>INTERACTIVE PROTOTYPE</b><span class="version-chip">v6 single-file</span>
+  <b>INTERACTIVE PROTOTYPE</b><span class="version-chip">v7 app-tabs</span>
   <span>Demo data only — engineering logic is illustrative and requires field validation.</span>
   <button id="methodologyBtn">Methodology</button>
 </div>
@@ -152,14 +253,14 @@ button,select,input,label,.nav-item{pointer-events:auto!important}
     </div>
 
     <nav>
-      <button class="nav-item nav-scroll" data-target="portfolioSection">⌂ <span>Portfolio</span></button>
-      <button class="nav-item active nav-scroll" data-target="strategySection">◫ <span>DMA Strategy</span></button>
-      <button class="nav-item nav-scroll" data-target="campaignSection">◎ <span>Campaigns</span></button>
-      <button class="nav-item nav-scroll" data-target="noiseSection">◉ <span>AI Leak Noise</span></button>
-      <button class="nav-item">▤ <span>Data Explorer</span></button>
+      <button class="nav-item nav-scroll" data-module="portfolio">⌂ <span>Portfolio</span></button>
+      <button class="nav-item active nav-scroll" data-module="strategy">◫ <span>DMA Strategy</span></button>
+      <button class="nav-item nav-scroll" data-module="campaign">◎ <span>Campaigns</span></button>
+      <button class="nav-item nav-scroll" data-module="noise">◉ <span>AI Leak Noise</span></button>
+      <button class="nav-item nav-scroll" data-module="data">▤ <span>Data Explorer</span></button>
       <button class="nav-item">⚠ <span>Alerts</span><b class="badge">12</b></button>
-      <button class="nav-item">▧ <span>Reports</span></button>
-      <button class="nav-item">⬡ <span>GIS Layers</span></button>
+      <button class="nav-item nav-scroll" data-module="reports">▧ <span>Reports</span></button>
+      <button class="nav-item nav-scroll" data-module="gis">⬡ <span>GIS Layers</span></button>
     </nav>
 
     <div class="sidebar-footer">
@@ -178,9 +279,8 @@ button,select,input,label,.nav-item{pointer-events:auto!important}
         <span class="user">Jane Engineer</span>
       </div>
     </header>
-
-
-    <section class="wide-section panel portfolio-section" id="portfolioSection">
+<div class="module-host">
+  <div class="app-module" id="module-portfolio"><section class="wide-section panel portfolio-section" id="portfolioSection">
       <div class="panel-header">
         <div>
           <h2>DMA Portfolio Prioritisation</h2>
@@ -209,9 +309,8 @@ button,select,input,label,.nav-item{pointer-events:auto!important}
       </div>
     </section>
 
-    <section class="main-grid" id="strategySection">
-
-      <section class="dma-panel panel">
+    </div>
+  <div class="app-module active" id="module-strategy"><section class="dma-panel panel">
         <div class="panel-header">
           <div><h2 id="dmaTitle">DMA-24</h2><div class="subtle" id="dmaZone">North Zone</div></div>
           <span class="pill green" id="dmaHealth">Healthy</span>
@@ -252,8 +351,7 @@ button,select,input,label,.nav-item{pointer-events:auto!important}
           </select>
         </div>
       </section>
-
-      <section class="map-panel panel">
+<section class="map-panel panel">
         <div id="map"></div>
         <div class="map-overlay-card">
           <div><b>Interactive GIS</b></div>
@@ -266,8 +364,7 @@ button,select,input,label,.nav-item{pointer-events:auto!important}
           </div>
         </div>
       </section>
-
-      <section class="planner panel">
+<section class="planner panel">
         <div class="panel-header">
           <h2>Strategy Planner</h2>
           <div class="header-actions">
@@ -348,138 +445,8 @@ button,select,input,label,.nav-item{pointer-events:auto!important}
           <button class="secondary ghost mini" id="randomiseBtn">Randomise Scenario</button>
         </div>
         <button class="primary" id="runBtn">▶ Run Strategy Analysis</button>
-      </section>
-
-      <section class="kpi-row">
-        <div class="kpi panel"><span>Current NRW</span><strong id="nrwKpi">24.7%</strong><small>Indicative input</small></div>
-        <div class="kpi panel"><span>Pressure (Avg)</span><strong id="pressureKpi">42 m</strong><small>Pressure sensitivity considered</small></div>
-        <div class="kpi panel"><span>Night Min Flow</span><strong id="flowKpi">18.6 L/s</strong><small id="nightRatioText">44% of inlet flow</small></div>
-        <div class="kpi panel"><span>Risk Score</span><strong id="riskKpi">68 / 100</strong><small id="riskBand">High priority</small></div>
-      </section>
-
-      <section class="decision-panel panel">
-        <div class="panel-header">
-          <div><h2>Engineering Decision Path</h2><span class="subtle">Explainable recommendation logic</span></div>
-          <span class="pill blue" id="confidenceBadge">Confidence 81%</span>
-        </div>
-        <div class="decision-path" id="decisionPath"></div>
-      </section>
-
-
-      <section class="ask-panel panel">
-        <div class="panel-header">
-          <div>
-            <h2>Ask the DMA</h2>
-            <span class="subtle">Explain the data, recommendation, uncertainty, or next action</span>
-          </div>
-          <span class="pill blue">AI Mode</span>
-        </div>
-        <div class="ask-suggestions">
-          <button data-q="Why are you recommending this strategy?">Why this strategy?</button>
-          <button data-q="What worries you most about this DMA?">What worries you most?</button>
-          <button data-q="Is the data good enough to act?">Is the data good enough?</button>
-          <button data-q="What should the field team do next?">What should field team do?</button>
-        </div>
-        <div class="chat-log" id="chatLog">
-          <div class="chat-msg ai">Ask a question about the current DMA. I will answer using the visible pressure, flow, burst, asset, and strategy data.</div>
-        </div>
-        <div class="chat-input-row">
-          <input id="chatInput" placeholder="e.g. Why not use permanent sensors everywhere?" />
-          <button class="primary compact" id="askBtn">Ask</button>
-        </div>
-      </section>
-
-      <section class="comparison panel">
-        <div class="panel-header"><h2>12-Month Strategy Comparison</h2><span class="subtle">Indicative planning model</span></div>
-        <div class="compare-grid">
-          <article class="compare-card" id="permCard">
-            <h3>Permanent Sensors</h3>
-            <div><span>Deploy</span><strong id="permDeploy">8 sensors</strong></div>
-            <div><span>Survey Frequency</span><strong id="permFreq">Continuous</strong></div>
-            <div><span>Expected Detection Speed</span><strong id="permSpeed">Fast</strong></div>
-            <div><span>Indicative Cost Index</span><strong id="permCost">100</strong></div>
-            <div><span>Suitability</span><strong id="permSuit">82%</strong></div>
-          </article>
-          <article class="compare-card" id="lsCard">
-            <h3>Lift & Shift</h3>
-            <div><span>Campaigns</span><strong id="lsDeploy">3 campaigns</strong></div>
-            <div><span>Survey Frequency</span><strong id="lsFreq">Quarterly</strong></div>
-            <div><span>Expected Detection Speed</span><strong id="lsSpeed">Medium</strong></div>
-            <div><span>Indicative Cost Index</span><strong id="lsCost">62</strong></div>
-            <div><span>Suitability</span><strong id="lsSuit">71%</strong></div>
-          </article>
-          <article class="compare-card recommended" id="hybCard">
-            <h3>Hybrid <span class="pill green" id="recommendedPill">Recommended</span></h3>
-            <div><span>Deploy</span><strong id="hybDeploy">4 fixed + 2 campaigns</strong></div>
-            <div><span>Survey Frequency</span><strong id="hybFreq">Continuous + targeted</strong></div>
-            <div><span>Expected Detection Speed</span><strong id="hybSpeed">Fast</strong></div>
-            <div><span>Indicative Cost Index</span><strong id="hybCost">82</strong></div>
-            <div><span>Suitability</span><strong id="hybSuit">91%</strong></div>
-          </article>
-        </div>
-      </section>
-
-      <section class="recommendation panel">
-        <div class="panel-header"><h2>Recommended Programme</h2><span class="pill green" id="recBadge">Hybrid Strategy</span></div>
-        <div class="programme-summary">
-          <div><span>Priority</span><strong id="priorityText">High</strong></div>
-          <div><span>Permanent Sensors</span><strong id="recSensors">4</strong></div>
-          <div><span>Lift & Shift Campaigns</span><strong id="recCampaigns">2</strong></div>
-          <div><span>Review Cycle</span><strong id="reviewCycle">90 days</strong></div>
-          <div><span>Indicative Manpower</span><strong id="manpowerText">2 technicians</strong></div>
-          <div><span>Survey Duration</span><strong id="durationText">3–5 days</strong></div>
-        </div>
-
-        <div class="why-box">
-          <h3>Why this recommendation?</h3>
-          <ul id="whyList"></ul>
-        </div>
-
-        <ol id="recommendationList"></ol>
-
-        <div class="verification-gate">
-          <b>Field verification gate</b>
-          <span>Correlation / ground confirmation is required before excavation approval.</span>
-        </div>
-        <button class="secondary" id="applyBtn">◎ Show Recommended Deployment</button>
-        <button class="secondary ghost" id="exportBtn">⇩ Export Strategy JSON</button>
-      </section>
-
-      <section class="technology-panel panel">
-        <div class="panel-header"><h2>Technology Suitability</h2><span class="subtle">Indicative fit for this DMA</span></div>
-        <div class="tech-grid" id="techGrid"></div>
-      </section>
-
-      <section class="pipe-panel panel">
-        <div class="panel-header">
-          <div><h2>Selected Pipe / Subzone</h2><span class="subtle">Click any blue line on map</span></div>
-          <span class="pill amber" id="pipePriority">Not selected</span>
-        </div>
-        <div id="pipeDetails" class="pipe-details">
-          Select a pipe segment to view its length, material, age, burst score and recommended action.
-        </div>
-      </section>
-
-
-      <section class="roi-panel panel">
-        <div class="panel-header">
-          <div><h2>ROI & Payback</h2><span class="subtle">Turn engineering strategy into a management case</span></div>
-          <span class="pill green" id="paybackBadge">9.4 months</span>
-        </div>
-        <div class="roi-inputs">
-          <div><label>Estimated Recoverable Leakage (m³/day)</label><input id="recoverableInput" type="number" value="520"></div>
-          <div><label>Value of Water ($/m³)</label><input id="waterValueInput" type="number" step=".01" value="1.35"></div>
-          <div><label>Programme Cost ($)</label><input id="programmeCostInput" type="number" value="198000"></div>
-          <div><label>Expected Recovery Success (%)</label><input id="successRateInput" type="number" value="78"></div>
-        </div>
-        <div class="roi-results">
-          <div><span>Annual Water Value Recovered</span><strong id="annualRecoveryValue">$199,692</strong></div>
-          <div><span>Net First-Year Benefit</span><strong id="netBenefit">$1,692</strong></div>
-          <div><span>Simple Payback</span><strong id="paybackText">11.9 months</strong></div>
-        </div>
-      </section>
-
-      <section class="campaign-panel panel" id="campaignSection">
+      </section></div>
+  <div class="app-module" id="module-campaign"><section class="campaign-panel panel" id="campaignSection">
         <div class="panel-header">
           <div><h2>Leak Detection Campaign</h2><span class="subtle">Convert strategy into an executable field programme</span></div>
           <button class="link-btn" id="generateCampaignBtn">Generate from Strategy</button>
@@ -491,9 +458,8 @@ button,select,input,label,.nav-item{pointer-events:auto!important}
           <div><span>Status</span><strong class="status-running">Planned</strong></div>
         </div>
         <div class="campaign-list" id="campaignList"></div>
-      </section>
-
-      <section class="noise-panel panel" id="noiseSection">
+      </section></div>
+  <div class="app-module" id="module-noise"><section class="noise-panel panel" id="noiseSection">
         <div class="panel-header">
           <div>
             <h2>AI Leak Noise Classification</h2>
@@ -521,17 +487,54 @@ button,select,input,label,.nav-item{pointer-events:auto!important}
         <div class="noise-disclaimer">
           Demo only: this is not a trained production leak classifier. A real implementation should use labelled utility recordings, sensor metadata, pipe material, pressure and confirmed leak/no-leak outcomes.
         </div>
-      </section>
-
-      <section class="insights panel">
-        <div class="panel-header"><h2>Engineering Insights</h2><span class="subtle">Decision support — not automatic excavation approval</span></div>
-        <div class="insight-grid" id="insightGrid"></div>
-      </section>
-
-    </section>
-  </main>
+      </section></div>
+  <div class="app-module" id="module-data">
+<section class="data-module">
+  <div class="module-titlebar"><div><h1>Data Explorer</h1><p>Inspect the sample DMA inputs used by the strategy engine.</p></div></div>
+  <div class="module-card">
+    <table class="data-table">
+      <thead><tr><th>DMA</th><th>Pressure</th><th>MNF</th><th>Inlet Flow</th><th>Bursts</th><th>Material</th><th>Data Quality</th></tr></thead>
+      <tbody>
+        <tr><td>DMA-12</td><td>57 m</td><td>24.2 L/s</td><td>44.0 L/s</td><td>13</td><td>Cast Iron</td><td>Good</td></tr>
+        <tr><td>DMA-24</td><td>42 m</td><td>18.6 L/s</td><td>42.3 L/s</td><td>8</td><td>Ductile Iron</td><td>Good</td></tr>
+        <tr><td>DMA-31</td><td>36 m</td><td>12.2 L/s</td><td>46.1 L/s</td><td>4</td><td>HDPE</td><td>Fair</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
 </div>
-
+  <div class="app-module" id="module-reports">
+<section class="reports-module">
+  <div class="module-titlebar"><div><h1>Reports</h1><p>Prototype outputs that a production system could generate.</p></div></div>
+  <div class="module-grid">
+    <div class="module-card">
+      <div class="report-card"><div><b>DMA Strategy Report</b><small>Map, evidence, recommendation, assumptions and verification gates.</small></div><span class="pill blue">PDF</span></div>
+      <div class="report-card"><div><b>Leak Detection Campaign Plan</b><small>Field sequence, manpower, sensors and targeted pipe sections.</small></div><span class="pill blue">PDF</span></div>
+    </div>
+    <div class="module-card">
+      <div class="report-card"><div><b>Management NRW Portfolio</b><small>DMA ranking, recoverable flow, cost and payback overview.</small></div><span class="pill green">Dashboard</span></div>
+      <div class="report-card"><div><b>Acoustic Evidence Summary</b><small>Recording features, classification and field confirmation notes.</small></div><span class="pill amber">Evidence</span></div>
+    </div>
+  </div>
+</section>
+</div>
+  <div class="app-module" id="module-gis">
+<section class="gis-module">
+  <div class="module-titlebar"><div><h1>GIS Layers</h1><p>Production version can connect to utility GIS, ArcGIS, GeoServer, WMS/WMTS or vector tiles.</p></div></div>
+  <div class="module-card">
+    <div class="gis-actions">
+      <span class="pill green">DMA Boundary</span>
+      <span class="pill green">Water Mains</span>
+      <span class="pill blue">Pressure Loggers</span>
+      <span class="pill blue">Flow Meters</span>
+      <span class="pill amber">Burst History</span>
+      <span class="pill amber">Leak Repairs</span>
+    </div>
+    <p class="subtle">Use the DMA Strategy module to import GeoJSON and interact with the network map.</p>
+  </div>
+</section>
+</div>
+</div>
 <div class="modal hidden" id="methodologyModal">
   <div class="modal-card">
     <div class="panel-header">
@@ -598,7 +601,7 @@ function riskColor(risk){
 }
 
 function initMap(){
-  map = L.map("map",{zoomControl:true}).setView(dmaData["DMA-24"].center,14);
+  map = L.map("map",{zoomControl:true,preferCanvas:true}).setView(dmaData["DMA-24"].center,14);
 
   L.tileLayer("https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",{
     maxZoom:19,
@@ -1038,7 +1041,12 @@ function openPortfolioDMA(name){
       runAnalysis();
     }
   }
-  document.getElementById("strategySection").scrollIntoView({behavior:"smooth"});
+  document.querySelectorAll(".app-module").forEach(m=>m.classList.remove("active"));
+  document.getElementById("module-strategy").classList.add("active");
+  document.querySelectorAll(".nav-scroll").forEach(x=>x.classList.remove("active"));
+  const strategyNav=document.querySelector('[data-module="strategy"]');
+  if(strategyNav) strategyNav.classList.add("active");
+  setTimeout(ensureMapSize,80);
 }
 
 function assistantAnswer(q){
@@ -1371,10 +1379,13 @@ generateCampaign();
 
 document.querySelectorAll(".nav-scroll").forEach(btn=>{
   btn.addEventListener("click",()=>{
-    const el=document.getElementById(btn.dataset.target);
-    if(el) el.scrollIntoView({behavior:"smooth",block:"start"});
+    const name=btn.dataset.module;
+    document.querySelectorAll(".app-module").forEach(m=>m.classList.remove("active"));
+    const target=document.getElementById("module-"+name);
+    if(target) target.classList.add("active");
     document.querySelectorAll(".nav-scroll").forEach(x=>x.classList.remove("active"));
     btn.classList.add("active");
+    if(name==="strategy") setTimeout(ensureMapSize,50);
   });
 });
 
