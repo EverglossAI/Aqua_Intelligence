@@ -1,0 +1,220 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <title>Aqua Intelligence — NRW Strategy Engine</title>
+
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+        integrity="sha256-p4NxAoJBhIINfQ3yPs8pGNkkmZXYJsJmY0Qy4PqLw=" crossorigin="" />
+  <link rel="stylesheet" href="styles.css" />
+</head>
+<body>
+<div class="app-shell">
+  <aside class="sidebar">
+    <div class="brand">
+      <div class="brand-mark">◉</div>
+      <div><div class="brand-name">AQUA</div><div class="brand-sub">INTELLIGENCE</div></div>
+    </div>
+
+    <nav>
+      <button class="nav-item">⌂ <span>Overview</span></button>
+      <button class="nav-item active">◫ <span>DMA Strategy</span></button>
+      <button class="nav-item">◎ <span>Campaigns</span></button>
+      <button class="nav-item">◉ <span>Sensors</span></button>
+      <button class="nav-item">▤ <span>Data Explorer</span></button>
+      <button class="nav-item">⚠ <span>Alerts</span><b class="badge">12</b></button>
+      <button class="nav-item">▧ <span>Reports</span></button>
+      <button class="nav-item">⬡ <span>GIS Layers</span></button>
+    </nav>
+
+    <div class="sidebar-footer">
+      <button class="nav-item">⚙ <span>Admin</span></button>
+    </div>
+  </aside>
+
+  <main class="workspace">
+    <header class="topbar">
+      <div><span class="crumb">NRW Strategy Engine</span> / <strong id="headerDma">DMA-24</strong></div>
+      <div class="top-actions">
+        <span class="status-dot"></span><span class="subtle">Map online</span>
+        <select id="systemSelect">
+          <option>Main System</option><option>North Network</option><option>East Network</option>
+        </select>
+        <span class="user">Jane Engineer</span>
+      </div>
+    </header>
+
+    <section class="main-grid">
+
+      <section class="dma-panel panel">
+        <div class="panel-header">
+          <div><h2 id="dmaTitle">DMA-24</h2><div class="subtle" id="dmaZone">North Zone</div></div>
+          <span class="pill green" id="dmaHealth">Healthy</span>
+        </div>
+
+        <label>Choose DMA</label>
+        <select id="dmaSelect">
+          <option value="DMA-24">DMA-24</option>
+          <option value="DMA-12">DMA-12</option>
+          <option value="DMA-31">DMA-31</option>
+        </select>
+
+        <div class="metric-stack">
+          <div><span>Population</span><strong id="popVal">12,540</strong></div>
+          <div><span>Pipe Length</span><strong id="pipeVal">68 km</strong></div>
+          <div><span>Properties</span><strong id="propVal">3,275</strong></div>
+          <div><span>Area</span><strong id="areaVal">2.45 km²</strong></div>
+        </div>
+
+        <div class="divider"></div>
+
+        <div class="mini-section">
+          <h3>Network Characteristics</h3>
+          <label>Dominant Pipe Material</label>
+          <select id="materialInput">
+            <option value="DI">Ductile Iron</option>
+            <option value="CI">Cast Iron</option>
+            <option value="AC">Asbestos Cement</option>
+            <option value="PVC">PVC</option>
+            <option value="HDPE">HDPE</option>
+          </select>
+
+          <label>Average Pipe Age</label>
+          <select id="ageInput">
+            <option value="10">&lt; 15 years</option>
+            <option value="25" selected>15–35 years</option>
+            <option value="45">&gt; 35 years</option>
+          </select>
+        </div>
+      </section>
+
+      <section class="map-panel panel">
+        <div id="map"></div>
+        <div class="map-overlay-card">
+          <div><b>Interactive GIS</b></div>
+          <small>Click a pipe segment to inspect / prioritise it</small>
+          <div class="legend-row">
+            <span><i class="dot pressure-dot"></i>Pressure</span>
+            <span><i class="dot flow-dot"></i>Flow</span>
+            <span><i class="dot acoustic-dot"></i>Acoustic</span>
+            <span><i class="dot candidate-dot"></i>Candidate</span>
+          </div>
+        </div>
+      </section>
+
+      <section class="planner panel">
+        <div class="panel-header"><h2>Strategy Planner</h2><button class="link-btn" id="resetBtn">Reset</button></div>
+
+        <label>Detection Strategy</label>
+        <div class="strategy-tabs">
+          <button class="strategy active" data-strategy="Permanent">Permanent Sensors<small>Continuous surveillance</small></button>
+          <button class="strategy" data-strategy="LiftShift">Lift & Shift<small>Targeted campaigns</small></button>
+          <button class="strategy" data-strategy="Hybrid">Hybrid<small>Fixed + campaign</small></button>
+          <button class="strategy" data-strategy="Auto">Auto Select<small>Engineering rules</small></button>
+        </div>
+
+        <div class="field-row">
+          <label>Aggressiveness <span id="aggrLabel">7 / 10</span></label>
+          <input id="aggressiveness" type="range" min="1" max="10" value="7" />
+          <div class="range-hints"><span>Economy</span><span>Maximum intervention</span></div>
+        </div>
+
+        <div class="input-grid">
+          <div><label>Average Pressure (m)</label><input id="pressureInput" type="number" value="42" /></div>
+          <div><label>Night Minimum Flow (L/s)</label><input id="flowInput" type="number" step=".1" value="18.6" /></div>
+          <div><label>DMA Inlet Flow (L/s)</label><input id="inletInput" type="number" step=".1" value="42.3" /></div>
+          <div><label>Recent Bursts (12m)</label><input id="burstsInput" type="number" value="8" /></div>
+          <div><label>Known Background Leakage</label>
+            <select id="backgroundLeakage"><option value="low">Low</option><option value="medium" selected>Medium</option><option value="high">High</option></select>
+          </div>
+          <div><label>Repair Response</label>
+            <select id="repairResponse"><option value="fast">Same / next day</option><option value="normal" selected>2–5 days</option><option value="slow">&gt; 5 days</option></select>
+          </div>
+        </div>
+
+        <button class="primary" id="runBtn">▶ Run Strategy Analysis</button>
+      </section>
+
+      <section class="kpi-row">
+        <div class="kpi panel"><span>Current NRW</span><strong id="nrwKpi">24.7%</strong><small>Indicative input</small></div>
+        <div class="kpi panel"><span>Pressure (Avg)</span><strong id="pressureKpi">42 m</strong><small>Pressure sensitivity considered</small></div>
+        <div class="kpi panel"><span>Night Min Flow</span><strong id="flowKpi">18.6 L/s</strong><small id="nightRatioText">44% of inlet flow</small></div>
+        <div class="kpi panel"><span>Risk Score</span><strong id="riskKpi">68 / 100</strong><small id="riskBand">High priority</small></div>
+      </section>
+
+      <section class="decision-panel panel">
+        <div class="panel-header">
+          <div><h2>Engineering Decision Path</h2><span class="subtle">Explainable recommendation logic</span></div>
+          <span class="pill blue" id="confidenceBadge">Confidence 81%</span>
+        </div>
+        <div class="decision-path" id="decisionPath"></div>
+      </section>
+
+      <section class="comparison panel">
+        <div class="panel-header"><h2>12-Month Strategy Comparison</h2><span class="subtle">Indicative planning model</span></div>
+        <div class="compare-grid">
+          <article class="compare-card" id="permCard">
+            <h3>Permanent Sensors</h3>
+            <div><span>Deploy</span><strong id="permDeploy">8 sensors</strong></div>
+            <div><span>Survey Frequency</span><strong id="permFreq">Continuous</strong></div>
+            <div><span>Expected Detection Speed</span><strong id="permSpeed">Fast</strong></div>
+            <div><span>Indicative Cost Index</span><strong id="permCost">100</strong></div>
+            <div><span>Suitability</span><strong id="permSuit">82%</strong></div>
+          </article>
+          <article class="compare-card" id="lsCard">
+            <h3>Lift & Shift</h3>
+            <div><span>Campaigns</span><strong id="lsDeploy">3 campaigns</strong></div>
+            <div><span>Survey Frequency</span><strong id="lsFreq">Quarterly</strong></div>
+            <div><span>Expected Detection Speed</span><strong id="lsSpeed">Medium</strong></div>
+            <div><span>Indicative Cost Index</span><strong id="lsCost">62</strong></div>
+            <div><span>Suitability</span><strong id="lsSuit">71%</strong></div>
+          </article>
+          <article class="compare-card recommended" id="hybCard">
+            <h3>Hybrid <span class="pill green" id="recommendedPill">Recommended</span></h3>
+            <div><span>Deploy</span><strong id="hybDeploy">4 fixed + 2 campaigns</strong></div>
+            <div><span>Survey Frequency</span><strong id="hybFreq">Continuous + targeted</strong></div>
+            <div><span>Expected Detection Speed</span><strong id="hybSpeed">Fast</strong></div>
+            <div><span>Indicative Cost Index</span><strong id="hybCost">82</strong></div>
+            <div><span>Suitability</span><strong id="hybSuit">91%</strong></div>
+          </article>
+        </div>
+      </section>
+
+      <section class="recommendation panel">
+        <div class="panel-header"><h2>Recommended Programme</h2><span class="pill green" id="recBadge">Hybrid Strategy</span></div>
+        <div class="programme-summary">
+          <div><span>Priority</span><strong id="priorityText">High</strong></div>
+          <div><span>Permanent Sensors</span><strong id="recSensors">4</strong></div>
+          <div><span>Lift & Shift Campaigns</span><strong id="recCampaigns">2</strong></div>
+          <div><span>Review Cycle</span><strong id="reviewCycle">90 days</strong></div>
+        </div>
+        <ol id="recommendationList"></ol>
+        <button class="secondary" id="applyBtn">◎ Show Recommended Deployment</button>
+        <button class="secondary ghost" id="exportBtn">⇩ Export Strategy JSON</button>
+      </section>
+
+      <section class="pipe-panel panel">
+        <div class="panel-header">
+          <div><h2>Selected Pipe / Subzone</h2><span class="subtle">Click any blue line on map</span></div>
+          <span class="pill amber" id="pipePriority">Not selected</span>
+        </div>
+        <div id="pipeDetails" class="pipe-details">
+          Select a pipe segment to view its length, material, age, burst score and recommended action.
+        </div>
+      </section>
+
+      <section class="insights panel">
+        <div class="panel-header"><h2>Engineering Insights</h2><span class="subtle">Decision support — not automatic excavation approval</span></div>
+        <div class="insight-grid" id="insightGrid"></div>
+      </section>
+
+    </section>
+  </main>
+</div>
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"
+        integrity="sha256-20nQCchB9co0qIjJZRGuk2/Z9VM+kNiyxNV1lvTlZBo=" crossorigin=""></script>
+<script src="app.js"></script>
+</body>
+</html>
