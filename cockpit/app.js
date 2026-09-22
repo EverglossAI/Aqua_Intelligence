@@ -4,7 +4,7 @@ const assetKinds={pipe:['pipe','eupipe','main','waterline'],meter:['meter','eume
 const colors={pipe:'#5c8da9',meter:'#ffc65c',valve:'#aa82ff',hydrant:'#ff7f6d',dma:'#36a3ff',other:'#72879a'};
 function kindFor(name=''){const n=name.toLowerCase();for(const[k,terms]of Object.entries(assetKinds))if(terms.some(t=>n.includes(t)))return k;return'other'}
 function initMap(){
-  state.map=L.map('map',{zoomControl:true,preferCanvas:true}).setView([1.35,103.82],12);
+  state.map=L.map('map',{zoomControl:true,preferCanvas:true}).setView([23.7,120.95],8);
   const primary=L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{
     subdomains:'abc',
     maxZoom:20,
@@ -33,10 +33,69 @@ function featureCount(project,kind){return project.layers.filter(l=>l.kind===kin
 function pipeLength(project){let m=0;project.layers.filter(l=>l.kind==='pipe').forEach(l=>l.geojson.features.forEach(f=>{const p=f.properties||{};const v=Number(p.LENGTH||p.Length||p.length||p.PIPE_LEN||0);if(Number.isFinite(v))m+=v}));return m}
 function updateProjectUI(){const p=state.active;if(!p)return;$('projectTitle').textContent=p.name;$('networkStatus').textContent='GIS loaded';$('projectEmpty').classList.add('hidden');$('projectTree').classList.remove('hidden');const counts={};['pipe','meter','valve','hydrant','dma'].forEach(k=>counts[k]=featureCount(p,k));$('pipeCount').textContent=counts.pipe;$('meterCount').textContent=counts.meter;$('treeMeters').textContent=counts.meter;$('valveCount').textContent=counts.valve;$('hydrantCount').textContent=counts.hydrant;$('dmaCount').textContent=counts.dma||'0';$('treeDmas').textContent=counts.dma;$('assetTotal').textContent=Object.values(counts).reduce((a,b)=>a+b,0);const km=pipeLength(p)/1000;$('pipeLength').textContent=km?km.toFixed(1)+' km':counts.pipe+' seg';$('flowCount').textContent=p.telemetry.filter(x=>x.type==='flow').length;$('pressureCount').textContent=p.telemetry.filter(x=>x.type==='pressure').length;$('acousticCount').textContent=p.telemetry.filter(x=>x.type==='acoustic').length;$('telemetryCount').textContent=p.telemetry.length;$('pressureStatus').textContent=p.telemetry.some(x=>x.type==='pressure')?'Connected':'No stream';$('acousticStatus').textContent=p.telemetry.some(x=>x.type==='acoustic')?'Connected':'No stream';$('confidence').textContent=confidenceScore(p)+'%';renderHealth();renderEvents()}
 function confidenceScore(p){let s=35;if(featureCount(p,'pipe'))s+=20;if(featureCount(p,'meter'))s+=10;if(featureCount(p,'valve'))s+=8;if(featureCount(p,'dma'))s+=7;if(p.telemetry.some(x=>x.type==='flow'))s+=8;if(p.telemetry.some(x=>x.type==='pressure'))s+=7;if(p.telemetry.some(x=>x.type==='acoustic'))s+=5;return Math.min(100,s)}
+
+/* Taiwan CRS handling */
+function aquaDefineTaiwanCrs(){
+  if(typeof proj4==='undefined')return;
+  proj4.defs('EPSG:3826','+proj=tmerc +lat_0=0 +lon_0=121 +k=0.9999 +x_0=250000 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs');
+  proj4.defs('EPSG:3825','+proj=tmerc +lat_0=0 +lon_0=119 +k=0.9999 +x_0=250000 +y_0=0 +ellps=GRS80 +units=m +no_defs +type=crs');
+}
+function aquaFirstXY(geometry){
+  if(!geometry||!geometry.coordinates)return null;
+  let c=geometry.coordinates;
+  while(Array.isArray(c)&&Array.isArray(c[0]))c=c[0];
+  return Array.isArray(c)&&c.length>=2?[Number(c[0]),Number(c[1])]:null;
+}
+function aquaLooksProjectedXY(xy){
+  if(!xy)return false;
+  const x=xy[0],y=xy[1];
+  return Number.isFinite(x)&&Number.isFinite(y)&&(Math.abs(x)>180||Math.abs(y)>90);
+}
+function aquaDetectCrs(layers){
+  for(const layer of layers){
+    for(const f of (layer.geojson?.features||[])){
+      const xy=aquaFirstXY(f.geometry);
+      if(!xy)continue;
+      if(aquaLooksProjectedXY(xy)){
+        // Most Taiwan Water Corporation TM2 datasets are zone 121.
+        // Zone 119 remains selectable for Penghu / western offshore data.
+        return 'EPSG:3826';
+      }
+      if(Math.abs(xy[0])<=180&&Math.abs(xy[1])<=90)return 'EPSG:4326';
+    }
+  }
+  return 'EPSG:4326';
+}
+function aquaTransformCoordinates(coords,sourceCrs){
+  if(!Array.isArray(coords))return coords;
+  if(typeof coords[0]==='number'&&typeof coords[1]==='number'){
+    const out=proj4(sourceCrs,'EPSG:4326',[Number(coords[0]),Number(coords[1])]);
+    return coords.length>2?[out[0],out[1],...coords.slice(2)]:[out[0],out[1]];
+  }
+  return coords.map(x=>aquaTransformCoordinates(x,sourceCrs));
+}
+function aquaReprojectLayers(layers,requestedCrs){
+  aquaDefineTaiwanCrs();
+  const detected=requestedCrs==='auto'?aquaDetectCrs(layers):requestedCrs;
+  if(detected==='EPSG:4326')return{layers,sourceCrs:detected,reprojected:false};
+  if(typeof proj4==='undefined')throw new Error('Projection library did not load; cannot convert '+detected+' to WGS84.');
+  const out=layers.map(layer=>({
+    ...layer,
+    geojson:{
+      ...layer.geojson,
+      features:(layer.geojson?.features||[]).map(f=>({
+        ...f,
+        geometry:f.geometry?{...f.geometry,coordinates:aquaTransformCoordinates(f.geometry.coordinates,detected)}:f.geometry
+      }))
+    }
+  }));
+  return{layers:out,sourceCrs:detected,reprojected:true};
+}
+
 function normalizeShpResult(raw){if(!raw)return[];if(raw.type==='FeatureCollection')return[{name:'network',geojson:raw}];if(Array.isArray(raw))return raw.map((g,i)=>({name:g.fileName||g.name||('layer_'+(i+1)),geojson:g}));return Object.entries(raw).filter(([,g])=>g&&g.type==='FeatureCollection').map(([name,geojson])=>({name,geojson}))}
 function renderProject(){const p=state.active;if(!p)return;state.networkLayer.clearLayers();let bounds=[];p.layers.forEach(layer=>{const kind=layer.kind;const gj=L.geoJSON(layer.geojson,{style:()=>({color:colors[kind]||colors.other,weight:kind==='pipe'?3:2,fillColor:colors[kind]||colors.other,fillOpacity:kind==='dma'?.05:.18}),pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:kind==='meter'?4:kind==='valve'?5:4,color:colors[kind]||colors.other,fillColor:colors[kind]||colors.other,fillOpacity:.9,weight:1}),onEachFeature:(f,l)=>{l.on('click',()=>selectFeature(layer,f,l));}});gj.addTo(state.networkLayer);try{const b=gj.getBounds();if(b.isValid())bounds.push(b)}catch(e){}});if(bounds.length){let b=bounds[0];for(let i=1;i<bounds.length;i++)b=b.extend(bounds[i]);state.map.fitBounds(b.pad(.06))}updateProjectUI()}
 function selectFeature(layer,f,l){state.selected={layer,feature:f,leaflet:l};const p=f.properties||{};const rows=Object.entries(p).slice(0,6).map(([k,v])=>k+': '+v).join(' · ');$('selectionCard').innerHTML='<small>SELECTION</small><b>'+escapeHtml(layer.name)+' · '+escapeHtml(layer.kind)+'</b><p>'+escapeHtml(rows||'No attributes')+'</p>'}
-async function createProject(){const file=$('gisInput').files[0];if(!file){alert('Choose a zipped shapefile or GeoJSON package.');return}const name=$('projectName').value.trim()||file.name.replace(/\.(zip|json|geojson)$/i,'');$('createProjectBtn').textContent='Reading GIS…';$('createProjectBtn').disabled=true;try{let raw;if(/\.zip$/i.test(file.name)){const buf=await file.arrayBuffer();raw=await shp(buf)}else{raw=JSON.parse(await file.text())}const layers=normalizeShpResult(raw).map(x=>({...x,kind:kindFor(x.name)}));const project={id:'p_'+Date.now(),name,utility:$('utilityName').value.trim(),source:file.name,layers,telemetry:[],created:new Date().toISOString()};state.projects.push(project);state.active=project;const o=document.createElement('option');o.value=project.id;o.textContent=project.name;$('projectSelect').appendChild(o);$('projectSelect').value=project.id;closeModal();renderProject();addAi('Project <b>'+escapeHtml(project.name)+'</b> opened. I classified '+layers.length+' GIS layers and '+layers.reduce((s,l)=>s+l.geojson.features.length,0)+' features. You can now import flow, pressure, meter or acoustic telemetry.')}catch(e){console.error(e);alert('GIS import failed: '+e.message)}finally{$('createProjectBtn').textContent='Create & analyse project';$('createProjectBtn').disabled=false}}
+async function createProject(){const file=$('gisInput').files[0];if(!file){alert('Choose a zipped shapefile or GeoJSON package.');return}const name=$('projectName').value.trim()||file.name.replace(/\.(zip|json|geojson)$/i,'');$('createProjectBtn').textContent='Reading GIS…';$('createProjectBtn').disabled=true;try{let raw;if(/\.zip$/i.test(file.name)){const buf=await file.arrayBuffer();raw=await shp(buf)}else{raw=JSON.parse(await file.text())}let layers=normalizeShpResult(raw).map(x=>({...x,kind:kindFor(x.name)}));const crsChoice=$('projectCrs')?.value||'auto';const projected=aquaReprojectLayers(layers,crsChoice);layers=projected.layers;const project={id:'p_'+Date.now(),name,utility:$('utilityName').value.trim(),source:file.name,sourceCrs:projected.sourceCrs,reprojected:projected.reprojected,layers,telemetry:[],created:new Date().toISOString()};state.projects.push(project);state.active=project;const o=document.createElement('option');o.value=project.id;o.textContent=project.name;$('projectSelect').appendChild(o);$('projectSelect').value=project.id;closeModal();renderProject();addAi('Project <b>'+escapeHtml(project.name)+'</b> opened. I classified '+layers.length+' GIS layers and '+layers.reduce((s,l)=>s+l.geojson.features.length,0)+' features. Source CRS: <b>'+escapeHtml(project.sourceCrs||'unknown')+'</b>'+(project.reprojected?' → reprojected to WGS84 for display.':'.')+' You can now import flow, pressure, meter or acoustic telemetry.')}catch(e){console.error(e);alert('GIS import failed: '+e.message)}finally{$('createProjectBtn').textContent='Create & analyse project';$('createProjectBtn').disabled=false}}
 function parseCSV(text){const lines=text.trim().split(/\r?\n/);if(lines.length<2)return[];const h=lines[0].split(',').map(x=>x.trim());return lines.slice(1).map(line=>{const cols=line.split(',');return Object.fromEntries(h.map((k,i)=>[k,cols[i]?.trim()]))})}
 function inferTelemetry(row){const keys=Object.keys(row).map(k=>k.toLowerCase());const has=s=>keys.some(k=>k.includes(s));return has('acoustic')||has('noise')?'acoustic':has('pressure')?'pressure':has('flow')||has('mnf')?'flow':has('meter')||has('consumption')?'meter':'other'}
 async function importTelemetry(file){if(!state.active){alert('Open a project first.');return}const rows=/\.json$/i.test(file.name)?JSON.parse(await file.text()):parseCSV(await file.text());const arr=Array.isArray(rows)?rows:(rows.records||[]);arr.forEach((r,i)=>state.active.telemetry.push({...r,_id:r.id||('T'+(i+1)),type:r.type||inferTelemetry(r)}));renderTelemetry();updateProjectUI();addAi('Imported <b>'+arr.length+'</b> telemetry records. I can now combine them with the GIS when answering network questions.')}
