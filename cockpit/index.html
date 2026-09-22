@@ -3,7 +3,7 @@
 <head>
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width,initial-scale=1">
-  <title>Aqua Intelligence — NRW Cockpit</title>
+  <title>Aqua Intelligence — NRW Cockpit V3</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="./styles.css">
 </head>
@@ -19,13 +19,13 @@
     <button class="nav" data-view="hydraulics">≈ <span>Hydraulics</span></button>
     <button class="nav" data-view="assets">⌘ <span>Assets</span></button>
     <button class="nav" data-view="planning">✓ <span>Planning</span></button>
-    <div class="rail-foot"><span class="live"></span> Cockpit V1</div>
+    <div class="rail-foot"><span class="live"></span> Cockpit V3</div>
   </aside>
 
   <main class="workspace">
     <header class="topbar">
       <div>
-        <div class="eyebrow">NRW DECISION COCKPIT</div>
+        <div class="eyebrow">NRW DECISION COCKPIT · V2 NETWORK + V3 ENGINEERING</div>
         <h1 id="projectTitle">No project open</h1>
       </div>
       <div class="top-actions">
@@ -38,6 +38,7 @@
 
     <section class="status-strip">
       <div><span>Network</span><b id="networkStatus">Not loaded</b></div>
+      <div><span>Topology</span><b id="topologyStatus">—</b></div>
       <div><span>DMA / Zones</span><b id="dmaCount">—</b></div>
       <div><span>Pipe</span><b id="pipeLength">—</b></div>
       <div><span>Meters</span><b id="meterCount">—</b></div>
@@ -61,14 +62,22 @@
           <div class="tree-item" data-filter="valve">◆ Valves <span id="valveCount">0</span></div>
           <div class="tree-item" data-filter="hydrant">● Hydrants <span id="hydrantCount">0</span></div>
           <div class="tree-item" data-filter="dma">⬡ DMA / regions <span id="treeDmas">0</span></div>
+
           <div class="tree-group top-gap"><button class="tree-title">▾ Telemetry <span id="telemetryCount">0</span></button></div>
-          <div class="tree-item" data-filter="flow">↗ Flow meters <span id="flowCount">0</span></div>
+          <div class="tree-item" data-filter="flow">↗ Flow / bulk meters <span id="flowCount">0</span></div>
           <div class="tree-item" data-filter="pressure">↕ Pressure loggers <span id="pressureCount">0</span></div>
           <div class="tree-item" data-filter="acoustic">◉ Acoustic sensors <span id="acousticCount">0</span></div>
-          <div class="tree-group top-gap"><button class="tree-title">▾ Intelligence</button></div>
+
+          <div class="tree-group top-gap"><button class="tree-title">▾ V2 Network Intelligence</button></div>
+          <button class="tree-action" id="runTopology">Build topology graph</button>
           <button class="tree-action" id="runWaterBalance">Calculate water balance</button>
-          <button class="tree-action" id="runDmaPlanner">Analyse DMA design</button>
-          <button class="tree-action" id="runSensorPlanner">Plan acoustic deployment</button>
+          <button class="tree-action" id="runDmaPlanner">Validate / design DMA</button>
+          <button class="tree-action" id="runFusion">Fuse NRW evidence</button>
+          <button class="tree-action" id="runSensorPlanner">Plan 20 hydrophones</button>
+
+          <div class="tree-group top-gap"><button class="tree-title">▾ V3 Engineering</button></div>
+          <button class="tree-action" id="runPrvAdvisor">Find PRV candidates</button>
+          <button class="tree-action" id="runAirAdvisor">Find air-valve candidates</button>
         </div>
       </aside>
 
@@ -76,56 +85,57 @@
         <div id="map"></div>
         <div class="map-toolbar">
           <button data-map-mode="inspect" class="active">Inspect</button>
-          <button data-map-mode="dma">Draw DMA</button>
-          <button data-map-mode="prv">PRV candidate</button>
-          <button data-map-mode="air">Air valve candidate</button>
+          <button data-map-mode="topology">Topology</button>
+          <button data-map-mode="dma">DMA</button>
+          <button data-map-mode="sensor">Hydrophones</button>
+          <button data-map-mode="prv">PRV</button>
+          <button data-map-mode="air">Air valve</button>
         </div>
         <div class="map-legend">
           <span><i class="pipe"></i>Pipe</span><span><i class="meter"></i>Meter</span><span><i class="valve"></i>Valve</span>
           <span><i class="pressure"></i>Pressure</span><span><i class="acoustic"></i>Acoustic</span><span><i class="risk"></i>Priority</span>
         </div>
         <div class="selection-card" id="selectionCard">
-          <small>SELECTION</small>
-          <b>No asset selected</b>
-          <p>Click a network asset to inspect it.</p>
+          <small>SELECTION</small><b>No asset selected</b><p>Click a network asset to inspect it.</p>
         </div>
       </section>
 
       <aside class="right-panel panel">
         <div class="copilot-head">
-          <div><small>AQUA COPILOT</small><h2>Ask the network</h2></div>
-          <span class="brain">AI</span>
+          <div><small>AQUA COPILOT</small><h2>Ask the network</h2></div><span class="brain">AI</span>
         </div>
         <div class="suggestions">
-          <button>Why did NRW increase?</button>
+          <button>Build the topology and tell me what is wrong</button>
+          <button>Calculate the water balance</button>
           <button>Where should I deploy 20 hydrophones?</button>
-          <button>Design a DMA here</button>
-          <button>Where should the PRV go?</button>
+          <button>Find PRV candidates</button>
+          <button>Where do I need air valves?</button>
         </div>
         <div id="chat" class="chat">
-          <div class="msg ai"><b>Aqua</b><p>Open a project and I will reason across GIS, meter, flow, pressure, acoustic and intervention data.</p></div>
+          <div class="msg ai"><b>Aqua</b><p>Open a project. I can call the local topology, NRW, deployment and hydraulic advisory engines directly from normal engineering language.</p></div>
         </div>
         <div class="prompt-row">
           <textarea id="prompt" rows="2" placeholder="Ask in normal engineering language…"></textarea>
           <button id="askBtn" class="primary compact">Ask</button>
         </div>
-        <div class="copilot-note">Copilot is designed to call deterministic NRW, GIS and hydraulic tools. Engineering recommendations require verification before field implementation.</div>
+        <div class="copilot-note">Aqua separates deterministic calculations from language generation. PRV/air-valve outputs are preliminary engineering recommendations and require design verification.</div>
       </aside>
     </section>
 
-    <section class="lower-grid">
+    <section class="analysis-grid">
+      <article class="panel analysis-output">
+        <div class="panel-head"><div><small>V2 / V3 ANALYSIS</small><h2>Engineering results</h2></div><button id="clearAnalysis" class="link">Clear overlay</button></div>
+        <div id="analysisOutput" class="analysis-output-body"><div class="empty-row">Run a network or engineering analysis.</div></div>
+      </article>
       <article class="panel intelligence">
         <div class="panel-head"><div><small>NETWORK EVENT ENGINE</small><h2>What needs attention</h2></div><button id="refreshEvents" class="link">Refresh</button></div>
         <div id="eventList" class="event-list"><div class="empty-row">No project data yet.</div></div>
       </article>
       <article class="panel engineering">
-        <div class="panel-head"><div><small>ENGINEERING ADVISOR</small><h2>Pressure control & air management</h2></div></div>
-        <div class="engineering-tabs">
-          <button class="eng-tab active" data-eng="prv">PRV</button>
-          <button class="eng-tab" data-eng="air">Air valve</button>
-        </div>
+        <div class="panel-head"><div><small>V3 ENGINEERING ADVISOR</small><h2>Pressure control & air management</h2></div></div>
+        <div class="engineering-tabs"><button class="eng-tab active" data-eng="prv">PRV</button><button class="eng-tab" data-eng="air">Air valve</button></div>
         <div id="engineeringBody" class="engineering-body">
-          <p>Select a pipe or point on the map. Aqua will combine pipe diameter, pressure, flow, elevation/profile inputs and operating constraints to produce a preliminary recommendation.</p>
+          <p>Select an asset or run a network-wide candidate search. Aqua will state assumptions and missing data explicitly.</p>
           <button class="secondary" id="runEngineering">Analyse selected location</button>
         </div>
       </article>
@@ -146,9 +156,7 @@
     <div class="modal-body">
       <label>Project name<input id="projectName" placeholder="e.g. Lambay Island NRW"></label>
       <label>Utility / client<input id="utilityName" placeholder="Water utility"></label>
-      <label>GIS package
-        <span class="dropzone" id="gisDrop">Drop a zipped SHP package here or click to browse<input id="gisInput" type="file" accept=".zip,.json,.geojson" hidden></span>
-      </label>
+      <label>GIS package<span class="dropzone" id="gisDrop">Drop a zipped SHP package here or click to browse<input id="gisInput" type="file" accept=".zip,.json,.geojson" hidden></span></label>
       <div id="gisFileName" class="file-name">No GIS file selected</div>
       <div class="modal-actions"><button id="createProjectBtn" class="primary">Create & analyse project</button></div>
     </div>
