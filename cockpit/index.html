@@ -147,6 +147,43 @@
         </div>
       </article>
     </section>
+    <section class="advanced-grid">
+      <article class="panel hydraulic-workbench" id="hydraulicsWorkbench">
+        <div class="panel-head"><div><small>V4 HYDRAULIC SIMULATION</small><h2>EPANET Hydraulic Planning</h2></div><span class="brain">OWA-EPANET</span></div>
+        <div class="workbench-body">
+          <div class="workbench-controls">
+            <label>EPANET model (.inp)<input id="epanetInp" type="file" accept=".inp,text/plain"></label>
+            <button id="runHydraulics" class="primary">Run baseline hydraulics</button>
+            <label>Map result<select id="hydraulicMetric"><option value="pressure">Node pressure</option><option value="flow">Pipe flow</option><option value="velocity">Pipe velocity</option><option value="headloss">Headloss</option></select></label>
+          </div>
+          <div class="scenario-grid">
+            <label>Scenario<select id="hydScenarioType"><option value="none">Baseline only</option><option value="close">Close link / valve</option><option value="prv">PRV setpoint</option><option value="leak">Leak emitter</option><option value="demand">Demand multiplier</option></select></label>
+            <label>Target ID<input id="hydTargetId" placeholder="e.g. V12 or J104"></label>
+            <label>Value<input id="hydScenarioValue" type="number" step="0.1" placeholder="e.g. 30"></label>
+            <button id="runScenario" class="secondary">Run what-if scenario</button>
+          </div>
+          <div id="hydraulicResults" class="workbench-results"><div class="empty-row">Import an EPANET .inp model to run the real hydraulic solver. GIS-to-EPANET model construction remains guarded by model-readiness checks.</div></div>
+        </div>
+      </article>
+
+      <article class="panel acoustic-workbench" id="acousticWorkbench">
+        <div class="panel-head"><div><small>ACOUSTIC INTELLIGENCE</small><h2>Sensor Planning & Data Analysis</h2></div></div>
+        <div class="workbench-body">
+          <div class="acoustic-controls">
+            <label>Deployment strategy<select id="sensorType"><option value="mixed">Mixed / Auto</option><option value="hydrophone">Hydrophones</option><option value="accelerometer">Accelerometers</option></select></label>
+            <label>Available quantity<input id="sensorQty" type="number" min="1" value="20"></label>
+            <button id="planAcoustics" class="primary">Plan acoustic deployment</button>
+          </div>
+          <div id="acousticPlanResults" class="workbench-results"><div class="empty-row">Aqua will use pipe length, material, acoustic transmission, sensor type and quantity to calculate coverage and recommended positions.</div></div>
+          <div class="acoustic-data-row">
+            <label>Acoustic data (CSV/JSON)<input id="acousticDataInput" type="file" accept=".csv,.json"></label>
+            <button id="analyseAcoustics" class="secondary">Analyse incoming acoustic data</button>
+          </div>
+          <div id="acousticAnalysisResults" class="workbench-results"><div class="empty-row">Import logger/sensor readings to analyse persistence, anomalies, trends and cross-sensor evidence.</div></div>
+        </div>
+      </article>
+    </section>
+
   </main>
 </div>
 
@@ -166,5 +203,6 @@
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
 <script src="./app.js"></script>
+<script src="./v4.js"></script>
 </body>
 </html>
