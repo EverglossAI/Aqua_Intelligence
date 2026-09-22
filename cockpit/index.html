@@ -197,6 +197,15 @@
       <label>Project name<input id="projectName" placeholder="e.g. Lambay Island NRW"></label>
       <label>Utility / client<input id="utilityName" placeholder="Water utility"></label>
       <label>GIS package<span class="dropzone" id="gisDrop">Drop a zipped SHP package here or click to browse<input id="gisInput" type="file" accept=".zip,.json,.geojson" hidden></span></label>
+      <label>Coordinate reference system
+        <select id="projectCrs">
+          <option value="auto">Auto detect (Taiwan TWD97 preferred)</option>
+          <option value="EPSG:3826">TWD97 / TM2 zone 121 (EPSG:3826)</option>
+          <option value="EPSG:3825">TWD97 / TM2 zone 119 (EPSG:3825)</option>
+          <option value="EPSG:4326">WGS84 latitude / longitude (EPSG:4326)</option>
+        </select>
+      </label>
+      <div class="file-name">Most Taiwan Water Corporation GIS should use zone 121; use zone 119 for Penghu / western offshore datasets when applicable.</div>
       <div id="gisFileName" class="file-name">No GIS file selected</div>
       <div class="modal-actions"><button id="createProjectBtn" class="primary">Create & analyse project</button></div>
     </div>
@@ -207,6 +216,7 @@
 <script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
 <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
 <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.15.0/proj4.js"></script>
 <script src="./app.js"></script>
 <script src="./v4.js"></script>
 </body>
