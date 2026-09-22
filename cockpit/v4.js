@@ -254,3 +254,133 @@ function av4Bind(){
   if($('analyseAcoustics'))$('analyseAcoustics').onclick=av4AnalyseAcoustics;
 }
 window.addEventListener('load',av4Bind);
+
+/* === GIS -> EPANET direct builder === */
+function av4PipeProp(f,names,def){
+  const p=f&&f.properties?f.properties:{},keys=Object.keys(p);
+  for(const n of names){
+    const k=keys.find(x=>x.toLowerCase()===n.toLowerCase());
+    if(k!==undefined&&p[k]!==''&&p[k]!=null)return p[k];
+  }
+  return def;
+}
+function av4PipeDiameter(f){
+  const v=Number(av4PipeProp(f,['pipe_size','diameter','dia','size'],100));
+  return Number.isFinite(v)&&v>0?v:100;
+}
+function av4PipeRoughness(f){
+  const m=String(av4PipeProp(f,['pipe_mtr','material','mat','pipe_kind','pipe_type'],'')).toUpperCase();
+  if(/PVC|HDPE|PE/.test(m))return 145;
+  if(/DIP|DI/.test(m))return 130;
+  if(/STEEL|MS|GI/.test(m))return 120;
+  if(/CI|AC/.test(m))return 110;
+  return 120;
+}
+function av4CoordKey(c){return Math.round(c[0]*1e5)+':'+Math.round(c[1]*1e5)}
+function av4BuildGraph(){
+  const pipes=V23.pipes(),nodes=[],edges=[],buckets=new Map();
+  function findOrAdd(coord){
+    const key=av4CoordKey(coord),parts=key.split(':').map(Number);
+    for(let di=-1;di<=1;di++)for(let dj=-1;dj<=1;dj++){
+      const ids=buckets.get((parts[0]+di)+':'+(parts[1]+dj))||[];
+      for(const id of ids)if(V23.dist(nodes[id].coord,coord)<=3)return id;
+    }
+    const id=nodes.length;nodes.push({id,coord,degree:0});
+    if(!buckets.has(key))buckets.set(key,[]);buckets.get(key).push(id);
+    return id;
+  }
+  pipes.forEach((p,i)=>{
+    const ends=V23.ends(p.feature);if(!ends)return;
+    const a=findOrAdd(ends[0]),b=findOrAdd(ends[1]);
+    nodes[a].degree++;nodes[b].degree++;
+    edges.push({i,a,b,feature:p.feature,length:Math.max(1,V23.len(p.feature)),diameter:av4PipeDiameter(p.feature),roughness:av4PipeRoughness(p.feature)});
+  });
+  const adj=Array.from({length:nodes.length},()=>[]);
+  edges.forEach((e,ei)=>{adj[e.a].push([e.b,ei]);adj[e.b].push([e.a,ei])});
+  const seen=new Set(),components=[];
+  for(let n=0;n<nodes.length;n++){
+    if(seen.has(n))continue;
+    const q=[n],ns=[],es=new Set();seen.add(n);
+    while(q.length){
+      const u=q.shift();ns.push(u);
+      adj[u].forEach(([v,ei])=>{es.add(ei);if(!seen.has(v)){seen.add(v);q.push(v)}});
+    }
+    components.push({nodes:ns,edges:[...es]});
+  }
+  components.sort((a,b)=>b.edges.length-a.edges.length);
+  return{nodes,edges,components};
+}
+function av4NearestNode(nodes,coord,allowed){
+  let best=null,bd=Infinity;
+  for(const id of allowed){
+    const d=V23.dist(nodes[id].coord,coord);
+    if(d<bd){bd=d;best=id}
+  }
+  return best;
+}
+async function av4RunGisModel(){
+  try{
+    if(!state.active)throw new Error('Open a GIS project first.');
+    const E=await av4LoadEpanet();
+    const graph=av4BuildGraph();
+    if(!graph.edges.length)throw new Error('No pipe network found.');
+    const comp=graph.components[0];
+    if(!comp||!comp.edges.length)throw new Error('No connected pipe component found.');
+
+    const sourceHead=Number($('gisSourceHead').value)||55;
+    const demand=Number($('gisDemand').value)||0;
+    const meters=V23.points('meter');
+    let sourceNode=comp.nodes[0];
+    if(meters.length)sourceNode=av4NearestNode(graph.nodes,meters[0].coord,comp.nodes);
+
+    const ws=new E.Workspace();await ws.loadModule();
+    const model=new E.Project(ws);
+    model.init('aqua.rpt','aqua.bin',E.FlowUnits.LPS,E.HeadLossType.HW);
+
+    const coords={},nodeMap=new Map();
+    comp.nodes.forEach((nid,idx)=>{
+      const n=graph.nodes[nid],id=(nid===sourceNode?'R':'J')+(idx+1);
+      let ni;
+      if(nid===sourceNode){
+        ni=model.addNode(id,E.NodeType.Reservoir);
+        model.setNodeValue(ni,E.NodeProperty.Elevation,sourceHead);
+      }else{
+        ni=model.addNode(id,E.NodeType.Junction);
+        model.setJunctionData(ni,0,demand,'');
+      }
+      nodeMap.set(nid,id);coords[id]=n.coord;
+    });
+
+    const parsedLinks=[];
+    comp.edges.forEach((ei,idx)=>{
+      const e=graph.edges[ei],id='P'+(idx+1),n1=nodeMap.get(e.a),n2=nodeMap.get(e.b);
+      const li=model.addLink(id,E.LinkType.Pipe,n1,n2);
+      model.setPipeData(li,e.length,e.diameter,e.roughness,0);
+      parsedLinks.push({id,n1,n2,type:'pipe'});
+    });
+
+    model.solveH();
+    const nc=model.getCount(E.CountType.NodeCount),lc=model.getCount(E.CountType.LinkCount);
+    const nodes=[],links=[];
+    for(let i=1;i<=nc;i++)nodes.push({id:model.getNodeId(i),pressure:model.getNodeValue(i,E.NodeProperty.Pressure),head:model.getNodeValue(i,E.NodeProperty.Head),demand:model.getNodeValue(i,E.NodeProperty.Demand)});
+    for(let i=1;i<=lc;i++)links.push({id:model.getLinkId(i),flow:model.getLinkValue(i,E.LinkProperty.Flow),velocity:model.getLinkValue(i,E.LinkProperty.Velocity),headloss:model.getLinkValue(i,E.LinkProperty.Headloss),status:model.getLinkValue(i,E.LinkProperty.Status)});
+    model.close();
+
+    AquaV4.inpModel={coords,links:parsedLinks};
+    AquaV4.baseline={nodes,links,scenario:{type:'none'},source:'gis'};
+    AquaV4.scenario=null;
+    av4RenderHyd(AquaV4.baseline);
+
+    const disconnected=graph.components.length-1;
+    const note=document.createElement('div');note.className='result-note';
+    note.innerHTML='<b>GIS model assumptions:</b> largest connected component only; source head '+sourceHead.toFixed(1)+' m; elevation defaults to 0 m; demand '+demand.toFixed(2)+' L/s per junction; Hazen-Williams roughness inferred from pipe material. '+(disconnected>0?disconnected+' smaller disconnected component(s) excluded.':'');
+    $('hydraulicResults').appendChild(note);
+    addAi('Built and solved an EPANET model directly from GIS: <b>'+nodes.length+' nodes</b> and <b>'+links.length+' pipes</b>.');
+  }catch(e){
+    console.error(e);
+    $('hydraulicResults').innerHTML='<div class="result-note"><b>GIS hydraulic model failed:</b> '+av4Esc(e.message)+'</div>';
+  }
+}
+window.addEventListener('load',function(){
+  if($('buildRunGisHydraulics'))$('buildRunGisHydraulics').onclick=av4RunGisModel;
+});
