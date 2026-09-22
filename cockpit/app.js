@@ -3,7 +3,29 @@ const state={projects:[],active:null,map:null,networkLayer:null,telemetryLayer:n
 const assetKinds={pipe:['pipe','eupipe','main','waterline'],meter:['meter','eumeter','flowmeter'],valve:['valve','gate','prv'],hydrant:['hydrant'],dma:['regionnet','dma','zone','district']};
 const colors={pipe:'#5c8da9',meter:'#ffc65c',valve:'#aa82ff',hydrant:'#ff7f6d',dma:'#36a3ff',other:'#72879a'};
 function kindFor(name=''){const n=name.toLowerCase();for(const[k,terms]of Object.entries(assetKinds))if(terms.some(t=>n.includes(t)))return k;return'other'}
-function initMap(){state.map=L.map('map',{zoomControl:true,preferCanvas:true}).setView([1.35,103.82],12);L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:20,attribution:'&copy; OpenStreetMap contributors &copy; CARTO'}).addTo(state.map);state.networkLayer=L.layerGroup().addTo(state.map);state.telemetryLayer=L.layerGroup().addTo(state.map);state.analysisLayer=L.layerGroup().addTo(state.map)}
+function initMap(){
+  state.map=L.map('map',{zoomControl:true,preferCanvas:true}).setView([1.35,103.82],12);
+  const primary=L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{
+    subdomains:'abc',
+    maxZoom:20,
+    attribution:'&copy; OpenStreetMap contributors, Tiles style by HOT'
+  });
+  const fallback=L.tileLayer('https://tile.openstreetmap.de/{z}/{x}/{y}.png',{
+    maxZoom:19,
+    attribution:'&copy; OpenStreetMap contributors'
+  });
+  let switched=false;
+  primary.on('tileerror',function(){
+    if(switched)return;
+    switched=true;
+    try{state.map.removeLayer(primary)}catch(e){}
+    fallback.addTo(state.map);
+  });
+  primary.addTo(state.map);
+  state.networkLayer=L.layerGroup().addTo(state.map);
+  state.telemetryLayer=L.layerGroup().addTo(state.map);
+  state.analysisLayer=L.layerGroup().addTo(state.map);
+}
 function openModal(){ $('projectModal').classList.remove('hidden'); }
 function closeModal(){ $('projectModal').classList.add('hidden'); }
 function escapeHtml(v){return String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
