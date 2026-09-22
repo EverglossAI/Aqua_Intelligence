@@ -33,6 +33,12 @@
         <select id="projectSelect"><option value="">Select project…</option></select>
         <button id="newProjectBtn" class="ghost">＋ New Project</button>
         <button id="demoProjectBtn" class="ghost">Load Demo</button>
+        <select id="activeCrs" class="crs-select" title="Active project source projection">
+          <option value="EPSG:3826">TWD97 / TM2 121</option>
+          <option value="EPSG:3825">TWD97 / TM2 119</option>
+          <option value="EPSG:4326">WGS84</option>
+        </select>
+        <button id="applyCrsBtn" class="ghost">Apply CRS</button>
         <button id="importTelemetryBtn" class="ghost">Import telemetry</button>
         <input id="telemetryInput" type="file" accept=".csv,.json" hidden>
       </div>
