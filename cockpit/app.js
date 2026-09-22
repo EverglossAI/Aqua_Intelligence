@@ -142,3 +142,61 @@ window.addEventListener('load',function(){
   if($('runDmaPlanner'))$('runDmaPlanner').onclick=function(){var r=V23.dma(true);addAi(r.length?'Validated '+r.length+' DMA/region feature(s) against pipes, valves and meters.':'No DMA polygon layer is available for validation.')};
   setTimeout(V23restore,150);
 });
+
+function createDemoProject(){
+  const baseLat=1.3425,baseLng=103.7050;
+  const mkLine=(id,coords,material,size,length)=>({type:'Feature',properties:{ID:id,MATERIAL:material,PIPE_SIZE:size,LENGTH:length},geometry:{type:'LineString',coordinates:coords.map(c=>[c[1],c[0]])}});
+  const pipes=[
+    mkLine('P-101',[[baseLat,baseLng],[baseLat+.002,baseLng+.003]],'DIP',150,420),
+    mkLine('P-102',[[baseLat+.002,baseLng+.003],[baseLat+.004,baseLng+.006]],'PVC',100,390),
+    mkLine('P-103',[[baseLat+.002,baseLng+.003],[baseLat+.003,baseLng-.001]],'DIP',200,360),
+    mkLine('P-104',[[baseLat+.004,baseLng+.006],[baseLat+.006,baseLng+.008]],'HDPE',100,310),
+    mkLine('P-105',[[baseLat+.003,baseLng-.001],[baseLat+.006,baseLng-.002]],'CI',100,350)
+  ];
+  const valves=[
+    {type:'Feature',properties:{ID:'V-01'},geometry:{type:'Point',coordinates:[baseLng+.003,baseLat+.002]}},
+    {type:'Feature',properties:{ID:'V-02'},geometry:{type:'Point',coordinates:[baseLng+.006,baseLat+.004]}},
+    {type:'Feature',properties:{ID:'V-03'},geometry:{type:'Point',coordinates:[baseLng-.001,baseLat+.003]}}
+  ];
+  const meters=[
+    {type:'Feature',properties:{ID:'FM-01',TYPE:'flowmeter'},geometry:{type:'Point',coordinates:[baseLng,baseLat]}},
+    {type:'Feature',properties:{ID:'M-01'},geometry:{type:'Point',coordinates:[baseLng+.008,baseLat+.006]}}
+  ];
+  const dmaPoly={type:'Feature',properties:{ID:'DMA-DEMO',NAME:'Demo DMA'},geometry:{type:'Polygon',coordinates:[[
+    [baseLng-.003,baseLat-.001],[baseLng+.010,baseLat-.001],[baseLng+.010,baseLat+.008],[baseLng-.003,baseLat+.008],[baseLng-.003,baseLat-.001]
+  ]]}};
+  const p={
+    id:'demo_nrw_project',
+    name:'Demo NRW Network',
+    utility:'Aqua Intelligence Demo',
+    source:'Built-in demo',
+    layers:[
+      {name:'pipe',kind:'pipe',geojson:{type:'FeatureCollection',features:pipes}},
+      {name:'valve',kind:'valve',geojson:{type:'FeatureCollection',features:valves}},
+      {name:'meter',kind:'meter',geojson:{type:'FeatureCollection',features:meters}},
+      {name:'regionnet',kind:'dma',geojson:{type:'FeatureCollection',features:[dmaPoly]}}
+    ],
+    telemetry:[
+      {_id:'F-01',type:'flow',lat:baseLat,lng:baseLng,flow:12.8,mnf:4.2,volume:1106},
+      {_id:'P-01',type:'pressure',lat:baseLat+.004,lng:baseLng+.006,pressure:51.2},
+      {_id:'A-01',type:'acoustic',lat:baseLat+.003,lng:baseLng-.001,noise:0.78},
+      {_id:'MTR-01',type:'meter',consumption:790}
+    ],
+    created:new Date().toISOString(),
+    analyses:{}
+  };
+  if(!state.projects.some(x=>x.id===p.id))state.projects.push(p);
+  if(!Array.from($('projectSelect').options).some(o=>o.value===p.id)){
+    const o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('projectSelect').appendChild(o);
+  }
+  state.active=p;$('projectSelect').value=p.id;
+  if(window.V23&&V23.topology)p.topology=V23.topology(false);
+  renderProject();renderTelemetry();
+  if(window.V23persist)V23persist();
+  addAi('Loaded the built-in <b>Demo NRW Network</b>. You can test topology, DMA, water balance, leak fusion, hydrophone planning, PRV and air-valve workflows immediately.');
+}
+
+window.addEventListener('load',function(){
+  if($('demoProjectBtn'))$('demoProjectBtn').onclick=createDemoProject;
+  if($('emptyDemoProject'))$('emptyDemoProject').onclick=createDemoProject;
+});
