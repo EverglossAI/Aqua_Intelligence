@@ -32,7 +32,8 @@
       <div class="top-actions">
         <select id="projectSelect"><option value="">Select project…</option></select>
         <button id="newProjectBtn" class="ghost">＋ New Project</button>
-        <button id="demoProjectBtn" class="ghost">Load Demo</button>
+        <button id="demoProjectBtn" class="ghost">Load Demo Data</button>
+        <input id="demoBundleInput" type="file" accept=".json,application/json" hidden>
         <select id="activeCrs" class="crs-select" title="Active project source projection">
           <option value="EPSG:3826">TWD97 / TM2 121</option>
           <option value="EPSG:3825">TWD97 / TM2 119</option>
@@ -62,7 +63,7 @@
           <b>Open a utility network</b>
           <p>Create a project and import a zipped shapefile package. Aqua will classify pipes, meters, valves, hydrants and DMA/region layers.</p>
           <button class="primary" id="emptyNewProject">Create project</button>
-          <button class="secondary demo-btn" id="emptyDemoProject">Load demo NRW network</button>
+          <button class="secondary demo-btn" id="emptyDemoProject">Load demo data bundle</button>
         </div>
         <div id="projectTree" class="hidden">
           <div class="tree-group"><button class="tree-title" data-filter="all">▾ Network <span id="assetTotal">0</span></button></div>
