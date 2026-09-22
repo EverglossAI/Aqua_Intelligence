@@ -476,3 +476,58 @@ window.addEventListener('load',function(){
   if($('projectSelect'))$('projectSelect').addEventListener('change',function(){setTimeout(aquaSyncCrsUi,50)});
   document.body.dataset.workspace=(location.hash||'#operations').replace('#','');
 });
+
+async function aquaLoadDemoBundle(file){
+  try{
+    const data=JSON.parse(await file.text());
+    if(!data||!Array.isArray(data.layers))throw new Error('Invalid Aqua demo data bundle.');
+    const project={
+      id:'demo_data',
+      name:'demo data',
+      utility:'Taiwan Demo Networks',
+      source:file.name,
+      sourceCrs:'MIXED',
+      reprojected:true,
+      layers:data.layers,
+      telemetry:[],
+      created:new Date().toISOString(),
+      analyses:{},
+      datasets:data.datasets||[]
+    };
+    const existing=state.projects.findIndex(p=>p.id===project.id);
+    if(existing>=0)state.projects[existing]=project;else state.projects.push(project);
+
+    let opt=Array.from($('projectSelect').options).find(o=>o.value===project.id);
+    if(!opt){opt=document.createElement('option');opt.value=project.id;$('projectSelect').appendChild(opt)}
+    opt.textContent='demo data';
+
+    state.active=project;
+    $('projectSelect').value=project.id;
+    renderProject();
+    renderTelemetry();
+    if(window.V23&&V23.topology){
+      try{project.topology=V23.topology(false)}catch(e){console.warn(e)}
+    }
+    if(window.V23persist)await V23persist();
+
+    if($('activeCrs')){
+      const mixedOpt=Array.from($('activeCrs').options).find(o=>o.value==='MIXED');
+      if(!mixedOpt){
+        const o=document.createElement('option');o.value='MIXED';o.textContent='Mixed source CRS · normalized to WGS84';$('activeCrs').prepend(o);
+      }
+      $('activeCrs').value='MIXED';
+    }
+
+    const ds=(data.datasets||[]).map(d=>d.name).join(', ');
+    addAi('Loaded <b>demo data</b> with '+data.layers.length+' GIS layers across <b>'+escapeHtml(ds||'the supplied Taiwan datasets')+'</b>. All display geometry is normalized to WGS84; original source CRS metadata is retained per dataset.');
+  }catch(e){
+    console.error(e);
+    alert('Could not load demo data bundle: '+e.message);
+  }
+}
+
+window.addEventListener('load',function(){
+  if($('demoProjectBtn'))$('demoProjectBtn').onclick=function(){$('demoBundleInput').click()};
+  if($('emptyDemoProject'))$('emptyDemoProject').onclick=function(){$('demoBundleInput').click()};
+  if($('demoBundleInput'))$('demoBundleInput').onchange=function(e){if(e.target.files[0])aquaLoadDemoBundle(e.target.files[0])};
+});
