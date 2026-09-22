@@ -26,7 +26,7 @@
   <main class="workspace">
     <header class="topbar">
       <div>
-        <div class="eyebrow">NRW DECISION COCKPIT · V2 NETWORK + V3 ENGINEERING</div>
+        <div class="eyebrow">AQUA INTELLIGENCE</div>
         <h1 id="projectTitle">No project open</h1>
       </div>
       <div class="top-actions">
@@ -128,7 +128,7 @@
           <textarea id="prompt" rows="2" placeholder="Ask in normal engineering language…"></textarea>
           <button id="askBtn" class="primary compact">Ask</button>
         </div>
-        <div class="copilot-note">Aqua separates deterministic calculations from language generation. PRV/air-valve outputs are preliminary engineering recommendations and require design verification.</div>
+        <div class="copilot-note">Engineering outputs show assumptions and require design verification.</div>
       </aside>
     </section>
 
@@ -159,20 +159,29 @@
     </section>
     <section class="advanced-grid">
       <article class="panel hydraulic-workbench" id="hydraulicsWorkbench">
-        <div class="panel-head"><div><small>V4 HYDRAULIC SIMULATION</small><h2>EPANET Hydraulic Planning</h2></div><span class="brain">OWA-EPANET</span></div>
+        <div class="panel-head"><div><small>HYDRAULICS</small><h2>EPANET Planning</h2></div><span class="brain">OWA-EPANET</span></div>
         <div class="workbench-body">
+          <div class="hyd-primary">
+            <div>
+              <b>Build directly from GIS</b>
+              <span>Aqua converts the active pipe network into an EPANET model.</span>
+            </div>
+            <label>Source head (m)<input id="gisSourceHead" type="number" step="1" value="55"></label>
+            <label>Demand / node (L/s)<input id="gisDemand" type="number" step="0.01" value="0.05"></label>
+            <button id="buildRunGisHydraulics" class="primary">Build & Run</button>
+          </div>
           <div class="workbench-controls">
-            <label>EPANET model (.inp)<input id="epanetInp" type="file" accept=".inp,text/plain"></label>
-            <button id="runHydraulics" class="primary">Run baseline hydraulics</button>
-            <label>Map result<select id="hydraulicMetric"><option value="pressure">Node pressure</option><option value="flow">Pipe flow</option><option value="velocity">Pipe velocity</option><option value="headloss">Headloss</option></select></label>
+            <label>Result<select id="hydraulicMetric"><option value="pressure">Pressure</option><option value="flow">Flow</option><option value="velocity">Velocity</option><option value="headloss">Headloss</option></select></label>
+            <label class="advanced-inp">Optional .inp<input id="epanetInp" type="file" accept=".inp,text/plain"></label>
+            <button id="runHydraulics" class="secondary advanced-inp">Run .inp</button>
           </div>
           <div class="scenario-grid">
-            <label>Scenario<select id="hydScenarioType"><option value="none">Baseline only</option><option value="close">Close link / valve</option><option value="prv">PRV setpoint</option><option value="leak">Leak emitter</option><option value="demand">Demand multiplier</option></select></label>
-            <label>Target ID<input id="hydTargetId" placeholder="e.g. V12 or J104"></label>
-            <label>Value<input id="hydScenarioValue" type="number" step="0.1" placeholder="e.g. 30"></label>
-            <button id="runScenario" class="secondary">Run what-if scenario</button>
+            <label>What-if<select id="hydScenarioType"><option value="none">Baseline</option><option value="close">Close link</option><option value="prv">PRV setpoint</option><option value="leak">Leak emitter</option><option value="demand">Demand multiplier</option></select></label>
+            <label>Target<input id="hydTargetId" placeholder="Link / node ID"></label>
+            <label>Value<input id="hydScenarioValue" type="number" step="0.1"></label>
+            <button id="runScenario" class="secondary">Run Scenario</button>
           </div>
-          <div id="hydraulicResults" class="workbench-results"><div class="empty-row">Import an EPANET .inp model to run the real hydraulic solver. GIS-to-EPANET model construction remains guarded by model-readiness checks.</div></div>
+          <div id="hydraulicResults" class="workbench-results"><div class="empty-row">Open a GIS project, then Build & Run. Aqua uses the open-source EPANET engine locally.</div></div>
         </div>
       </article>
 
