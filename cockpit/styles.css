@@ -31,3 +31,52 @@
 .workspace-focus{animation:aquaFocusPulse 1.1s ease-out}
 @keyframes aquaFocusPulse{0%{box-shadow:0 0 0 0 rgba(73,214,223,.45)}100%{box-shadow:0 0 0 18px rgba(73,214,223,0)}}
 .demo-btn{margin-top:8px}
+
+/* True workspace routing */
+body[data-workspace="operations"] .analysis-grid,
+body[data-workspace="operations"] .advanced-grid{display:none}
+
+body[data-workspace="nrw"] .cockpit,
+body[data-workspace="nrw"] .advanced-grid{display:none}
+body[data-workspace="nrw"] .analysis-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr)}
+body[data-workspace="nrw"] .analysis-grid .engineering,
+body[data-workspace="nrw"] .analysis-grid .data-health{display:none}
+
+body[data-workspace="dma"] .advanced-grid{display:none}
+body[data-workspace="dma"] .analysis-grid .engineering,
+body[data-workspace="dma"] .analysis-grid .data-health{display:none}
+
+body[data-workspace="pressure"] .cockpit,
+body[data-workspace="pressure"] .analysis-grid{display:none}
+body[data-workspace="pressure"] .advanced-grid{display:block;padding-top:10px}
+body[data-workspace="pressure"] .acoustic-workbench{display:none}
+body[data-workspace="pressure"] .hydraulic-workbench{display:block}
+
+body[data-workspace="acoustic"] .cockpit,
+body[data-workspace="acoustic"] .analysis-grid{display:none}
+body[data-workspace="acoustic"] .advanced-grid{display:block;padding-top:10px}
+body[data-workspace="acoustic"] .hydraulic-workbench{display:none}
+body[data-workspace="acoustic"] .acoustic-workbench{display:block}
+
+body[data-workspace="hydraulics"] .cockpit,
+body[data-workspace="hydraulics"] .analysis-grid{display:none}
+body[data-workspace="hydraulics"] .advanced-grid{display:block;padding-top:10px}
+body[data-workspace="hydraulics"] .acoustic-workbench{display:none}
+body[data-workspace="hydraulics"] .hydraulic-workbench{display:block}
+
+body[data-workspace="assets"] .analysis-grid,
+body[data-workspace="assets"] .advanced-grid{display:none}
+
+body[data-workspace="planning"] .cockpit,
+body[data-workspace="planning"] .analysis-grid{display:none}
+body[data-workspace="planning"] .advanced-grid{display:block;padding-top:10px}
+body[data-workspace="planning"] .hydraulic-workbench{display:none}
+body[data-workspace="planning"] .acoustic-workbench{display:block}
+
+body[data-workspace="hydraulics"] .hydraulic-workbench,
+body[data-workspace="pressure"] .hydraulic-workbench,
+body[data-workspace="acoustic"] .acoustic-workbench,
+body[data-workspace="planning"] .acoustic-workbench{min-height:calc(100vh - 170px)}
+
+.crs-select{background:#0e1c29;border:1px solid var(--line);color:#dbe8f2;padding:8px 10px;border-radius:6px;max-width:190px}
+.top-actions{flex-wrap:wrap}
