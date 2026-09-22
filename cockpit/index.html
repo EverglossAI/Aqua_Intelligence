@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Aqua Intelligence — NRW Cockpit V3</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css">
   <link rel="stylesheet" href="./styles.css">
 </head>
 <body>
@@ -31,6 +32,7 @@
       <div class="top-actions">
         <select id="projectSelect"><option value="">Select project…</option></select>
         <button id="newProjectBtn" class="ghost">＋ New Project</button>
+        <button id="demoProjectBtn" class="ghost">Load Demo</button>
         <button id="importTelemetryBtn" class="ghost">Import telemetry</button>
         <input id="telemetryInput" type="file" accept=".csv,.json" hidden>
       </div>
@@ -54,6 +56,7 @@
           <b>Open a utility network</b>
           <p>Create a project and import a zipped shapefile package. Aqua will classify pipes, meters, valves, hydrants and DMA/region layers.</p>
           <button class="primary" id="emptyNewProject">Create project</button>
+          <button class="secondary demo-btn" id="emptyDemoProject">Load demo NRW network</button>
         </div>
         <div id="projectTree" class="hidden">
           <div class="tree-group"><button class="tree-title" data-filter="all">▾ Network <span id="assetTotal">0</span></button></div>
@@ -201,6 +204,8 @@
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
 <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
 <script src="./app.js"></script>
 <script src="./v4.js"></script>
