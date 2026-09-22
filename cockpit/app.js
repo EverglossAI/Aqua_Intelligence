@@ -83,3 +83,62 @@ window.addEventListener('load',function(){
   if($('runAirAdvisor'))$('runAirAdvisor').onclick=function(){var r=V23.air(true);addAi('Screened '+r.length+' air-valve candidates.')};
   if($('clearAnalysis'))$('clearAnalysis').onclick=function(){V23.clear();$('analysisOutput').innerHTML='<div class="empty-row">Analysis overlay cleared.</div>'};
 });
+
+/* V2 project persistence + DMA validation */
+function V23pointInPolygon(point,feature){
+  var g=feature&&feature.geometry;if(!g||['Polygon','MultiPolygon'].indexOf(g.type)<0)return false;
+  var polys=g.type==='Polygon'?[g.coordinates]:g.coordinates,x=point[1],y=point[0];
+  function insideRing(ring){var inside=false;for(var i=0,j=ring.length-1;i<ring.length;j=i++){var xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];var hit=((yi>y)!=(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi+1e-12)+xi);if(hit)inside=!inside}return inside}
+  return polys.some(function(poly){return poly[0]&&insideRing(poly[0])})
+}
+V23.dma=function(show){
+  if(!state.active)return[];
+  var dmas=state.active.layers.filter(function(l){return l.kind==='dma'}).flatMap(function(l){return l.geojson.features.map(function(f,i){return{feature:f,layer:l,index:i}})}),
+      valves=this.points('valve'),meters=this.points('meter'),pipes=this.pipes();
+  if(!dmas.length){
+    var t=state.active.topology||this.topology(false);
+    if(show!==false)$('analysisOutput').innerHTML='<div class="result-note"><b>No recognized DMA polygon/region layer.</b> Network graph has '+t.components+' component(s), '+valves.length+' valves and '+meters.length+' mapped meters. Aqua will not invent DMA boundaries without boundary geometry or isolation/meter rules.</div>';
+    return[];
+  }
+  var out=dmas.map(function(d,i){
+    var pk=0,km=0,vk=0,mk=0;
+    pipes.forEach(function(p){var m=V23.mid(p.feature);if(m&&V23pointInPolygon(m,d.feature)){pk++;km+=V23.len(p.feature)/1000}});
+    valves.forEach(function(v){if(V23pointInPolygon(v.coord,d.feature))vk++});
+    meters.forEach(function(m){if(V23pointInPolygon(m.coord,d.feature))mk++});
+    var id=String(V23.val(V23.props(d.feature),['DMA','NAME','ID','REGION','ZONE','OBJECTID'])||('DMA '+(i+1)));
+    return{id:id,pipes:pk,km:km,valves:vk,meters:mk,score:Math.min(100,30+(mk?25:0)+(vk?20:0)+(pk>10?15:0)+(km>1?10:0))}
+  }).sort(function(a,b){return b.score-a.score});
+  state.active.analyses=state.active.analyses||{};state.active.analyses.dma=out;
+  if(show!==false)$('analysisOutput').innerHTML='<div class="rank-list">'+out.map(function(r){return'<div><b>'+escapeHtml(r.id)+'</b><span>'+r.km.toFixed(1)+' km · '+r.pipes+' pipes · '+r.valves+' valves · '+r.meters+' meters · readiness '+Math.round(r.score)+'</span></div>'}).join('')+'</div><div class="result-note">DMA readiness is a GIS screening result. Boundary closure, valve status, flow direction and meter role still require validation before the zone is treated as hydraulically closed.</div>';
+  return out
+};
+
+async function V23db(){
+  return new Promise(function(resolve,reject){
+    var req=indexedDB.open('AquaIntelligenceDB',1);
+    req.onupgradeneeded=function(){var d=req.result;if(!d.objectStoreNames.contains('projects'))d.createObjectStore('projects',{keyPath:'id'})};
+    req.onsuccess=function(){resolve(req.result)};req.onerror=function(){reject(req.error)}
+  })
+}
+async function V23persist(){
+  if(!state.active)return;
+  try{var d=await V23db();await new Promise(function(resolve,reject){var tx=d.transaction('projects','readwrite');tx.objectStore('projects').put(state.active);tx.oncomplete=resolve;tx.onerror=function(){reject(tx.error)}})}catch(e){console.warn('Aqua project persistence unavailable',e)}
+}
+async function V23restore(){
+  try{
+    var d=await V23db(),projects=await new Promise(function(resolve,reject){var req=d.transaction('projects','readonly').objectStore('projects').getAll();req.onsuccess=function(){resolve(req.result||[])};req.onerror=function(){reject(req.error)}});
+    if(!projects.length)return;
+    state.projects=projects;
+    projects.forEach(function(p){if(!Array.from($('projectSelect').options).some(function(o){return o.value===p.id})){var o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('projectSelect').appendChild(o)}});
+    if(!state.active){state.active=projects[0];$('projectSelect').value=state.active.id;renderProject();renderTelemetry();addAi('Restored <b>'+escapeHtml(state.active.name)+'</b> from the local project database.')}
+  }catch(e){console.warn('Could not restore Aqua projects',e)}
+}
+var V23oldCreate=createProject;
+createProject=async function(){await V23oldCreate();if(state.active){if(!state.active.topology)state.active.topology=V23.topology(false);await V23persist()}};
+var V23oldImport=importTelemetry;
+importTelemetry=async function(file){await V23oldImport(file);await V23persist()};
+
+window.addEventListener('load',function(){
+  if($('runDmaPlanner'))$('runDmaPlanner').onclick=function(){var r=V23.dma(true);addAi(r.length?'Validated '+r.length+' DMA/region feature(s) against pipes, valves and meters.':'No DMA polygon layer is available for validation.')};
+  setTimeout(V23restore,150);
+});
