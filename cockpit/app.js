@@ -281,3 +281,97 @@ window.addEventListener('load',function(){
   if($('demoProjectBtn'))$('demoProjectBtn').onclick=createDemoProject;
   if($('emptyDemoProject'))$('emptyDemoProject').onclick=createDemoProject;
 });
+
+/* Left workspace navigation */
+function aquaSetRailActive(view){
+  document.querySelectorAll('.nav[data-view]').forEach(function(b){
+    b.classList.toggle('active',b.dataset.view===view);
+  });
+}
+function aquaFocus(el){
+  if(!el)return;
+  el.classList.remove('workspace-focus');
+  void el.offsetWidth;
+  el.classList.add('workspace-focus');
+  el.scrollIntoView({behavior:'smooth',block:'start'});
+  setTimeout(function(){if(state.map)state.map.invalidateSize()},350);
+}
+function aquaSetMapMode(mode){
+  var btn=document.querySelector('[data-map-mode="'+mode+'"]');
+  if(btn){
+    document.querySelectorAll('[data-map-mode]').forEach(function(x){x.classList.remove('active')});
+    btn.classList.add('active');
+    state.mapMode=mode;
+  }
+}
+function aquaNavigate(view){
+  aquaSetRailActive(view);
+  history.replaceState(null,'','#'+view);
+
+  if(view==='operations'){
+    aquaSetMapMode('inspect');
+    aquaFocus(document.querySelector('.cockpit'));
+    return;
+  }
+
+  if(view==='nrw'){
+    aquaFocus(document.querySelector('.analysis-grid'));
+    if(state.active&&window.V23){
+      try{
+        var w=V23.water(true);
+        if(!w.complete){
+          $('analysisOutput').innerHTML='<div class="result-note"><b>NRW workspace</b><br>Import bulk/inlet flow and authorized-consumption data to calculate a defensible water balance. You can still run leak-evidence fusion from the Network Intelligence panel.</div>';
+        }
+      }catch(e){}
+    }else if($('analysisOutput')){
+      $('analysisOutput').innerHTML='<div class="result-note"><b>NRW workspace</b><br>Open a project to calculate water balance, real/apparent losses and fused leak priority.</div>';
+    }
+    return;
+  }
+
+  if(view==='dma'){
+    aquaSetMapMode('dma');
+    aquaFocus(document.querySelector('.cockpit'));
+    if(state.active&&window.V23&&V23.dma){
+      try{V23.dma(true)}catch(e){}
+    }
+    return;
+  }
+
+  if(view==='pressure'){
+    aquaSetMapMode('prv');
+    if($('hydraulicMetric'))$('hydraulicMetric').value='pressure';
+    aquaFocus($('hydraulicsWorkbench'));
+    return;
+  }
+
+  if(view==='acoustic'){
+    aquaSetMapMode('sensor');
+    aquaFocus($('acousticWorkbench'));
+    return;
+  }
+
+  if(view==='hydraulics'){
+    aquaFocus($('hydraulicsWorkbench'));
+    return;
+  }
+
+  if(view==='assets'){
+    aquaSetMapMode('inspect');
+    aquaFocus(document.querySelector('.cockpit'));
+    return;
+  }
+
+  if(view==='planning'){
+    aquaSetMapMode('sensor');
+    aquaFocus($('acousticWorkbench'));
+    return;
+  }
+}
+window.addEventListener('load',function(){
+  document.querySelectorAll('.nav[data-view]').forEach(function(b){
+    b.onclick=function(){aquaNavigate(b.dataset.view)};
+  });
+  var initial=(location.hash||'#operations').replace('#','');
+  if(document.querySelector('.nav[data-view="'+initial+'"]'))aquaSetRailActive(initial);
+});
