@@ -1,34 +1,59 @@
-# Aqua Intelligence — NRW Cockpit V1
+# Aqua Intelligence — NRW Cockpit V3
 
-This branch is the architectural reset of Aqua Intelligence from a browser-style NRW portal into a desktop-first NRW decision cockpit.
+Aqua Intelligence is being rebuilt from a browser-style NRW portal into a desktop-first NRW decision cockpit.
 
 ## Product model
 Utility → Project → Network → DMA → Asset → Sensor/Meter → Time Series → Event → Investigation → Leak → Repair.
 
-## Implemented in this first cockpit build
-- New-project workflow with ZIP SHP / GeoJSON import.
+## V1 foundation
+- New project workflow with ZIP SHP / GeoJSON import.
 - Layer-aware GIS classification for pipe/eupipe, meter/eumeter, valve, hydrant and regionnet/DMA layers.
-- Network navigator and map workspace.
-- Telemetry import for CSV/JSON with flow, pressure, meter and acoustic classification.
-- Data-confidence and data-health indicators.
-- Network event engine for missing evidence / readiness signals.
-- DMA planning, water-balance and acoustic-deployment entry points.
-- PRV / air-valve engineering advisor entry points.
-- Aqua Copilot UI designed for a real LLM tool-calling endpoint at `/api/copilot`.
-- Explicit non-LLM fallback that reports evidence instead of pretending keyword rules are neural reasoning.
+- Network navigator and engineering map canvas.
+- CSV/JSON telemetry import for flow, customer meter, pressure and acoustic data.
+- Data health / confidence and event panels.
+
+## V2 — Network Intelligence
+Implemented on `feature/nrw-cockpit`:
+- Pipe-topology graph built from actual SHP geometry with endpoint snapping.
+- Connectivity diagnostics: nodes, pipe edges, connected components, endpoints and junctions.
+- DMA/region validation against contained pipes, valves and meters.
+- Water-balance engine using imported system-input and authorized-consumption evidence.
+- Flow + pressure + acoustic + asset-risk fusion for leak survey prioritisation.
+- 20-hydrophone deployment planner using network risk, acoustic suitability, accessible assets and spacing.
+- Browser-local project persistence using IndexedDB.
+- Local natural-language tool routing for topology, NRW, leak fusion, sensor deployment, PRV and air-valve requests.
+
+## V3 — Engineering Intelligence
+- Network-wide preliminary PRV candidate screening using valve locations plus nearby pressure/flow evidence.
+- Air-valve candidate detection from pipe Z/elevation high points when 3D GIS geometry is available.
+- Explicit missing-data warnings when hydraulic profile or telemetry is insufficient.
+- Engineering guardrails: outputs are preliminary recommendations, not final design approval.
+
+## Engineering inputs still required for final PRV sizing
+- Upstream/downstream pressure envelope.
+- Minimum, average, peak and fire flow.
+- Valve authority / required pressure drop.
+- Cavitation check.
+- Manufacturer Cv/Kv and valve operating limits.
+
+## Engineering inputs still required for final air-valve sizing
+- Longitudinal/elevation profile.
+- Filling and draining rates.
+- Normal operating flow.
+- Allowable differential pressure.
+- Vacuum / transient criteria.
+- Manufacturer air-flow curves.
 
 ## Reference GIS
-The importer is designed against the uploaded Lambay Island package, which contains layers including `pipe`, `eupipe`, `meter`, `eumeter`, `valve`, `hydrant`, and `regionnet`, plus the uploaded Keelung SHP package.
+The importer is designed against the uploaded Lambay Island package, including `pipe`, `eupipe`, `meter`, `eumeter`, `valve`, `hydrant`, and `regionnet`, plus the Keelung SHP package.
 
 ## Run
-Open `cockpit/index.html` from a static server. The root `index.html` on this branch redirects to the cockpit.
+Use a local static server when possible. The root of `feature/nrw-cockpit` redirects to `cockpit/`.
 
-## Next engineering increments
-1. Project persistence (SQLite/GeoPackage).
-2. Tauri desktop shell.
-3. Network-topology graph and DMA boundary validation.
-4. Time-series store + adapters (CSV, API, MQTT/SCADA).
-5. Deterministic NRW calculation tools.
-6. Hydraulic profile tools for PRV and air-valve sizing.
-7. LLM tool-calling service with auditable evidence references.
-8. Leak/repair feedback loop for risk-model training.
+## Next major work
+1. Proper Tauri desktop packaging.
+2. Unit/time-window mapping UI for telemetry import.
+3. Hydraulic solver integration for pressure-zone and PRV scenarios.
+4. Better network snapping/topology repair tools.
+5. Auditable LLM service with tool-calling and evidence citations.
+6. Leak/repair feedback loop for model calibration.
