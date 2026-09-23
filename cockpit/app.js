@@ -765,3 +765,118 @@ window.addEventListener('load',function(){
   if($('toggleGisControl'))$('toggleGisControl').onclick=function(){const body=$('gisControlBody'),hidden=body.classList.toggle('hidden');this.textContent=hidden?'+':'−'};
   if($('runInitialRisk'))$('runInitialRisk').onclick=function(){const r=aquaInitialRisk(true);addAi(r.length?'Initial network risk complete. Highest pipe score: <b>'+Math.round(r[0].score)+'/100</b> at '+r[0].confidence+'% evidence confidence.':'No pipe data available.')};
 });
+
+/* === Configurable LAN LLM connection === */
+const AquaLLM={
+  load(){
+    try{return JSON.parse(localStorage.getItem('aqua.llm')||'{}')}catch(e){return{}}
+  },
+  save(cfg){localStorage.setItem('aqua.llm',JSON.stringify(cfg))},
+  headers(cfg){
+    const h={'Content-Type':'application/json'};
+    if(cfg.apiKey)h.Authorization='Bearer '+cfg.apiKey;
+    return h;
+  },
+  endpoint(cfg){
+    const b=(cfg.baseUrl||'').replace(/\/$/,'');
+    return b.endsWith('/v1')?b+'/chat/completions':b+'/chat/completions';
+  }
+};
+
+function aquaOpenLlmModal(){
+  const cfg=AquaLLM.load();
+  $('llmBaseUrl').value=cfg.baseUrl||'';
+  $('llmModel').value=cfg.model||'';
+  $('llmApiKey').value=cfg.apiKey||'';
+  $('llmStatus').textContent=cfg.baseUrl&&cfg.model?'Saved configuration':'Not connected';
+  $('llmModal').classList.remove('hidden');
+}
+function aquaCloseLlmModal(){$('llmModal').classList.add('hidden')}
+function aquaSaveLlm(){
+  const cfg={
+    baseUrl:$('llmBaseUrl').value.trim(),
+    model:$('llmModel').value.trim(),
+    apiKey:$('llmApiKey').value.trim()
+  };
+  AquaLLM.save(cfg);
+  $('llmStatus').textContent='Saved';
+  setTimeout(aquaCloseLlmModal,250);
+}
+async function aquaTestLlm(){
+  const cfg={baseUrl:$('llmBaseUrl').value.trim(),model:$('llmModel').value.trim(),apiKey:$('llmApiKey').value.trim()};
+  if(!cfg.baseUrl||!cfg.model){$('llmStatus').textContent='Enter server URL and model name';return}
+  $('llmStatus').textContent='Testing…';
+  try{
+    const res=await fetch(AquaLLM.endpoint(cfg),{
+      method:'POST',
+      headers:AquaLLM.headers(cfg),
+      body:JSON.stringify({
+        model:cfg.model,
+        messages:[{role:'user',content:'Reply only with: AQUA CONNECTED'}],
+        temperature:0,
+        max_tokens:12
+      })
+    });
+    if(!res.ok)throw new Error('HTTP '+res.status+' '+(await res.text()).slice(0,160));
+    const data=await res.json();
+    const reply=data.choices?.[0]?.message?.content||'Connected';
+    $('llmStatus').textContent=reply.trim();
+  }catch(e){
+    $('llmStatus').textContent='Connection failed: '+e.message;
+  }
+}
+function aquaSystemPrompt(){
+  return `You are Aqua Intelligence, an NRW water-network engineering copilot.
+Use the supplied project context and deterministic analysis results.
+Do not invent hydraulic calculations, sensor readings, pipe attributes, or operational facts.
+When evidence is missing, say what is missing.
+For PRV, air-valve and hydraulic recommendations, clearly label them preliminary and require engineering verification.
+Prioritize concise, practical engineering answers.`;
+}
+async function aquaAskConfiguredLlm(q){
+  const cfg=AquaLLM.load();
+  if(!cfg.baseUrl||!cfg.model)throw new Error('No LLM configured');
+  const ctx=contextSnapshot();
+  const res=await fetch(AquaLLM.endpoint(cfg),{
+    method:'POST',
+    headers:AquaLLM.headers(cfg),
+    body:JSON.stringify({
+      model:cfg.model,
+      messages:[
+        {role:'system',content:aquaSystemPrompt()},
+        {role:'user',content:'PROJECT CONTEXT\n'+JSON.stringify(ctx)+'\n\nQUESTION\n'+q}
+      ],
+      temperature:0.2
+    })
+  });
+  if(!res.ok)throw new Error('LLM server returned HTTP '+res.status+' '+(await res.text()).slice(0,180));
+  const data=await res.json();
+  return data.choices?.[0]?.message?.content||'No response returned.';
+}
+
+/* Replace generic Copilot fallback with configured LAN model */
+const aquaPreviousAskCopilot=askCopilot;
+askCopilot=async function(q){
+  addUser(q);
+  if(!state.active){addAi('Open a project first.');return}
+  const local=window.V23route?V23route(q):null;
+  if(local){addAi(local);return}
+  const placeholder=document.createElement('div');
+  placeholder.className='msg ai';
+  placeholder.innerHTML='<b>Aqua</b><p>Thinking…</p>';
+  $('chat').appendChild(placeholder);
+  $('chat').scrollTop=$('chat').scrollHeight;
+  try{
+    const answer=await aquaAskConfiguredLlm(q);
+    placeholder.innerHTML='<b>Aqua</b><p>'+escapeHtml(answer).replace(/\n/g,'<br>')+'</p>';
+  }catch(e){
+    placeholder.innerHTML='<b>Aqua</b><p>LLM unavailable: '+escapeHtml(e.message)+'. Configure the LLM button in the top bar.</p>';
+  }
+};
+
+window.addEventListener('load',function(){
+  if($('llmSettingsBtn'))$('llmSettingsBtn').onclick=aquaOpenLlmModal;
+  if($('closeLlmModal'))$('closeLlmModal').onclick=aquaCloseLlmModal;
+  if($('saveLlmBtn'))$('saveLlmBtn').onclick=aquaSaveLlm;
+  if($('testLlmBtn'))$('testLlmBtn').onclick=aquaTestLlm;
+});
