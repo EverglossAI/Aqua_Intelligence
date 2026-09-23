@@ -137,3 +137,50 @@ body{font-size:14px}
 .gis-actions button{border:1px solid var(--line);background:#102536;color:#dbe8f2;border-radius:5px;padding:6px;font-size:9px;cursor:pointer}
 .important-action{border-color:#c7832f;background:#2b2113;color:#ffd49a}
 .risk-summary{margin-top:7px!important;padding-top:7px;border-top:1px solid var(--line);color:#ffd166!important}
+
+/* Persistent map across all workspaces */
+body[data-workspace] .cockpit{display:grid}
+body[data-workspace="nrw"] .cockpit .left-panel,
+body[data-workspace="nrw"] .cockpit .right-panel,
+body[data-workspace="dma"] .cockpit .left-panel,
+body[data-workspace="dma"] .cockpit .right-panel,
+body[data-workspace="pressure"] .cockpit .left-panel,
+body[data-workspace="pressure"] .cockpit .right-panel,
+body[data-workspace="acoustic"] .cockpit .left-panel,
+body[data-workspace="acoustic"] .cockpit .right-panel,
+body[data-workspace="hydraulics"] .cockpit .left-panel,
+body[data-workspace="hydraulics"] .cockpit .right-panel,
+body[data-workspace="assets"] .cockpit .right-panel,
+body[data-workspace="planning"] .cockpit .left-panel,
+body[data-workspace="planning"] .cockpit .right-panel{display:none}
+
+body[data-workspace="nrw"] .cockpit,
+body[data-workspace="dma"] .cockpit,
+body[data-workspace="pressure"] .cockpit,
+body[data-workspace="acoustic"] .cockpit,
+body[data-workspace="hydraulics"] .cockpit,
+body[data-workspace="planning"] .cockpit{grid-template-columns:1fr;height:52vh;min-height:430px}
+
+body[data-workspace="nrw"] .map-panel,
+body[data-workspace="dma"] .map-panel,
+body[data-workspace="pressure"] .map-panel,
+body[data-workspace="acoustic"] .map-panel,
+body[data-workspace="hydraulics"] .map-panel,
+body[data-workspace="planning"] .map-panel{grid-column:1}
+
+body[data-workspace="nrw"] .analysis-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr)}
+body[data-workspace="dma"] .analysis-grid{display:grid;grid-template-columns:minmax(0,2fr) minmax(300px,1fr)}
+body[data-workspace="pressure"] .analysis-grid{display:none}
+body[data-workspace="acoustic"] .analysis-grid{display:none}
+body[data-workspace="hydraulics"] .analysis-grid{display:none}
+body[data-workspace="planning"] .analysis-grid{display:none}
+
+body[data-workspace="pressure"] .advanced-grid,
+body[data-workspace="acoustic"] .advanced-grid,
+body[data-workspace="hydraulics"] .advanced-grid,
+body[data-workspace="planning"] .advanced-grid{display:block;padding-top:0}
+
+body[data-workspace="pressure"] .acoustic-workbench,
+body[data-workspace="hydraulics"] .acoustic-workbench{display:none}
+body[data-workspace="acoustic"] .hydraulic-workbench,
+body[data-workspace="planning"] .hydraulic-workbench{display:none}
