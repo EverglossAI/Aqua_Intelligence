@@ -82,6 +82,7 @@
           <button class="tree-action" id="runTopology">Build topology graph</button>
           <button class="tree-action" id="runWaterBalance">Calculate water balance</button>
           <button class="tree-action" id="runDmaPlanner">Validate / design DMA</button>
+          <button class="tree-action important-action" id="runInitialRisk">Initial network risk</button>
           <button class="tree-action" id="runFusion">Fuse NRW evidence</button>
           <button class="tree-action" id="runSensorPlanner">Plan 20 hydrophones</button>
 
@@ -100,6 +101,26 @@
           <button data-map-mode="sensor">Hydrophones</button>
           <button data-map-mode="prv">PRV</button>
           <button data-map-mode="air">Air valve</button>
+        </div>
+        <div class="gis-control">
+          <div class="gis-control-head"><b>Map</b><button id="toggleGisControl">−</button></div>
+          <div id="gisControlBody">
+            <div class="gis-row"><span>Layers</span></div>
+            <label><input type="checkbox" data-layer-toggle="pipe" checked> Pipes</label>
+            <label><input type="checkbox" data-layer-toggle="meter"> Meters</label>
+            <label><input type="checkbox" data-layer-toggle="valve"> Valves</label>
+            <label><input type="checkbox" data-layer-toggle="hydrant"> Hydrants</label>
+            <label><input type="checkbox" data-layer-toggle="dma" checked> DMA</label>
+            <label><input type="checkbox" data-layer-toggle="telemetry" checked> Telemetry</label>
+            <label><input type="checkbox" data-layer-toggle="analysis" checked> Analysis</label>
+            <div class="gis-row top-gap"><span>Select</span>
+              <select id="selectionMode"><option value="any">Any</option><option value="point">Points</option><option value="pipe">Pipes</option><option value="dma">DMA</option></select>
+            </div>
+            <div class="gis-actions">
+              <button id="focusSelection">Focus DMA</button>
+              <button id="showAllAssets">Show All</button>
+            </div>
+          </div>
         </div>
         <div class="map-legend">
           <span><i class="pipe"></i>Pipe</span><span><i class="meter"></i>Meter</span><span><i class="valve"></i>Valve</span>
