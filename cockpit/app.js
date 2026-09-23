@@ -531,3 +531,237 @@ window.addEventListener('load',function(){
   if($('emptyDemoProject'))$('emptyDemoProject').onclick=function(){$('demoBundleInput').click()};
   if($('demoBundleInput'))$('demoBundleInput').onchange=function(e){if(e.target.files[0])aquaLoadDemoBundle(e.target.files[0])};
 });
+
+/* === GIS layer controls, selection and initial risk === */
+state.layerVisibility=state.layerVisibility||{pipe:true,meter:false,valve:false,hydrant:false,dma:true,telemetry:true,analysis:true};
+state.kindLayers=state.kindLayers||{};
+state.focusDma=null;
+state.selectionMode='any';
+
+function aquaPointFromFeature(f){
+  const g=f&&f.geometry;if(!g)return null;
+  if(g.type==='Point')return[g.coordinates[1],g.coordinates[0]];
+  if(g.type==='LineString'&&g.coordinates.length){const m=g.coordinates[Math.floor(g.coordinates.length/2)];return[m[1],m[0]]}
+  if(g.type==='MultiLineString'&&g.coordinates[0]?.length){const arr=g.coordinates.flat();const m=arr[Math.floor(arr.length/2)];return[m[1],m[0]]}
+  if(g.type==='Polygon'&&g.coordinates[0]?.length){const r=g.coordinates[0],m=r[Math.floor(r.length/2)];return[m[1],m[0]]}
+  return null;
+}
+function aquaPointInPolygon(point,feature){
+  const g=feature&&feature.geometry;if(!g||!['Polygon','MultiPolygon'].includes(g.type))return false;
+  const polys=g.type==='Polygon'?[g.coordinates]:g.coordinates,x=point[1],y=point[0];
+  function ringInside(ring){let inside=false;for(let i=0,j=ring.length-1;i<ring.length;j=i++){const xi=ring[i][0],yi=ring[i][1],xj=ring[j][0],yj=ring[j][1];const hit=((yi>y)!=(yj>y))&&(x<(xj-xi)*(y-yi)/(yj-yi+1e-12)+xi);if(hit)inside=!inside}return inside}
+  return polys.some(poly=>poly[0]&&ringInside(poly[0]));
+}
+function aquaFeatureInFocus(f,kind){
+  if(!state.focusDma)return true;
+  if(kind==='dma')return f===state.focusDma;
+  const p=aquaPointFromFeature(f);return p?aquaPointInPolygon(p,state.focusDma):false;
+}
+function aquaSelectionAllows(kind){
+  const m=state.selectionMode||'any';
+  if(m==='any')return true;
+  if(m==='point')return['meter','valve','hydrant'].includes(kind);
+  if(m==='pipe')return kind==='pipe';
+  if(m==='dma')return kind==='dma';
+  return true;
+}
+function aquaApplyLayerVisibility(){
+  ['pipe','meter','valve','hydrant','dma'].forEach(kind=>{
+    const grp=state.kindLayers[kind];if(!grp||!state.map)return;
+    const visible=state.layerVisibility[kind]!==false;
+    if(visible&&!state.map.hasLayer(grp))grp.addTo(state.map);
+    if(!visible&&state.map.hasLayer(grp))state.map.removeLayer(grp);
+  });
+  if(state.telemetryLayer&&state.map){
+    if(state.layerVisibility.telemetry&&!state.map.hasLayer(state.telemetryLayer))state.telemetryLayer.addTo(state.map);
+    if(!state.layerVisibility.telemetry&&state.map.hasLayer(state.telemetryLayer))state.map.removeLayer(state.telemetryLayer);
+  }
+  if(state.analysisLayer&&state.map){
+    if(state.layerVisibility.analysis&&!state.map.hasLayer(state.analysisLayer))state.analysisLayer.addTo(state.map);
+    if(!state.layerVisibility.analysis&&state.map.hasLayer(state.analysisLayer))state.map.removeLayer(state.analysisLayer);
+  }
+}
+function aquaBaseStyle(kind){
+  return{color:colors[kind]||colors.other,weight:kind==='pipe'?2.3:kind==='dma'?2:1.5,fillColor:colors[kind]||colors.other,fillOpacity:kind==='dma'?.04:.2,opacity:kind==='pipe'?.72:.9};
+}
+function aquaEnhancedSelect(layer,f,l){
+  if(!aquaSelectionAllows(layer.kind))return;
+  if(state.selected&&state.selected.leaflet&&state.selected.leaflet.setStyle){
+    try{state.selected.leaflet.setStyle(aquaBaseStyle(state.selected.layer.kind))}catch(e){}
+  }
+  state.selected={layer,feature:f,leaflet:l};
+  if(l&&l.setStyle)try{l.setStyle({color:'#ffffff',weight:5,fillOpacity:.35,opacity:1})}catch(e){}
+  const p=f.properties||{};
+  const risk=p.__aquaRisk;
+  const rows=Object.entries(p).filter(([k])=>!k.startsWith('__')).slice(0,7).map(([k,v])=>k+': '+v).join(' · ');
+  $('selectionCard').innerHTML='<small>SELECTION</small><b>'+escapeHtml(layer.name)+' · '+escapeHtml(layer.kind)+'</b><p>'+escapeHtml(rows||'No attributes')+'</p>'+
+    (risk?'<p class="risk-summary"><b>Risk '+Math.round(risk.score)+'/100</b> · '+escapeHtml(risk.reasons.slice(0,3).join(' · '))+'</p>':'');
+}
+selectFeature=aquaEnhancedSelect;
+
+renderProject=function(){
+  const p=state.active;if(!p)return;
+  try{state.networkLayer.clearLayers()}catch(e){}
+  Object.values(state.kindLayers||{}).forEach(grp=>{try{if(state.map.hasLayer(grp))state.map.removeLayer(grp)}catch(e){}});
+  state.kindLayers={pipe:L.layerGroup(),meter:L.layerGroup(),valve:L.layerGroup(),hydrant:L.layerGroup(),dma:L.layerGroup()};
+  let bounds=[];
+  p.layers.forEach(layer=>{
+    const kind=layer.kind;if(!state.kindLayers[kind])return;
+    (layer.geojson?.features||[]).forEach(f=>{
+      if(!aquaFeatureInFocus(f,kind))return;
+      const gj=L.geoJSON(f,{
+        style:()=>aquaBaseStyle(kind),
+        pointToLayer:(feature,ll)=>L.circleMarker(ll,{radius:kind==='meter'?4.5:kind==='valve'?4.5:4,color:colors[kind]||colors.other,fillColor:colors[kind]||colors.other,fillOpacity:.85,weight:1}),
+        onEachFeature:(feature,ll)=>ll.on('click',()=>aquaEnhancedSelect(layer,feature,ll))
+      });
+      gj.eachLayer(ll=>{ll.__aquaFeature=f;ll.__aquaKind=kind;ll.__aquaLayer=layer});
+      gj.addTo(state.kindLayers[kind]);
+      try{const b=gj.getBounds();if(b.isValid())bounds.push(b)}catch(e){}
+    });
+  });
+  Object.values(state.kindLayers).forEach(grp=>grp.addTo(state.map));
+  aquaApplyLayerVisibility();
+  if(bounds.length){let b=bounds[0];for(let i=1;i<bounds.length;i++)b=b.extend(bounds[i]);state.map.fitBounds(b.pad(.04))}
+  updateProjectUI();
+  if(p&&featureCount(p,'pipe')&&!p.analyses?.initialRisk)setTimeout(()=>aquaInitialRisk(false),80);
+};
+
+function aquaFocusSelectedDma(){
+  if(!state.selected||state.selected.layer.kind!=='dma'){alert('Select a DMA polygon first.');return}
+  state.focusDma=state.selected.feature;
+  renderProject();renderTelemetry();
+  addAi('Focused on the selected DMA. Assets outside the DMA are hidden.');
+}
+function aquaShowAllAssets(){
+  state.focusDma=null;state.selected=null;
+  renderProject();renderTelemetry();
+  $('selectionCard').innerHTML='<small>SELECTION</small><b>No asset selected</b><p>Click a network asset to inspect it.</p>';
+}
+function aquaTelemetryInFocus(t){
+  if(!state.focusDma)return true;
+  const lat=Number(t.lat||t.latitude),lng=Number(t.lng||t.lon||t.longitude);
+  return Number.isFinite(lat)&&Number.isFinite(lng)&&aquaPointInPolygon([lat,lng],state.focusDma);
+}
+const aquaOldRenderTelemetry=renderTelemetry;
+renderTelemetry=function(){
+  state.telemetryLayer.clearLayers();if(!state.active)return;
+  state.active.telemetry.forEach(t=>{
+    if(!aquaTelemetryInFocus(t))return;
+    const lat=Number(t.lat||t.latitude),lng=Number(t.lng||t.lon||t.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+    const col=t.type==='pressure'?colors.dma:t.type==='acoustic'?'#5edc9a':colors.meter;
+    L.circleMarker([lat,lng],{radius:5,color:col,fillColor:col,fillOpacity:1}).bindTooltip((t._id||'Telemetry')+' · '+t.type).addTo(state.telemetryLayer);
+  });
+  aquaApplyLayerVisibility();
+};
+
+function aquaAttr(f,names){
+  const p=f?.properties||{},keys=Object.keys(p);
+  for(const n of names){const k=keys.find(x=>x.toLowerCase()===n.toLowerCase());if(k!==undefined&&p[k]!==''&&p[k]!=null)return p[k]}
+  return null;
+}
+function aquaDateYear(v){
+  if(v==null)return null;const s=String(v).trim();
+  const m=s.match(/(19|20)\d{2}/);if(m)return Number(m[0]);
+  const n=Number(v);return Number.isFinite(n)&&n>1900&&n<2100?n:null;
+}
+function aquaNearestTelemetry(coord,type,maxD=1200){
+  let best=null;
+  (state.active?.telemetry||[]).filter(x=>x.type===type).forEach(t=>{
+    const lat=Number(t.lat||t.latitude),lng=Number(t.lng||t.lon||t.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
+    const d=V23&&V23.dist?V23.dist(coord,[lat,lng]):Infinity;
+    if(d<=maxD&&(!best||d<best.d))best={row:t,d};
+  });
+  return best;
+}
+function aquaTelemetryNumber(row,names){
+  if(!row)return null;
+  for(const [k,v] of Object.entries(row)){if(names.some(n=>k.toLowerCase()===n||k.toLowerCase().includes(n))){const x=Number(v);if(Number.isFinite(x))return x}}
+  return null;
+}
+function aquaRiskForPipe(f){
+  const p=f.properties||{},coord=aquaPointFromFeature(f),reasons=[];let score=0,available=0,total=4;
+  const material=String(aquaAttr(f,['pipe_mtr','material','mat','pipe_kind','pipe_type','type'])||'').toUpperCase();
+  if(material){
+    available++;
+    let m=6;
+    if(/CI|CAST|AC|ASBESTOS|GALV|GI/.test(material)){m=25;reasons.push('higher-risk '+material)}
+    else if(/DIP|DI|STEEL|MS/.test(material)){m=14;reasons.push(material+' material')}
+    else if(/PVC|HDPE|PE/.test(material)){m=7;reasons.push(material+' lower failure susceptibility')}
+    else{m=10;reasons.push(material)}
+    score+=m;
+  }
+  const year=aquaDateYear(aquaAttr(f,['install_year','bury_year','year','bury_date','install_date']));
+  if(year){
+    available++;const age=Math.max(0,new Date().getFullYear()-year);
+    let a=age>=50?25:age>=30?19:age>=15?11:5;score+=a;
+    reasons.push(age+' yr pipe');
+  }
+  let pressure=Number(aquaAttr(f,['pressure','press','avg_pressure']));if(!Number.isFinite(pressure))pressure=null;
+  const pt=coord?aquaNearestTelemetry(coord,'pressure',1000):null;
+  const tp=aquaTelemetryNumber(pt?.row,['pressure','avg_pressure','min_pressure','max_pressure']);
+  if(tp!=null)pressure=tp;
+  if(pressure!=null){
+    available++;let ps=pressure>=60?25:pressure>=50?21:pressure>=40?15:pressure>=30?9:5;score+=ps;
+    reasons.push('pressure '+pressure.toFixed(1));
+  }
+  let flow=Number(aquaAttr(f,['flowage','flow','avg_flow']));if(!Number.isFinite(flow))flow=null;
+  const ft=coord?aquaNearestTelemetry(coord,'flow',1400):null;
+  const mnf=aquaTelemetryNumber(ft?.row,['mnf','minimum_night_flow','night_flow']);
+  const tf=aquaTelemetryNumber(ft?.row,['flow','avg_flow','average_flow']);
+  let flowScore=null;
+  if(mnf!=null&&tf!=null&&tf>0){
+    const r=mnf/tf;flowScore=r>=.5?25:r>=.35?20:r>=.2?12:6;reasons.push('MNF '+Math.round(r*100)+'% of flow');
+  }else if(mnf!=null){flowScore=mnf>=10?25:mnf>=5?18:mnf>=2?10:5;reasons.push('MNF '+mnf.toFixed(1))}
+  else if(flow!=null){flowScore=flow>=20?20:flow>=10?14:8;reasons.push('flow '+flow.toFixed(1))}
+  if(flowScore!=null){available++;score+=flowScore}
+  const bursts=Number(aquaAttr(f,['bursts','breaks','failures','repair_count']));
+  if(Number.isFinite(bursts)&&bursts>0){score=Math.min(100,score+Math.min(15,bursts*3));reasons.push(bursts+' prior failures')}
+  const normalized=available?score/(available*25)*100:0;
+  const confidence=Math.round(available/total*100);
+  return{score:Math.max(0,Math.min(100,normalized)),confidence,material:material||'Unknown',year,pressure,flow,mnf,reasons,available};
+}
+function aquaRiskColor(score){return score>=70?'#ff4d5f':score>=50?'#ff9f43':score>=35?'#ffd166':'#45c98a'}
+
+function aquaInitialRisk(showResults=true){
+  if(!state.active||!window.V23)return[];
+  const pipes=V23.pipes(),ranked=[];
+  pipes.forEach((x,i)=>{
+    const r=aquaRiskForPipe(x.feature);
+    x.feature.properties=x.feature.properties||{};
+    x.feature.properties.__aquaRisk=r;
+    ranked.push({id:String(aquaAttr(x.feature,['id','pipe_id','unific_id','gid','objectid'])||('Pipe '+(i+1))),feature:x.feature,layer:x.layer,...r});
+  });
+  ranked.sort((a,b)=>b.score-a.score);
+  state.active.analyses=state.active.analyses||{};
+  state.active.analyses.initialRisk=ranked.slice(0,100).map(x=>({id:x.id,score:x.score,confidence:x.confidence,reasons:x.reasons}));
+  if(window.V23persist)V23persist();
+  if(state.analysisLayer){
+    state.analysisLayer.clearLayers();
+    ranked.slice(0,Math.min(300,ranked.length)).forEach(x=>{
+      const g=x.feature.geometry;if(!g)return;
+      const lines=g.type==='LineString'?[g.coordinates]:g.type==='MultiLineString'?g.coordinates:[];
+      lines.forEach(line=>L.polyline(line.map(c=>[c[1],c[0]]),{color:aquaRiskColor(x.score),weight:x.score>=70?6:x.score>=50?5:4,opacity:.9}).bindTooltip(x.id+' · risk '+Math.round(x.score)+' · confidence '+x.confidence+'%').addTo(state.analysisLayer));
+    });
+    aquaApplyLayerVisibility();
+  }
+  if(showResults&&$('analysisOutput')){
+    const avgConf=ranked.length?Math.round(ranked.slice(0,Math.min(50,ranked.length)).reduce((s,x)=>s+x.confidence,0)/Math.min(50,ranked.length)):0;
+    $('analysisOutput').innerHTML='<div class="metric-cards"><div><span>Pipes assessed</span><b>'+ranked.length+'</b></div><div><span>High risk ≥70</span><b>'+ranked.filter(x=>x.score>=70).length+'</b></div><div><span>Evidence confidence</span><b>'+avgConf+'%</b></div></div>'+
+      '<div class="rank-list">'+ranked.slice(0,12).map((x,i)=>'<div><b>#'+(i+1)+' '+escapeHtml(x.id)+'</b><span>Risk '+Math.round(x.score)+' · Conf '+x.confidence+'% · '+escapeHtml(x.reasons.slice(0,3).join(' · '))+'</span></div>').join('')+'</div>'+
+      '<div class="result-note">Initial risk combines pressure, flow/MNF, pipe material and pipe age when available. Missing evidence lowers confidence rather than being assumed normal. Red indicates investigation priority, not confirmed leakage.</div>';
+  }
+  return ranked;
+}
+
+window.addEventListener('load',function(){
+  document.querySelectorAll('[data-layer-toggle]').forEach(cb=>{
+    const kind=cb.dataset.layerToggle;
+    cb.checked=state.layerVisibility[kind]!==false;
+    cb.onchange=function(){state.layerVisibility[kind]=cb.checked;aquaApplyLayerVisibility()};
+  });
+  if($('selectionMode'))$('selectionMode').onchange=function(){state.selectionMode=this.value};
+  if($('focusSelection'))$('focusSelection').onclick=aquaFocusSelectedDma;
+  if($('showAllAssets'))$('showAllAssets').onclick=aquaShowAllAssets;
+  if($('toggleGisControl'))$('toggleGisControl').onclick=function(){const body=$('gisControlBody'),hidden=body.classList.toggle('hidden');this.textContent=hidden?'+':'−'};
+  if($('runInitialRisk'))$('runInitialRisk').onclick=function(){const r=aquaInitialRisk(true);addAi(r.length?'Initial network risk complete. Highest pipe score: <b>'+Math.round(r[0].score)+'/100</b> at '+r[0].confidence+'% evidence confidence.':'No pipe data available.')};
+});
