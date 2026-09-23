@@ -40,6 +40,7 @@
           <option value="EPSG:4326">WGS84</option>
         </select>
         <button id="applyCrsBtn" class="ghost">Apply CRS</button>
+        <button id="llmSettingsBtn" class="ghost">LLM</button>
         <button id="importTelemetryBtn" class="ghost">Import telemetry</button>
         <input id="telemetryInput" type="file" accept=".csv,.json" hidden>
       </div>
@@ -245,6 +246,28 @@
       <div class="file-name">Most Taiwan Water Corporation GIS should use zone 121; use zone 119 for Penghu / western offshore datasets when applicable.</div>
       <div id="gisFileName" class="file-name">No GIS file selected</div>
       <div class="modal-actions"><button id="createProjectBtn" class="primary">Create & analyse project</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="llmModal" class="modal hidden">
+  <div class="modal-card">
+    <div class="modal-head"><div><small>AQUA COPILOT</small><h2>LLM Connection</h2></div><button id="closeLlmModal">×</button></div>
+    <div class="modal-body">
+      <label>OpenAI-compatible endpoint
+        <input id="llmBaseUrl" placeholder="http://192.168.1.50:11434/v1">
+      </label>
+      <label>Model
+        <input id="llmModel" placeholder="e.g. qwen2.5:14b / llama-3.1-8b">
+      </label>
+      <label>API key (optional)
+        <input id="llmApiKey" type="password" placeholder="Leave blank for local servers without auth">
+      </label>
+      <div id="llmStatus" class="file-name">Not connected</div>
+      <div class="modal-actions">
+        <button id="testLlmBtn" class="secondary">Test Connection</button>
+        <button id="saveLlmBtn" class="primary">Save</button>
+      </div>
     </div>
   </div>
 </div>
