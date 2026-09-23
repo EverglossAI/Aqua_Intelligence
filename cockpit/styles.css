@@ -123,3 +123,17 @@ body{font-size:14px}
 .hyd-primary input{display:block;width:100%;margin-top:4px;background:#08131d;color:#fff;border:1px solid var(--line);border-radius:6px;padding:9px}
 .advanced-inp{opacity:.75}
 @media(max-width:1000px){.hyd-primary{grid-template-columns:1fr 1fr}}
+
+.gis-control{position:absolute;z-index:760;left:12px;top:58px;width:180px;background:rgba(7,16,25,.94);border:1px solid var(--line);border-radius:8px;padding:8px;box-shadow:0 8px 20px rgba(0,0,0,.25)}
+.gis-control-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:6px}
+.gis-control-head b{font-size:12px}
+.gis-control-head button{border:0;background:transparent;color:var(--muted);cursor:pointer;font-size:14px}
+.gis-control label{display:flex;align-items:center;gap:7px;font-size:11px;color:#bfd0dc;padding:3px 0}
+.gis-control input[type="checkbox"]{accent-color:#36a3ff}
+.gis-row{display:flex;align-items:center;justify-content:space-between;gap:8px;border-top:1px solid var(--line);padding-top:6px;margin-top:5px;font-size:10px;color:var(--muted)}
+.gis-row:first-child{border-top:0;margin-top:0;padding-top:0}
+.gis-row select{background:#08131d;color:#fff;border:1px solid var(--line);border-radius:5px;padding:4px;font-size:10px}
+.gis-actions{display:grid;grid-template-columns:1fr 1fr;gap:5px;margin-top:7px}
+.gis-actions button{border:1px solid var(--line);background:#102536;color:#dbe8f2;border-radius:5px;padding:6px;font-size:9px;cursor:pointer}
+.important-action{border-color:#c7832f;background:#2b2113;color:#ffd49a}
+.risk-summary{margin-top:7px!important;padding-top:7px;border-top:1px solid var(--line);color:#ffd166!important}
