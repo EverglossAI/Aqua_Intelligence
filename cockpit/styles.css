@@ -184,3 +184,156 @@ body[data-workspace="pressure"] .acoustic-workbench,
 body[data-workspace="hydraulics"] .acoustic-workbench{display:none}
 body[data-workspace="acoustic"] .hydraulic-workbench,
 body[data-workspace="planning"] .hydraulic-workbench{display:none}
+
+/* === Map-first fullscreen cockpit === */
+html,body{height:100%;overflow:hidden}
+.shell{height:100vh;min-height:100vh}
+.workspace{position:relative;height:100vh;overflow:hidden}
+.topbar{position:relative;z-index:1200}
+.status-strip{position:relative;z-index:1150}
+.cockpit{
+  position:absolute!important;
+  left:0;right:0;top:121px;bottom:0;
+  display:block!important;
+  height:auto!important;
+  min-height:0!important;
+  padding:0!important;
+  margin:0!important;
+}
+.map-panel{
+  position:absolute!important;
+  inset:0!important;
+  margin:0!important;
+  border-radius:0!important;
+  border:0!important;
+  z-index:1;
+}
+#map{height:100%!important;min-height:0!important;width:100%!important}
+
+.left-panel,.right-panel,
+.analysis-grid .panel,
+.advanced-grid .panel{
+  backdrop-filter:blur(12px);
+  background:rgba(9,20,30,.92)!important;
+  box-shadow:0 12px 32px rgba(0,0,0,.34);
+}
+
+.left-panel{
+  position:absolute!important;
+  z-index:820;
+  left:14px;top:72px;
+  width:250px!important;
+  max-height:calc(100% - 110px);
+  overflow:auto;
+  border-radius:10px;
+}
+.right-panel{
+  position:absolute!important;
+  z-index:820;
+  right:14px;top:72px;
+  width:360px!important;
+  height:auto!important;
+  max-height:calc(100% - 110px);
+  overflow:auto;
+  border-radius:10px;
+}
+.map-toolbar{top:14px;left:300px}
+.gis-control{top:58px;left:300px}
+.selection-card{top:14px;right:390px}
+.map-legend{left:300px;bottom:14px}
+
+.analysis-grid{
+  position:absolute!important;
+  z-index:830;
+  left:285px;right:390px;bottom:14px;
+  padding:0!important;
+  display:none!important;
+  grid-template-columns:minmax(0,1.55fr) minmax(280px,.9fr)!important;
+  gap:10px;
+  pointer-events:none;
+}
+.analysis-grid .panel{
+  pointer-events:auto;
+  max-height:280px;
+  overflow:auto;
+}
+.analysis-grid .engineering,.analysis-grid .data-health{display:none!important}
+
+.advanced-grid{
+  position:absolute!important;
+  z-index:840;
+  left:285px;right:390px;bottom:14px;
+  padding:0!important;
+  display:none!important;
+  pointer-events:none;
+}
+.advanced-grid .panel{
+  pointer-events:auto;
+  max-height:58vh;
+  overflow:auto;
+  border-radius:10px;
+}
+
+body[data-workspace="operations"] .analysis-grid,
+body[data-workspace="operations"] .advanced-grid{display:none!important}
+
+body[data-workspace="nrw"] .analysis-grid,
+body[data-workspace="dma"] .analysis-grid{display:grid!important}
+
+body[data-workspace="pressure"] .advanced-grid,
+body[data-workspace="acoustic"] .advanced-grid,
+body[data-workspace="hydraulics"] .advanced-grid,
+body[data-workspace="planning"] .advanced-grid{display:block!important}
+
+body[data-workspace="pressure"] .advanced-grid .acoustic-workbench,
+body[data-workspace="hydraulics"] .advanced-grid .acoustic-workbench{display:none!important}
+body[data-workspace="acoustic"] .advanced-grid .hydraulic-workbench,
+body[data-workspace="planning"] .advanced-grid .hydraulic-workbench{display:none!important}
+
+/* keep floating side tools available by workspace */
+body[data-workspace="nrw"] .left-panel,
+body[data-workspace="dma"] .left-panel,
+body[data-workspace="assets"] .left-panel,
+body[data-workspace="operations"] .left-panel{display:block!important}
+body[data-workspace="pressure"] .left-panel,
+body[data-workspace="acoustic"] .left-panel,
+body[data-workspace="hydraulics"] .left-panel,
+body[data-workspace="planning"] .left-panel{display:none!important}
+
+body[data-workspace="operations"] .right-panel,
+body[data-workspace="nrw"] .right-panel,
+body[data-workspace="dma"] .right-panel,
+body[data-workspace="pressure"] .right-panel,
+body[data-workspace="acoustic"] .right-panel,
+body[data-workspace="hydraulics"] .right-panel,
+body[data-workspace="planning"] .right-panel,
+body[data-workspace="assets"] .right-panel{display:block!important}
+
+/* panel collapse */
+.float-collapse{
+  margin-left:auto;
+  border:1px solid var(--line);
+  background:#0b1d2a;
+  color:#9fc0d4;
+  width:26px;height:26px;
+  border-radius:5px;
+  cursor:pointer;
+  font-size:15px;
+  line-height:20px;
+}
+.panel.float-collapsed{overflow:hidden!important}
+.panel.float-collapsed>*:not(.panel-head):not(.copilot-head){display:none!important}
+.panel.float-collapsed .panel-head,
+.panel.float-collapsed .copilot-head{border-bottom:0!important}
+.left-panel.float-collapsed{width:205px!important;max-height:48px}
+.right-panel.float-collapsed{width:230px!important;max-height:48px}
+.analysis-grid .panel.float-collapsed{max-height:48px}
+.advanced-grid .panel.float-collapsed{max-height:48px}
+
+@media(max-width:1200px){
+  .left-panel{width:220px!important}
+  .right-panel{width:320px!important}
+  .map-toolbar,.gis-control,.map-legend{left:250px}
+  .selection-card{right:350px}
+  .analysis-grid,.advanced-grid{left:250px;right:350px}
+}
