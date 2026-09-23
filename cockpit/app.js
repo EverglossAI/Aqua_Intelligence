@@ -767,7 +767,7 @@ window.addEventListener('load',function(){
 });
 
 /* === Configurable LAN LLM connection === */
-const AQUA_LLM_BASE_URL='http://192.168.1.80:3000/api';
+const AQUA_LLM_BASE_URL='http://192.168.1.80:1234/v1';
 const AquaLLM={
   load(){
     try{
