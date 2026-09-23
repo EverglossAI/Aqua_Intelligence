@@ -767,9 +767,13 @@ window.addEventListener('load',function(){
 });
 
 /* === Configurable LAN LLM connection === */
+const AQUA_LLM_BASE_URL='http://192.168.1.80:3000/api';
 const AquaLLM={
   load(){
-    try{return JSON.parse(localStorage.getItem('aqua.llm')||'{}')}catch(e){return{}}
+    try{
+      const cfg=JSON.parse(localStorage.getItem('aqua.llm')||'{}');
+      return {...cfg,baseUrl:AQUA_LLM_BASE_URL};
+    }catch(e){return{baseUrl:AQUA_LLM_BASE_URL}}
   },
   save(cfg){localStorage.setItem('aqua.llm',JSON.stringify(cfg))},
   headers(cfg){
@@ -785,7 +789,7 @@ const AquaLLM={
 
 function aquaOpenLlmModal(){
   const cfg=AquaLLM.load();
-  $('llmBaseUrl').value=cfg.baseUrl||'';
+  $('llmBaseUrl').value=AQUA_LLM_BASE_URL;
   $('llmModel').value=cfg.model||'';
   $('llmApiKey').value=cfg.apiKey||'';
   $('llmStatus').textContent=cfg.baseUrl&&cfg.model?'Saved configuration':'Not connected';
@@ -794,7 +798,7 @@ function aquaOpenLlmModal(){
 function aquaCloseLlmModal(){$('llmModal').classList.add('hidden')}
 function aquaSaveLlm(){
   const cfg={
-    baseUrl:$('llmBaseUrl').value.trim(),
+    baseUrl:AQUA_LLM_BASE_URL,
     model:$('llmModel').value.trim(),
     apiKey:$('llmApiKey').value.trim()
   };
@@ -803,8 +807,8 @@ function aquaSaveLlm(){
   setTimeout(aquaCloseLlmModal,250);
 }
 async function aquaTestLlm(){
-  const cfg={baseUrl:$('llmBaseUrl').value.trim(),model:$('llmModel').value.trim(),apiKey:$('llmApiKey').value.trim()};
-  if(!cfg.baseUrl||!cfg.model){$('llmStatus').textContent='Enter server URL and model name';return}
+  const cfg={baseUrl:AQUA_LLM_BASE_URL,model:$('llmModel').value.trim(),apiKey:$('llmApiKey').value.trim()};
+  if(!cfg.model){$('llmStatus').textContent='Enter the Open WebUI model name';return}
   $('llmStatus').textContent='Testing…';
   try{
     const res=await fetch(AquaLLM.endpoint(cfg),{
