@@ -884,3 +884,36 @@ window.addEventListener('load',function(){
   if($('saveLlmBtn'))$('saveLlmBtn').onclick=aquaSaveLlm;
   if($('testLlmBtn'))$('testLlmBtn').onclick=aquaTestLlm;
 });
+
+/* Floating panel collapse controls */
+function aquaAddFloatControls(){
+  const panels=[
+    document.querySelector('.left-panel'),
+    document.querySelector('.right-panel'),
+    ...document.querySelectorAll('.analysis-grid .panel'),
+    ...document.querySelectorAll('.advanced-grid .panel')
+  ].filter(Boolean);
+  panels.forEach(panel=>{
+    if(panel.dataset.floatReady)return;
+    panel.dataset.floatReady='1';
+    const head=panel.querySelector('.panel-head,.copilot-head');
+    if(!head)return;
+    const b=document.createElement('button');
+    b.className='float-collapse';
+    b.type='button';
+    b.title='Collapse panel';
+    b.textContent='−';
+    b.onclick=function(e){
+      e.stopPropagation();
+      const collapsed=panel.classList.toggle('float-collapsed');
+      b.textContent=collapsed?'+':'−';
+      b.title=collapsed?'Expand panel':'Collapse panel';
+      setTimeout(()=>{if(state.map)state.map.invalidateSize()},50);
+    };
+    head.appendChild(b);
+  });
+}
+window.addEventListener('load',function(){
+  setTimeout(aquaAddFloatControls,100);
+  setTimeout(function(){if(state.map)state.map.invalidateSize()},250);
+});
