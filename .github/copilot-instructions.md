@@ -206,3 +206,116 @@ At minimum demonstrate:
 - show an elevation/terrain layer control even if the engineering elevation dataset is not yet connected
 
 Do not hard-code a dashboard layout that would later need to be discarded.
+
+
+## Visual acceptance target — match the approved Aqua Intelligence mockup
+The approved product direction is a polished, dark, map-first engineering workspace. Do not interpret "clean" as a generic white SaaS dashboard.
+
+### Overall visual language
+- Dark navy / charcoal application chrome.
+- Full-bleed map remains the dominant visual surface.
+- High-contrast cyan/blue accents for primary controls and active states.
+- Floating panels use dark translucent/opaque surfaces with subtle borders, restrained shadows, and compact spacing.
+- Typography should feel technical, modern, and premium; avoid oversized marketing typography.
+- Rounded corners are acceptable but should remain restrained and professional.
+- The UI should feel like a professional GIS/engineering workstation, not a consumer app.
+
+### Header
+- Compact dark top bar.
+- Product name / logo at left.
+- Search field integrated into header.
+- Minimal utility icons/user area at right.
+- Header height must stay compact so the map remains dominant.
+
+### Map treatment
+- Satellite imagery should look rich and detailed when selected.
+- Engineering overlays should remain clearly legible above satellite imagery.
+- Pipe network colors must be bright and distinct enough to read over complex basemaps.
+- DMA boundaries, alerts, valves, pressure sensors, acoustic sensors, and risk states should have a consistent icon/color system.
+- Elevation/terrain visualization may use a heat/gradient treatment, but it must remain visually subordinate to the engineering network.
+- Labels and popovers should use dark, readable callouts.
+
+### Floating panels
+Use the approved mockup as the behavioral and visual reference:
+- dark panel background
+- compact title bar
+- minimize / restore / close controls
+- thin border
+- restrained shadow
+- draggable from title bar
+- resizable where appropriate
+- content dense enough for engineering work without becoming cramped
+- active panel should gain a subtle focus state, not a loud outline
+
+Representative floating windows:
+- Aqua Intelligence command/chat
+- Map Layers
+- Asset Details
+- Elevation Profile
+- Hydraulic Analysis
+- DMA Analysis
+- Telemetry / Event details
+
+### Aqua Intelligence panel
+- Should look like an operational engineering assistant, not a generic chatbot.
+- Show parsed intent, extracted entities, selected route, and actionable results where useful.
+- Keep a compact message entry field at the bottom.
+- Provide direct map actions such as "Show results on map".
+- Structured reasoning/tool status may be shown as concise check items.
+
+### Layer panel
+- Use compact segmented/tabbed controls for base map / network / analytics.
+- Base map choices should visually include:
+  - Street
+  - Satellite
+  - Terrain
+  - Elevation
+- Overlay toggles should be compact and aligned.
+
+### Asset detail panel
+- Compact engineering facts.
+- Selected asset identifier prominent but not oversized.
+- Support small contextual imagery/street-view thumbnail where available.
+- Risk score can use strong emphasis.
+- Actions such as View on Map, Run Analysis, Add to Plan should remain compact.
+
+### Elevation profile panel
+- Dark chart panel consistent with the rest of the UI.
+- Clear elevation vs distance plot.
+- Key stats beneath the chart.
+- Chart should be readable without dominating the workspace.
+
+### Bottom taskbar
+- Dark compact dock spanning the bottom edge.
+- Open/minimized tools represented as compact task buttons.
+- Active task has a clear blue/cyan highlight.
+- Include room for map status items such as scale/coordinates without clutter.
+- The dock should feel desktop-like, not like mobile navigation.
+
+### Density and polish
+- Prefer compact engineering information density.
+- Avoid excessive whitespace.
+- Avoid giant cards, giant buttons, and large empty panels.
+- Visual hierarchy should come from spacing, typography, iconography, and subtle elevation rather than oversized components.
+- Every control should feel intentionally placed.
+
+### Hard rejection criteria
+Do not consider the V2 shell acceptable if it becomes:
+- a white dashboard
+- a fixed left-sidebar app
+- a card-grid homepage
+- a generic Bootstrap/admin template
+- a chatbot page with a small map
+- a mobile-style interface stretched to desktop
+- a low-contrast map where engineering overlays are hard to read
+
+### Review requirement
+Before declaring the V2 UI shell complete, visually compare the running implementation against the approved mockup direction and verify:
+1. map dominates the viewport
+2. dark premium engineering chrome
+3. floating draggable windows
+4. compact bottom taskbar
+5. satellite/elevation layer experience
+6. dense but readable asset/analysis panels
+7. cyan/blue active-state language
+8. no dashboard-style visual regression
