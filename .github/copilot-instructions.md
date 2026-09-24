@@ -138,3 +138,71 @@ Do not implement fake EPANET outputs in Phase 1. Hydraulic and DMA requests shou
 
 ## Working style
 Make small, reviewable commits. Avoid broad rewrites. Keep existing cockpit behavior intact. Add or update tests with each functional change.
+
+
+## UI shell requirements — map-first workspace
+The V2 main screen must be the map itself, occupying the full application canvas.
+
+### Basemap / terrain controls
+The map must support clean switching or layering between:
+- standard map/street view
+- satellite imagery
+- elevation/terrain visualization
+
+Elevation should be treated as both:
+1. a visual layer (e.g. terrain shading/contours where supported), and
+2. engineering data tied to the network model.
+
+### Floating workspace model
+All command panels, dialogs, result panels, analysis windows, and tool palettes should float above the map rather than permanently consume layout space.
+
+Each floating window should:
+- be draggable
+- be independently movable anywhere over the map
+- support minimize
+- support restore
+- support close where appropriate
+- preserve its position/state during the current session
+- have a compact title bar and minimal chrome
+- avoid blocking large areas of the map by default
+
+### Bottom taskbar
+Minimized tools/windows should collapse into a compact taskbar along the bottom edge of the application.
+
+The taskbar should:
+- show minimized tools as small labeled buttons/icons
+- restore a panel when clicked
+- remain visually quiet when few tools are open
+- avoid covering important map controls
+
+### Visual style
+The interface should be:
+- clean
+- modern
+- restrained
+- engineering-focused
+- map-dominant
+
+Avoid dashboard clutter, permanent sidebars, oversized cards, and large fixed headers.
+
+Use translucent or lightly elevated floating panels where appropriate, but preserve readability over both light street maps and dark/satellite imagery.
+
+### Interaction principle
+The product should feel like a map-centric engineering operating system:
+- map = workspace
+- floating windows = tools
+- bottom taskbar = minimized work
+- intent/command box = one floating tool among others, not the whole product
+
+### Phase 1 UI acceptance criteria
+The V2 demo panel must be implemented using the floating-window system rather than as a fixed page section.
+
+At minimum demonstrate:
+- one draggable command/intent window
+- one draggable results/debug window
+- minimize both to the bottom taskbar
+- restore from the taskbar
+- switch between standard map and satellite
+- show an elevation/terrain layer control even if the engineering elevation dataset is not yet connected
+
+Do not hard-code a dashboard layout that would later need to be discarded.
