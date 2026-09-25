@@ -106,7 +106,7 @@ function renderEvents(){const p=state.active;if(!p)return;const events=[];const 
 function addAi(html){const d=document.createElement('div');d.className='msg ai';d.innerHTML='<b>Aqua</b><p>'+html+'</p>';$('chat').appendChild(d);$('chat').scrollTop=$('chat').scrollHeight}
 function addUser(text){const d=document.createElement('div');d.className='msg user';d.innerHTML='<b>You</b><p>'+escapeHtml(text)+'</p>';$('chat').appendChild(d);$('chat').scrollTop=$('chat').scrollHeight}
 function contextSnapshot(){const p=state.active;if(!p)return null;return{project:p.name,utility:p.utility,layers:p.layers.map(l=>({name:l.name,kind:l.kind,count:l.geojson.features.length})),telemetry:p.telemetry.slice(-250),selected:state.selected?{layer:state.selected.layer.name,kind:state.selected.layer.kind,properties:state.selected.feature.properties}:null,confidence:confidenceScore(p)}}
-async function askCopilot(q){addUser(q);if(!state.active){addAi('Open a project first. The Copilot needs the network context before it can reason about NRW.');return}addAi('<span class="thinking">Analysing network context…</span>');const nodes=[...$('chat').querySelectorAll('.msg.ai')];const placeholder=nodes[nodes.length-1];try{const res=await fetch('/api/copilot',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({question:q,context:contextSnapshot()})});if(!res.ok)throw new Error('Copilot service unavailable');const data=await res.json();placeholder.innerHTML='<b>Aqua</b><p>'+escapeHtml(data.answer||'No answer returned.')+'</p>'}catch(e){placeholder.innerHTML='<b>Aqua</b><p>'+localReasoning(q)+'</p>'}}
+async function askCopilot(q){addUser(q);if(!state.active){addAi('Open a project first. The Copilot needs the network context before it can reason about NRW.');return}addAi(localReasoning(q))}
 function localReasoning(q){const p=state.active;const c={pipe:featureCount(p,'pipe'),meter:featureCount(p,'meter'),valve:featureCount(p,'valve'),dma:featureCount(p,'dma')};const flows=p.telemetry.filter(x=>x.type==='flow'),press=p.telemetry.filter(x=>x.type==='pressure'),ac=p.telemetry.filter(x=>x.type==='acoustic');return 'The LLM service is not connected in this prototype, so I will not pretend to produce a neural-language diagnosis. Current evidence: <b>'+c.pipe+'</b> pipes, <b>'+c.meter+'</b> meters, <b>'+c.valve+'</b> valves, <b>'+c.dma+'</b> DMA/region features, '+flows.length+' flow records, '+press.length+' pressure records and '+ac.length+' acoustic records. Connect the Copilot API to enable full natural-language tool-calling analysis.'}
 function runWaterBalance(){if(!state.active)return;const flow=state.active.telemetry.filter(x=>x.type==='flow'),meters=state.active.telemetry.filter(x=>x.type==='meter');addAi(flow.length&&meters.length?'Water-balance inputs are present. The next engine step is to aggregate system input volume, authorized consumption and apparent/real losses by DMA and time window.':'A defensible water balance needs both system input/flow data and customer or authorized-consumption meter data. Import those streams and I will calculate it by DMA.')}
 function runDmaPlanner(){if(!state.active)return;const d=featureCount(state.active,'dma'),v=featureCount(state.active,'valve'),m=featureCount(state.active,'meter');addAi(d?'I found '+d+' DMA/region features. I would validate boundary connectivity against '+v+' valves and '+m+' meter assets, then score candidate boundary changes.':'No recognized DMA/region layer was found. Use Draw DMA or import a regionnet/DMA layer; then Aqua can validate boundary valves and inlet-meter coverage.')}
@@ -144,16 +144,30 @@ const V23={
 
 window.V23=V23;
 
-function V23route(q){
+function V23intent(q){
   var s=q.toLowerCase();
-  if(/topolog|connect|network graph|disconnected/.test(s)){var t=V23.topology(true);return'I rebuilt the network graph: <b>'+t.nodes.length+' nodes</b>, <b>'+t.edges.length+' pipe edges</b> and <b>'+t.components+' component(s)</b>.'}
-  if(/water balance|nrw|non.?revenue|real loss|apparent loss/.test(s)){var w=V23.water(true);return w.complete?'Imported-data NRW is <b>'+w.nrw.toFixed(1)+' m³/day ('+w.pct.toFixed(1)+'%)</b>.':'I need both system-input flow and authorized-consumption meter evidence before calculating NRW.'}
-  if(/hydrophone|sensor.*deploy|acoustic.*deploy/.test(s)){var m=s.match(/\b(\d{1,3})\b/),n=m?Number(m[1]):20,c=V23.sensorPlan(n,true);return'I planned <b>'+c.length+' hydrophone locations</b> using actual network/access assets, risk, acoustics and spacing.'}
-  if(/suspected leak|leak priority|fusion|fuse|where.*leak/.test(s)){var f=V23.fusion(true);return f.length?'Highest fused priority is <b>'+escapeHtml(f[0].id)+'</b> at '+Math.round(f[0].score)+'/100.':'No pipe network is available.'}
-  if(/prv|pressure reducing|reduce pressure/.test(s)){var p=V23.prv(true);return'I screened <b>'+p.length+' valve locations</b> for preliminary PRV candidacy.'}
-  if(/air valve|air release|vacuum|high point/.test(s)){var a=V23.air(true);return'I screened <b>'+a.length+' air-valve candidates</b>. '+(a.some(function(x){return x.z!=null})?'GIS elevation was available.':'A longitudinal elevation profile is still required.')}
+  if(/topolog|connect|network graph|disconnected/.test(s))return{intent:'network.topology',parameters:{}};
+  if(/water balance|nrw|non.?revenue|real loss|apparent loss/.test(s))return{intent:'nrw.water_balance',parameters:{}};
+  if(/hydrophone|sensor.*deploy|acoustic.*deploy/.test(s)){var m=s.match(/\b(\d{1,3})\b/);return{intent:'acoustic.sensor_plan',parameters:{count:m?Number(m[1]):20}}}
+  if(/suspected leak|leak priority|fusion|fuse|where.*leak/.test(s))return{intent:'nrw.leak_fusion',parameters:{}};
+  if(/prv|pressure reducing|reduce pressure/.test(s))return{intent:'pressure.prv_screen',parameters:{}};
+  if(/air valve|air release|vacuum|high point/.test(s))return{intent:'air.air_valve_screen',parameters:{}};
   return null
 }
+
+function V23execute(request){
+  var intent=typeof request==='string'?request:request&&request.intent,parameters=request&&request.parameters||{};
+  if(intent==='network.topology'){var t=V23.topology(true);return'I rebuilt the network graph: <b>'+t.nodes.length+' nodes</b>, <b>'+t.edges.length+' pipe edges</b> and <b>'+t.components+' component(s)</b>.'}
+  if(intent==='nrw.water_balance'){var w=V23.water(true);return w.complete?'Imported-data NRW is <b>'+w.nrw.toFixed(1)+' m³/day ('+w.pct.toFixed(1)+'%)</b>.':'I need both system-input flow and authorized-consumption meter evidence before calculating NRW.'}
+  if(intent==='acoustic.sensor_plan'){var c=V23.sensorPlan(Number(parameters.count)||20,true);return'I planned <b>'+c.length+' hydrophone locations</b> using actual network/access assets, risk, acoustics and spacing.'}
+  if(intent==='nrw.leak_fusion'){var f=V23.fusion(true);return f.length?'Highest fused priority is <b>'+escapeHtml(f[0].id)+'</b> at '+Math.round(f[0].score)+'/100.':'No pipe network is available.'}
+  if(intent==='pressure.prv_screen'){var p=V23.prv(true);return'I screened <b>'+p.length+' valve locations</b> for preliminary PRV candidacy.'}
+  if(intent==='air.air_valve_screen'){var a=V23.air(true);return'I screened <b>'+a.length+' air-valve candidates</b>. '+(a.some(function(x){return x.z!=null})?'GIS elevation was available.':'A longitudinal elevation profile is still required.')}
+  return null
+}
+
+function V23route(q){var request=V23intent(q);return request?V23execute(request):null}
+window.AquaIntentRouter={parse:V23intent,execute:V23execute};
 
 var oldAskCopilot=askCopilot;
 askCopilot=async function(q){var local=state.active?V23route(q):null;if(local){addUser(q);addAi(local);return}return oldAskCopilot(q)};
@@ -807,122 +821,98 @@ window.addEventListener('load',function(){
   if($('runInitialRisk'))$('runInitialRisk').onclick=function(){const r=aquaInitialRisk(true);addAi(r.length?'Initial network risk complete. Highest pipe score: <b>'+Math.round(r[0].score)+'/100</b> at '+r[0].confidence+'% evidence confidence.':'No pipe data available.')};
 });
 
-/* === Configurable LAN LLM connection === */
-const AQUA_LLM_BASE_URL='http://192.168.1.80:1234/v1';
-const AquaLLM={
-  load(){
-    try{
-      const cfg=JSON.parse(localStorage.getItem('aqua.llm')||'{}');
-      return {...cfg,baseUrl:AQUA_LLM_BASE_URL};
-    }catch(e){return{baseUrl:AQUA_LLM_BASE_URL}}
-  },
-  save(cfg){localStorage.setItem('aqua.llm',JSON.stringify(cfg))},
-  headers(cfg){
-    const h={'Content-Type':'application/json'};
-    if(cfg.apiKey)h.Authorization='Bearer '+cfg.apiKey;
-    return h;
-  },
-  endpoint(cfg){
-    const b=(cfg.baseUrl||'').replace(/\/$/,'');
-    return b.endsWith('/v1')?b+'/chat/completions':b+'/chat/completions';
-  }
-};
+/* === Same-origin AI service contract === */
+const AQUA_AI_ENDPOINT='/api/ai';
+const AQUA_AI_ENABLED=false;
+
+function aquaSetAiStatus(message){if($('llmStatus'))$('llmStatus').textContent=message}
 
 function aquaOpenLlmModal(){
-  const cfg=AquaLLM.load();
-  $('llmBaseUrl').value=AQUA_LLM_BASE_URL;
-  $('llmModel').value=cfg.model||'';
-  $('llmApiKey').value=cfg.apiKey||'';
-  $('llmStatus').textContent=cfg.baseUrl&&cfg.model?'Saved configuration':'Not connected';
+  $('llmBaseUrl').value=AQUA_AI_ENDPOINT;
+  aquaSetAiStatus('Deterministic commands are available without the AI service.');
   $('llmModal').classList.remove('hidden');
 }
 function aquaCloseLlmModal(){$('llmModal').classList.add('hidden')}
-function aquaSaveLlm(){
-  const cfg={
-    baseUrl:AQUA_LLM_BASE_URL,
-    model:$('llmModel').value.trim(),
-    apiKey:$('llmApiKey').value.trim()
-  };
-  AquaLLM.save(cfg);
-  $('llmStatus').textContent='Saved';
-  setTimeout(aquaCloseLlmModal,250);
-}
 async function aquaTestLlm(){
-  const cfg={baseUrl:AQUA_LLM_BASE_URL,model:$('llmModel').value.trim(),apiKey:$('llmApiKey').value.trim()};
-  if(!cfg.model){$('llmStatus').textContent='Enter the Open WebUI model name';return}
-  $('llmStatus').textContent='Testing…';
+  if(!AQUA_AI_ENABLED){
+    aquaSetAiStatus('AI service not deployed · deterministic commands remain active.');
+    return;
+  }
+  aquaSetAiStatus('Checking service…');
   try{
-    const res=await fetch(AquaLLM.endpoint(cfg),{
+    const res=await fetch(AQUA_AI_ENDPOINT,{
       method:'POST',
-      headers:AquaLLM.headers(cfg),
-      body:JSON.stringify({
-        model:cfg.model,
-        messages:[{role:'user',content:'Reply only with: AQUA CONNECTED'}],
-        temperature:0,
-        max_tokens:12
-      })
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contractVersion:1,type:'status'})
     });
-    if(!res.ok)throw new Error('HTTP '+res.status+' '+(await res.text()).slice(0,160));
-    const data=await res.json();
-    const reply=data.choices?.[0]?.message?.content||'Connected';
-    $('llmStatus').textContent=reply.trim();
+    if(!res.ok)throw new Error('Service unavailable');
+    aquaSetAiStatus('AI service connected.');
   }catch(e){
-    $('llmStatus').textContent='Connection failed: '+e.message;
+    aquaSetAiStatus('AI service unavailable · deterministic commands remain active.');
   }
 }
-function aquaSystemPrompt(){
-  return `You are Aqua Intelligence, an NRW water-network engineering copilot.
-Use the supplied project context and deterministic analysis results.
-Do not invent hydraulic calculations, sensor readings, pipe attributes, or operational facts.
-When evidence is missing, say what is missing.
-For PRV, air-valve and hydraulic recommendations, clearly label them preliminary and require engineering verification.
-Prioritize concise, practical engineering answers.`;
-}
-async function aquaAskConfiguredLlm(q){
-  const cfg=AquaLLM.load();
-  if(!cfg.baseUrl||!cfg.model)throw new Error('No LLM configured');
-  const ctx=contextSnapshot();
-  const res=await fetch(AquaLLM.endpoint(cfg),{
+async function aquaAskAi(q,suggestedIntent){
+  const res=await fetch(AQUA_AI_ENDPOINT,{
     method:'POST',
-    headers:AquaLLM.headers(cfg),
+    headers:{'Content-Type':'application/json'},
     body:JSON.stringify({
-      model:cfg.model,
-      messages:[
-        {role:'system',content:aquaSystemPrompt()},
-        {role:'user',content:'PROJECT CONTEXT\n'+JSON.stringify(ctx)+'\n\nQUESTION\n'+q}
-      ],
-      temperature:0.2
+      contractVersion:1,
+      question:q,
+      context:contextSnapshot(),
+      suggestedIntent:suggestedIntent
     })
   });
-  if(!res.ok)throw new Error('LLM server returned HTTP '+res.status+' '+(await res.text()).slice(0,180));
-  const data=await res.json();
-  return data.choices?.[0]?.message?.content||'No response returned.';
+  if(!res.ok)throw new Error('AI service unavailable');
+  return res.json();
 }
 
-/* Replace generic Copilot fallback with configured LAN model */
-const aquaPreviousAskCopilot=askCopilot;
+function aquaApiIntent(data){
+  if(typeof data?.intent==='string')return{intent:data.intent,parameters:data.parameters||{}};
+  if(data?.intent&&typeof data.intent.intent==='string')return data.intent;
+  return null;
+}
+
+/* Use the same-origin AI service, then fall back to deterministic tools. */
 askCopilot=async function(q){
   addUser(q);
   if(!state.active){addAi('Open a project first.');return}
-  const local=window.V23route?V23route(q):null;
-  if(local){addAi(local);return}
+  const suggestedIntent=V23intent(q);
+  if(suggestedIntent){
+    const local=V23execute(suggestedIntent);
+    aquaSetAiStatus('AI service not deployed · deterministic commands remain active.');
+    addAi(local+'<br><span class="thinking">Deterministic engineering command executed locally.</span>');
+    return;
+  }
+  if(!AQUA_AI_ENABLED){
+    aquaSetAiStatus('AI service not deployed · deterministic commands remain active.');
+    addAi('AI service is not deployed yet. Deterministic engineering commands remain available.');
+    return;
+  }
   const placeholder=document.createElement('div');
   placeholder.className='msg ai';
   placeholder.innerHTML='<b>Aqua</b><p>Thinking…</p>';
   $('chat').appendChild(placeholder);
   $('chat').scrollTop=$('chat').scrollHeight;
   try{
-    const answer=await aquaAskConfiguredLlm(q);
-    placeholder.innerHTML='<b>Aqua</b><p>'+escapeHtml(answer).replace(/\n/g,'<br>')+'</p>';
+    const data=await aquaAskAi(q,suggestedIntent);
+    const apiIntent=aquaApiIntent(data);
+    const intentResult=apiIntent?V23execute(apiIntent):null;
+    if(intentResult){placeholder.innerHTML='<b>Aqua</b><p>'+intentResult+'</p>';return}
+    if(data.answer){placeholder.innerHTML='<b>Aqua</b><p>'+escapeHtml(data.answer).replace(/\n/g,'<br>')+'</p>';return}
+    throw new Error('AI response did not contain an answer or supported intent');
   }catch(e){
-    placeholder.innerHTML='<b>Aqua</b><p>LLM unavailable: '+escapeHtml(e.message)+'. Configure the LLM button in the top bar.</p>';
+    const local=suggestedIntent?V23execute(suggestedIntent):null;
+    aquaSetAiStatus('AI service unavailable · deterministic commands remain active.');
+    placeholder.innerHTML=local
+      ?'<b>Aqua</b><p>'+local+'</p><p class="thinking">AI service unavailable · deterministic result shown.</p>'
+      :'<b>Aqua</b><p>AI service unavailable. Deterministic engineering commands remain available.</p>';
   }
 };
 
 window.addEventListener('load',function(){
+  try{localStorage.removeItem('aqua.llm')}catch(e){}
   if($('llmSettingsBtn'))$('llmSettingsBtn').onclick=aquaOpenLlmModal;
   if($('closeLlmModal'))$('closeLlmModal').onclick=aquaCloseLlmModal;
-  if($('saveLlmBtn'))$('saveLlmBtn').onclick=aquaSaveLlm;
   if($('testLlmBtn'))$('testLlmBtn').onclick=aquaTestLlm;
 });
 

@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width,initial-scale=1">
   <title>Aqua Intelligence — NRW Cockpit V3</title>
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
-  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css">
+  <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.css">
   <link rel="stylesheet" href="./styles.css">
   <link rel="stylesheet" href="../aqua-shell.css">
 </head>
@@ -254,30 +254,23 @@
 
 <div id="llmModal" class="modal hidden">
   <div class="modal-card">
-    <div class="modal-head"><div><small>AQUA COPILOT</small><h2>LLM Connection</h2></div><button id="closeLlmModal">×</button></div>
+    <div class="modal-head"><div><small>AQUA COPILOT</small><h2>AI Service</h2></div><button id="closeLlmModal">×</button></div>
     <div class="modal-body">
-      <label>Model server
-        <input id="llmBaseUrl" value="http://192.168.1.80:1234/v1" readonly>
+      <label>Service endpoint
+        <input id="llmBaseUrl" value="/api/ai" readonly>
       </label>
-      <label>Model
-        <input id="llmModel" placeholder="e.g. qwen2.5:14b / llama-3.1-8b">
-      </label>
-      <label>API key (optional)
-        <input id="llmApiKey" type="password" placeholder="Leave blank for local servers without auth">
-      </label>
-      <div id="llmStatus" class="file-name">Not connected</div>
+      <div id="llmStatus" class="file-name">Deterministic commands are available without the AI service.</div>
       <div class="modal-actions">
-        <button id="testLlmBtn" class="secondary">Test Connection</button>
-        <button id="saveLlmBtn" class="primary">Save</button>
+        <button id="testLlmBtn" class="secondary">Check service</button>
       </div>
     </div>
   </div>
 </div>
 
 <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
-<script src="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.js"></script>
-<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet/leaflet-maplibre-gl.js"></script>
-<script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
+<script src="https://unpkg.com/maplibre-gl@5.24.0/dist/maplibre-gl.js"></script>
+<script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
+<script src="https://unpkg.com/shpjs@6.2.0/dist/shp.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.15.0/proj4.js"></script>
 <script src="./app.js"></script>
 <script src="./v4.js"></script>
