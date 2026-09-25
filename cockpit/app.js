@@ -5,6 +5,7 @@ const colors={pipe:'#5c8da9',meter:'#ffc65c',valve:'#aa82ff',hydrant:'#ff7f6d',d
 function kindFor(name=''){const n=name.toLowerCase();for(const[k,terms]of Object.entries(assetKinds))if(terms.some(t=>n.includes(t)))return k;return'other'}
 function initMap(){
   state.map=L.map('map',{zoomControl:true,preferCanvas:true}).setView([23.7,120.95],8);
+  window.aquaMap=state.map;
   const primary=L.tileLayer('https://{s}.tile.openstreetmap.fr/hot/{z}/{x}/{y}.png',{
     subdomains:'abc',
     maxZoom:20,
@@ -140,6 +141,8 @@ const V23={
   prv:function(show){if(!state.active)return[];var vals=this.points('valve').map(function(v,i){var pp=V23.nearestTelemetry(v.coord,'pressure'),fp=V23.nearestTelemetry(v.coord,'flow'),press=pp&&pp.d<1200?V23.telemetryValue(pp.row,['pressure','avg_pressure','upstream_pressure']):null,flow=fp&&fp.d<1500?V23.telemetryValue(fp.row,['flow','avg_flow','ls']):null,score=20;if(press!=null)score+=Math.max(0,Math.min(55,(press-35)*1.8));if(flow!=null)score+=10;return{id:String(V23.val(V23.props(v.feature),['ID','VALVE_ID','OBJECTID','FID'])||('Valve '+(i+1))),coord:v.coord,pressure:press,flow:flow,score:Math.min(100,score)}}).sort(function(a,b){return b.score-a.score});this.clear();vals.slice(0,10).forEach(function(c){L.circleMarker(c.coord,{radius:7,color:'#f0a44b',fillColor:'#f0a44b',fillOpacity:.92,weight:2}).bindTooltip(c.id+' · PRV '+Math.round(c.score)).addTo(state.analysisLayer)});if(show!==false)$('analysisOutput').innerHTML='<div class="rank-list">'+vals.slice(0,10).map(function(c,i){return'<div><b>#'+(i+1)+' '+escapeHtml(c.id)+'</b><span>Score '+Math.round(c.score)+' · pressure '+(c.pressure==null?'—':c.pressure.toFixed(1)+' m')+' · flow '+(c.flow==null?'—':c.flow.toFixed(1)+' L/s')+'</span></div>'}).join('')+'</div><div class="result-note"><b>Preliminary PRV siting only.</b> Final sizing requires upstream/downstream pressure, min/avg/peak/fire flow, cavitation check and manufacturer Cv/Kv data.</div>';return vals},
   air:function(show){if(!state.active)return[];var out=[];this.pipes().forEach(function(p,pi){var g=p.feature.geometry;if(!g||g.type!=='LineString'||g.coordinates.length<3)return;var ok=g.coordinates.every(function(c){return Number.isFinite(Number(c[2]))});if(!ok)return;for(var i=1;i<g.coordinates.length-1;i++){var z0=Number(g.coordinates[i-1][2]),z=Number(g.coordinates[i][2]),z1=Number(g.coordinates[i+1][2]);if(z>z0&&z>z1){var dia=V23.num(V23.props(p.feature),['DIAMETER','DIA','SIZE','PIPE_SIZE'])||100,prom=Math.min(z-z0,z-z1);out.push({id:'AV-'+(pi+1)+'-'+i,coord:[g.coordinates[i][1],g.coordinates[i][0]],z:z,prom:prom,dia:dia,score:Math.min(100,45+prom*8+Math.min(20,dia/25))})}}});if(!out.length)this.pipes().slice(0,12).forEach(function(p,i){out.push({id:'Profile-'+(i+1),coord:V23.mid(p.feature),z:null,prom:null,dia:V23.num(V23.props(p.feature),['DIAMETER','DIA','SIZE','PIPE_SIZE'])||100,score:30})});out.sort(function(a,b){return b.score-a.score});this.clear();out.slice(0,12).forEach(function(c){L.circleMarker(c.coord,{radius:7,color:'#b08cff',fillColor:'#b08cff',fillOpacity:.92,weight:2}).bindTooltip(c.id+' · air valve').addTo(state.analysisLayer)});if(show!==false)$('analysisOutput').innerHTML='<div class="rank-list">'+out.slice(0,12).map(function(c,i){return'<div><b>#'+(i+1)+' '+c.id+'</b><span>'+(c.z==null?'Elevation missing':'elev '+c.z.toFixed(1)+' · prominence '+c.prom.toFixed(1)+' m')+' · pipe '+c.dia+' mm</span></div>'}).join('')+'</div><div class="result-note">'+(out.some(function(c){return c.z!=null})?'<b>Local high points detected from GIS Z values.</b>':'<b>No usable pipe elevation/Z profile found.</b>')+' Final type/orifice sizing requires filling/draining rate, allowable differential pressure and transient/vacuum criteria.</div>';return out}
 };
+
+window.V23=V23;
 
 function V23route(q){
   var s=q.toLowerCase();
@@ -584,6 +587,48 @@ function aquaApplyLayerVisibility(){
 function aquaBaseStyle(kind){
   return{color:colors[kind]||colors.other,weight:kind==='pipe'?2.3:kind==='dma'?2:1.5,fillColor:colors[kind]||colors.other,fillOpacity:kind==='dma'?.04:.2,opacity:kind==='pipe'?.72:.9};
 }
+function aquaSelectionLabel(key){
+  return String(key).replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
+}
+function aquaSelectionValue(properties,names){
+  const keys=Object.keys(properties);
+  for(const name of names){
+    const key=keys.find(item=>item.toLowerCase()===name.toLowerCase());
+    if(key&&properties[key]!==''&&properties[key]!=null)return{key,value:properties[key]};
+  }
+  return null;
+}
+function aquaEmptySelectionMarkup(){
+  return '<div class="selection-kicker"><small>SELECTION</small><span>MAP</span></div><b class="selection-title">No asset selected</b><p class="selection-empty">Choose a visible network asset to inspect its engineering context.</p>';
+}
+function aquaSelectionMarkup(layer,feature){
+  const properties=feature.properties||{};
+  const risk=properties.__aquaRisk;
+  const identity=aquaSelectionValue(properties,['ID','PIPE_ID','VALVE_ID','METER_ID','ASSET_ID','OBJECTID','NAME','DMA','ZONE']);
+  const priorities={
+    pipe:['MATERIAL','PIPE_MTR','DIAMETER','DIA','PIPE_SIZE','LENGTH','PIPE_LENGTH','BURSTS','AGE','INSTALL_YEAR'],
+    dma:['NAME','DMA','ZONE','REGION','POPULATION','PROPERTIES','AREA'],
+    valve:['TYPE','STATUS','DIAMETER','DIA','SIZE','ELEVATION'],
+    meter:['TYPE','STATUS','FLOW','VOLUME','DIAMETER','SIZE'],
+    hydrant:['STATUS','TYPE','ELEVATION','PRESSURE']
+  };
+  const fields=[],used=new Set(identity?[identity.key]:[]);
+  for(const name of priorities[layer.kind]||[]){
+    const match=aquaSelectionValue(properties,[name]);
+    if(match&&!used.has(match.key)){fields.push(match);used.add(match.key)}
+    if(fields.length===6)break;
+  }
+  if(fields.length<6){
+    Object.entries(properties).filter(([key,value])=>!key.startsWith('__')&&!used.has(key)&&value!==''&&value!=null).forEach(([key,value])=>{
+      if(fields.length<6){fields.push({key,value});used.add(key)}
+    });
+  }
+  const title=identity?identity.value:layer.name;
+  const metrics=fields.length?'<dl class="selection-grid">'+fields.map(({key,value})=>'<div><dt>'+escapeHtml(aquaSelectionLabel(key))+'</dt><dd>'+escapeHtml(value)+'</dd></div>').join('')+'</dl>':'<p class="selection-empty">No mapped attributes are available for this asset.</p>';
+  const riskClass=risk?(risk.score>=75?'high':risk.score>=50?'medium':'low'):'';
+  const riskMarkup=risk?'<div class="selection-risk '+riskClass+'"><span><small>PRIORITY SCORE</small><b>'+Math.round(risk.score)+'/100</b></span><p>'+escapeHtml(risk.reasons.slice(0,3).join(' · ')||'No dominant risk driver recorded.')+'</p></div>':'';
+  return '<div class="selection-kicker"><small>SELECTED ASSET</small><span>'+escapeHtml(layer.kind.toUpperCase())+'</span></div><b class="selection-title">'+escapeHtml(title)+'</b><p class="selection-source">'+escapeHtml(layer.name)+' layer</p>'+metrics+riskMarkup;
+}
 function aquaEnhancedSelect(layer,f,l){
   if(!aquaSelectionAllows(layer.kind))return;
   if(state.selected&&state.selected.leaflet&&state.selected.leaflet.setStyle){
@@ -591,11 +636,7 @@ function aquaEnhancedSelect(layer,f,l){
   }
   state.selected={layer,feature:f,leaflet:l};
   if(l&&l.setStyle)try{l.setStyle({color:'#ffffff',weight:5,fillOpacity:.35,opacity:1})}catch(e){}
-  const p=f.properties||{};
-  const risk=p.__aquaRisk;
-  const rows=Object.entries(p).filter(([k])=>!k.startsWith('__')).slice(0,7).map(([k,v])=>k+': '+v).join(' · ');
-  $('selectionCard').innerHTML='<small>SELECTION</small><b>'+escapeHtml(layer.name)+' · '+escapeHtml(layer.kind)+'</b><p>'+escapeHtml(rows||'No attributes')+'</p>'+
-    (risk?'<p class="risk-summary"><b>Risk '+Math.round(risk.score)+'/100</b> · '+escapeHtml(risk.reasons.slice(0,3).join(' · '))+'</p>':'');
+  $('selectionCard').innerHTML=aquaSelectionMarkup(layer,f);
 }
 selectFeature=aquaEnhancedSelect;
 
@@ -635,7 +676,7 @@ function aquaFocusSelectedDma(){
 function aquaShowAllAssets(){
   state.focusDma=null;state.selected=null;
   renderProject();renderTelemetry();
-  $('selectionCard').innerHTML='<small>SELECTION</small><b>No asset selected</b><p>Click a network asset to inspect it.</p>';
+  $('selectionCard').innerHTML=aquaEmptySelectionMarkup();
 }
 function aquaTelemetryInFocus(t){
   if(!state.focusDma)return true;

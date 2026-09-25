@@ -1,14 +1,22 @@
-# Aqua Intelligence v14 — DOM Fixed
+# Aqua Intelligence NRW Cockpit
 
-This build fixes the v13 startup crash.
+The active application is the static, framework-free cockpit in `cockpit/`. The repository-root `index.html` redirects there so the repository root remains the Cloudflare/static-host deployment target.
 
-## Root cause
-The operational-data modal was rendered after the application script, while the script tried to attach event listeners to `opsClose`, `opsSave`, and related controls immediately. Those elements did not exist yet, causing `Cannot read properties of null (reading addEventListener)` and stopping Leaflet/GIS startup.
+## Run locally
 
-## Fix
-- Moved the operational modal before the application scripts.
-- Wrapped UI event binding in `bindUI()` and run it on `window.load`.
-- Added a defensive inert-element fallback so an optional future control cannot kill map startup.
-- Retains all v13 engineer-control features.
+```powershell
+python -m http.server 8000
+```
 
-Publish by replacing the root `index.html`.
+Open `http://localhost:8000/`.
+
+## Application structure
+
+- `cockpit/index.html`: active NRW cockpit markup and engineering workbenches.
+- `cockpit/app.js`: GIS import, projects, telemetry, NRW analysis, topology, DMA, risk, and deterministic command routing.
+- `cockpit/v4.js`: GIS-to-EPANET hydraulics and acoustic planning/analysis.
+- `cockpit/styles.css`: cockpit controls and engineering-result styling.
+- `aqua-shell.js`: persistent floating-window manager, command bar, taskbar, and basemap management.
+- `aqua-shell.css`: full-screen map-first shell and responsive window presentation.
+
+The legacy root `app.js` and `styles.css` are retained as prototype history; they are not the deployed application entry point.

@@ -1,0 +1,631 @@
+:root {
+  --aqua-glass: rgba(7, 17, 27, 0.9);
+  --aqua-glass-strong: rgba(7, 16, 26, 0.97);
+  --aqua-border: rgba(125, 177, 218, 0.28);
+  --aqua-cyan: #49d6df;
+  --aqua-blue: #36a3ff;
+  --aqua-muted: #8ca6b8;
+}
+
+body.aqua-map-first {
+  overflow: hidden;
+  background: #06101a;
+}
+
+.aqua-map-first .shell,
+.aqua-map-first .workspace,
+.aqua-map-first .cockpit {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+  overflow: hidden !important;
+}
+
+.aqua-map-first .rail,
+.aqua-map-first .topbar,
+.aqua-map-first .status-strip,
+.aqua-map-first .float-collapse {
+  display: none !important;
+}
+
+.aqua-map-first .map-panel {
+  position: fixed !important;
+  inset: 0 !important;
+  width: 100% !important;
+  height: 100% !important;
+  border: 0 !important;
+  border-radius: 0 !important;
+  margin: 0 !important;
+  z-index: 1 !important;
+}
+
+.aqua-map-first #map {
+  width: 100% !important;
+  height: 100% !important;
+  min-height: 0 !important;
+}
+
+.aqua-map-first .map-toolbar {
+  top: 82px;
+  left: 14px;
+}
+
+.aqua-map-first .map-legend {
+  left: 14px;
+  bottom: 70px;
+}
+
+.aqua-map-first .selection-card {
+  top: 82px;
+  right: 14px;
+  width: min(320px, calc(100vw - 28px));
+}
+
+#aquaChrome {
+  position: fixed;
+  top: 12px;
+  left: 14px;
+  right: 14px;
+  z-index: 2200;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  height: 50px;
+  pointer-events: none;
+}
+
+#aquaChrome > * {
+  pointer-events: auto;
+  background: var(--aqua-glass);
+  border: 1px solid var(--aqua-border);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.3);
+  backdrop-filter: blur(16px);
+}
+
+.aqua-brand {
+  height: 50px;
+  min-width: 148px;
+  padding: 8px 13px;
+  border-radius: 8px;
+}
+
+.aqua-brand b {
+  display: block;
+  font-size: 14px;
+  letter-spacing: 0.16em;
+}
+
+.aqua-brand span {
+  color: var(--aqua-cyan);
+  font-size: 8px;
+  letter-spacing: 0.2em;
+}
+
+.aqua-project {
+  display: flex;
+  align-items: center;
+  height: 50px;
+  padding: 6px 8px;
+  border-radius: 8px;
+}
+
+.aqua-project select {
+  width: clamp(130px, 14vw, 220px);
+  border: 0;
+  background: transparent;
+  color: #eaf2f8;
+  padding: 6px;
+}
+
+.aqua-command {
+  display: flex;
+  flex: 1;
+  align-items: center;
+  max-width: 620px;
+  height: 50px;
+  margin: 0 auto;
+  padding: 6px 7px 6px 12px;
+  border-radius: 8px;
+}
+
+.aqua-command input {
+  min-width: 0;
+  flex: 1;
+  height: 34px;
+  border: 0;
+  outline: 0;
+  background: transparent;
+  color: #f0f6fa;
+  padding: 0 8px;
+}
+
+.aqua-command button,
+.aqua-map-modes button,
+.aqua-tools {
+  border: 0;
+  color: #bdd0de;
+  cursor: pointer;
+}
+
+.aqua-command button {
+  height: 34px;
+  padding: 0 15px;
+  border-radius: 6px;
+  background: #176aa4;
+  color: #fff;
+}
+
+.aqua-map-modes {
+  display: flex;
+  gap: 3px;
+  height: 50px;
+  padding: 5px;
+  border-radius: 8px;
+}
+
+.aqua-map-modes button {
+  padding: 0 9px;
+  border-radius: 5px;
+  background: transparent;
+  font-size: 10px;
+}
+
+.aqua-map-modes button.is-active {
+  background: #16466b;
+  color: #fff;
+}
+
+.aqua-tools {
+  width: 50px;
+  height: 50px;
+  flex: 0 0 50px;
+  border-radius: 8px;
+  background: var(--aqua-glass);
+  font-size: 21px;
+}
+
+.aqua-map-first .aqua-window {
+  position: fixed !important;
+  display: block !important;
+  min-width: 280px;
+  min-height: 160px;
+  max-width: calc(100vw - 16px);
+  max-height: calc(100vh - 136px);
+  margin: 0 !important;
+  overflow: auto !important;
+  resize: both;
+  border: 1px solid var(--aqua-border) !important;
+  border-radius: 8px !important;
+  background: var(--aqua-glass-strong) !important;
+  box-shadow: 0 18px 48px rgba(0, 0, 0, 0.38) !important;
+  backdrop-filter: blur(16px);
+}
+
+.aqua-map-first .aqua-window.is-hidden {
+  display: none !important;
+}
+
+.aqua-map-first .aqua-window-header {
+  position: sticky;
+  top: 0;
+  z-index: 2;
+  min-height: 44px;
+  cursor: move;
+  user-select: none;
+  background: rgba(9, 23, 35, 0.98);
+}
+
+.aqua-window-actions {
+  display: flex;
+  gap: 3px;
+  margin-left: auto;
+}
+
+.aqua-window-actions button {
+  width: 28px;
+  height: 28px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: #9db4c5;
+  cursor: pointer;
+  font-size: 15px;
+}
+
+.aqua-window-actions button:hover,
+.aqua-window-actions button:focus-visible {
+  background: #173248;
+  color: #fff;
+  outline: 1px solid var(--aqua-blue);
+}
+
+.aqua-project-body {
+  display: grid;
+  gap: 8px;
+  padding: 12px;
+}
+
+.aqua-project-body > button,
+.aqua-project-body > select {
+  width: 100%;
+}
+
+.aqua-map-first .gis-control.aqua-window {
+  padding: 0;
+}
+
+.aqua-map-first .gis-control-head {
+  padding: 10px 12px;
+}
+
+.aqua-map-first .gis-control-head > #toggleGisControl {
+  display: none;
+}
+
+.aqua-map-first #gisControlBody {
+  padding: 10px 12px 14px;
+}
+
+#aquaDock {
+  position: fixed;
+  z-index: 2300;
+  left: 50%;
+  bottom: 10px;
+  display: flex;
+  gap: 5px;
+  max-width: calc(100vw - 24px);
+  padding: 6px;
+  overflow-x: auto;
+  transform: translateX(-50%);
+  border: 1px solid var(--aqua-border);
+  border-radius: 8px;
+  background: rgba(6, 15, 24, 0.9);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.36);
+  backdrop-filter: blur(16px);
+}
+
+#aquaDock button {
+  flex: 0 0 auto;
+  padding: 7px 10px;
+  border: 1px solid transparent;
+  border-radius: 5px;
+  background: transparent;
+  color: #9fb5c5;
+  cursor: pointer;
+  white-space: nowrap;
+  font-size: 10px;
+}
+
+#aquaDock button:hover,
+#aquaDock button:focus-visible,
+#aquaDock button.is-active {
+  border-color: #2d6080;
+  background: #12344b;
+  color: #fff;
+  outline: 0;
+}
+
+#aquaDock button.is-minimized::before {
+  content: "− ";
+  color: var(--aqua-cyan);
+}
+
+#aquaDock button.is-closed {
+  color: #617888;
+}
+
+@media (max-width: 1000px) {
+  .aqua-brand {
+    min-width: 118px;
+  }
+
+  .aqua-map-modes button {
+    padding: 0 6px;
+  }
+}
+
+@media (max-width: 800px) {
+  #aquaChrome {
+    top: 8px;
+    left: 8px;
+    right: 8px;
+    height: auto;
+    flex-wrap: wrap;
+  }
+
+  .aqua-brand {
+    height: 44px;
+  }
+
+  .aqua-project {
+    flex: 1;
+    height: 44px;
+  }
+
+  .aqua-tools {
+    width: 44px;
+    height: 44px;
+    flex-basis: 44px;
+  }
+
+  .aqua-command {
+    order: 5;
+    flex-basis: 100%;
+    max-width: none;
+    height: 44px;
+  }
+
+  .aqua-map-modes {
+    display: none;
+  }
+
+  .aqua-map-first .map-toolbar {
+    top: 112px;
+    left: 8px;
+    right: 8px;
+    overflow-x: auto;
+  }
+
+  .aqua-map-first .selection-card,
+  .aqua-map-first .map-legend {
+    display: none;
+  }
+
+  .aqua-map-first .aqua-window {
+    left: 8px !important;
+    right: 8px !important;
+    top: auto !important;
+    bottom: 82px !important;
+    width: auto !important;
+    height: min(62vh, 620px) !important;
+    max-width: none;
+    max-height: calc(100vh - 176px);
+    min-width: 0;
+    resize: none;
+  }
+
+  .aqua-map-first .aqua-window-header {
+    cursor: default;
+  }
+
+  #aquaDock {
+    left: 8px;
+    right: 8px;
+    bottom: 8px;
+    transform: none;
+  }
+}
+
+/* Approved map-first refinement */
+:root { --aqua-border-focus: rgba(73, 214, 223, 0.62); }
+
+.aqua-project { padding: 5px 6px 5px 10px; }
+.aqua-project-context { min-width: 0; }
+.aqua-project-context > small {
+  display: block;
+  margin: 0 0 1px 6px;
+  color: #6f93aa;
+  font-size: 7px;
+  letter-spacing: .12em;
+}
+.aqua-project select { padding: 3px 6px; font-size: 11px; font-weight: 700; }
+#aquaProjectTools {
+  width: 32px;
+  height: 32px;
+  flex: 0 0 32px;
+  border: 0;
+  border-radius: 5px;
+  background: #102b3e;
+  color: #a9c6d8;
+  cursor: pointer;
+  font-size: 17px;
+}
+
+.aqua-command {
+  padding: 5px 6px 5px 10px;
+  transition: border-color 140ms ease, box-shadow 140ms ease, background 140ms ease;
+}
+.aqua-command:focus-within {
+  border-color: var(--aqua-border-focus) !important;
+  background: rgba(8,24,36,.97) !important;
+  box-shadow: 0 0 0 2px rgba(73,214,223,.12), 0 16px 38px rgba(0,0,0,.34) !important;
+}
+.aqua-command-mark { color: var(--aqua-cyan); font-size: 23px; line-height: 1; }
+.aqua-command > div { min-width: 0; flex: 1; }
+.aqua-command small {
+  display: block;
+  margin: 0 0 -2px 8px;
+  color: #6d9bb4;
+  font-size: 7px;
+  letter-spacing: .14em;
+}
+.aqua-command input { width: 100%; height: 29px; }
+.aqua-command kbd {
+  border: 1px solid #29475b;
+  border-bottom-color: #173143;
+  border-radius: 4px;
+  background: #0a1b27;
+  color: #7895a8;
+  padding: 2px 6px;
+  font: 10px ui-monospace, monospace;
+}
+.aqua-tools { width: 64px; flex-basis: 64px; font-size: 17px; }
+.aqua-tools b { display: block; font-size: 8px; letter-spacing: .06em; }
+
+.aqua-map-first .aqua-window {
+  box-shadow: 0 14px 36px rgba(0,0,0,.3) !important;
+  transition: border-color 140ms ease, box-shadow 140ms ease, opacity 140ms ease;
+  scrollbar-color: #31536a transparent;
+  scrollbar-width: thin;
+}
+.aqua-map-first .aqua-window.is-focused {
+  border-color: var(--aqua-border-focus) !important;
+  box-shadow: 0 22px 56px rgba(0,0,0,.44), 0 0 0 1px rgba(73,214,223,.1) !important;
+}
+.aqua-map-first .aqua-window::after {
+  content: "";
+  position: absolute;
+  right: 3px;
+  bottom: 3px;
+  width: 9px;
+  height: 9px;
+  border-right: 2px solid rgba(125,177,218,.45);
+  border-bottom: 2px solid rgba(125,177,218,.45);
+  pointer-events: none;
+}
+.aqua-map-first .aqua-window-header {
+  box-shadow: inset 3px 0 0 rgba(73,214,223,.34);
+}
+.aqua-map-first .aqua-window-header h2 { font-size: 13px; }
+.aqua-map-first .aqua-window-header small { color: #6f9ab2; }
+
+.aqua-map-first [data-window-id="network"] .tree-group {
+  margin-top: 8px;
+  border-top-color: rgba(125,177,218,.18);
+  background: rgba(8,23,34,.48);
+}
+.aqua-map-first [data-window-id="network"] .tree-title {
+  color: #d9e8f1;
+  font-size: 10px;
+  font-weight: 750;
+  letter-spacing: .04em;
+}
+.aqua-map-first [data-window-id="network"] .tree-item {
+  position: relative;
+  margin-left: 12px;
+  padding-left: 17px;
+  border-left: 1px solid #203c4f;
+  color: #9fb5c4;
+}
+.aqua-map-first [data-window-id="network"] .tree-action {
+  margin-top: 5px;
+  border-color: #27485c;
+  background: #0b2130;
+}
+
+#aquaDock:not(:has(button.is-minimized)) { display: none; }
+#aquaDock button { display: none; align-items: center; gap: 7px; }
+#aquaDock button.is-minimized { display: flex; }
+#aquaDock button > span {
+  display: grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  border-radius: 4px;
+  background: #15384d;
+  color: var(--aqua-cyan);
+  font-weight: 800;
+}
+#aquaDock button > b { font-size: 10px; font-weight: 650; }
+#aquaDock button.is-minimized::before { content: none; }
+
+#aquaToolMenu {
+  position: fixed;
+  z-index: 2400;
+  top: 70px;
+  right: 14px;
+  display: none;
+  width: 310px;
+  max-height: calc(100vh - 90px);
+  overflow: auto;
+  border: 1px solid var(--aqua-border);
+  border-radius: 8px;
+  background: rgba(7,16,26,.98);
+  box-shadow: 0 22px 56px rgba(0,0,0,.46);
+  backdrop-filter: blur(18px);
+}
+#aquaToolMenu.is-open { display: block; }
+#aquaToolMenu > div:first-child { padding: 13px 14px 9px; border-bottom: 1px solid rgba(125,177,218,.16); }
+#aquaToolMenu > div:first-child small { display: block; color: #6c98af; font-size: 8px; letter-spacing: .13em; }
+#aquaToolMenu > div:first-child b { display: block; margin-top: 3px; font-size: 13px; }
+#aquaToolMenuList { display: grid; grid-template-columns: 1fr 1fr; gap: 5px; padding: 8px; }
+#aquaToolMenuList button {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  min-height: 49px;
+  border: 1px solid transparent;
+  border-radius: 6px;
+  background: #0a1b28;
+  color: #bdd0dc;
+  text-align: left;
+  cursor: pointer;
+}
+#aquaToolMenuList button:hover,#aquaToolMenuList button:focus-visible { border-color: #315c75; background: #102a3c; outline: 0; }
+#aquaToolMenuList button.is-open { background: #103248; border-color: #26627c; }
+#aquaToolMenuList button > span:first-child {
+  display: grid;
+  place-items: center;
+  width: 25px;
+  height: 25px;
+  flex: 0 0 25px;
+  border-radius: 5px;
+  background: #15384d;
+  color: var(--aqua-cyan);
+  font-weight: 800;
+}
+#aquaToolMenuList button > span:last-child { min-width: 0; }
+#aquaToolMenuList button b { display: block; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; font-size: 9px; }
+#aquaToolMenuList button small { display: block; margin-top: 2px; color: #6f8a9c; font-size: 8px; }
+
+.aqua-map-first .map-legend {
+  left: 14px;
+  bottom: 16px;
+  display: grid;
+  gap: 6px;
+  min-width: 224px;
+  padding: 9px 10px;
+  border-color: rgba(125,177,218,.24);
+  border-radius: 7px;
+  background: rgba(6,15,24,.88);
+  box-shadow: 0 10px 28px rgba(0,0,0,.24);
+  backdrop-filter: blur(12px);
+}
+body:has(#aquaDock button.is-minimized) .map-legend { bottom: 70px; }
+.map-legend-title { color: #6f98ae; font-size: 7px; letter-spacing: .14em; }
+.map-legend-group { display: flex; align-items: center; gap: 9px; }
+.map-legend-group small { width: 64px; color: #58798d; font-size: 7px; letter-spacing: .08em; }
+.map-legend-group span { margin: 0; color: #b6c9d5; font-size: 9px; }
+.map-legend-group i { width: 6px; height: 6px; margin-right: 4px; box-shadow: 0 0 0 2px rgba(255,255,255,.06); }
+
+.aqua-map-first .selection-card {
+  width: min(330px, calc(100vw - 28px));
+  padding: 0;
+  overflow: hidden;
+  border-color: rgba(125,177,218,.3);
+  border-radius: 8px;
+  background: rgba(7,16,25,.94);
+  box-shadow: 0 16px 38px rgba(0,0,0,.3);
+  backdrop-filter: blur(14px);
+}
+.selection-kicker { display: flex; align-items: center; justify-content: space-between; padding: 9px 11px 7px; border-bottom: 1px solid rgba(125,177,218,.14); }
+.selection-kicker small { color: #6f9ab2; font-size: 7px; letter-spacing: .14em; }
+.selection-kicker span { padding: 2px 6px; border: 1px solid #2b5c74; border-radius: 4px; background: #102b3d; color: #8fd5e4; font-size: 7px; font-weight: 800; }
+.selection-card .selection-title { display: block; padding: 10px 11px 0; color: #f2f7fa; font-size: 15px; }
+.selection-source { margin: 2px 11px 9px !important; color: #6f899a !important; font-size: 8px !important; }
+.selection-empty { margin: 5px 11px 12px !important; color: #879fac !important; line-height: 1.45; }
+.selection-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; margin: 0 10px 10px; overflow: hidden; border: 1px solid rgba(125,177,218,.13); border-radius: 6px; background: rgba(125,177,218,.1); }
+.selection-grid div { min-width: 0; padding: 7px 8px; background: #091824; }
+.selection-grid dt { overflow: hidden; color: #668699; font-size: 7px; letter-spacing: .05em; text-overflow: ellipsis; white-space: nowrap; }
+.selection-grid dd { overflow: hidden; margin: 2px 0 0; color: #d8e4eb; font-size: 10px; font-weight: 700; text-overflow: ellipsis; white-space: nowrap; }
+.selection-risk { display: grid; grid-template-columns: auto 1fr; gap: 10px; align-items: center; margin: 0 10px 10px; padding: 8px; border: 1px solid #36576a; border-radius: 6px; background: #0b1d29; }
+.selection-risk span { min-width: 64px; }
+.selection-risk small { display: block; color: #7290a1; font-size: 6px; letter-spacing: .08em; }
+.selection-risk b { display: block; margin-top: 2px; font-size: 14px; }
+.selection-risk p { margin: 0 !important; color: #9eb4c1 !important; line-height: 1.4; }
+.selection-risk.high { border-color: rgba(255,109,123,.42); }
+.selection-risk.high b { color: #ff8792; }
+.selection-risk.medium { border-color: rgba(255,198,92,.42); }
+.selection-risk.medium b { color: #ffd277; }
+.selection-risk.low b { color: #6cdca2; }
+
+@media (max-width: 800px) {
+  .aqua-tools { width: 50px; flex-basis: 50px; }
+  .aqua-map-first .aqua-window::after { display: none; }
+  .aqua-map-first .map-legend { display: none; }
+  #aquaDock button > b { display: none; }
+  #aquaToolMenu { top: 106px; left: 8px; right: 8px; width: auto; max-height: calc(100vh - 180px); }
+}

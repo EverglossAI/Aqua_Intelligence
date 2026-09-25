@@ -7,6 +7,7 @@
   <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css">
   <link rel="stylesheet" href="https://unpkg.com/maplibre-gl@5/dist/maplibre-gl.css">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="../aqua-shell.css">
 </head>
 <body>
 <div class="shell">
@@ -123,12 +124,13 @@
             </div>
           </div>
         </div>
-        <div class="map-legend">
-          <span><i class="pipe"></i>Pipe</span><span><i class="meter"></i>Meter</span><span><i class="valve"></i>Valve</span>
-          <span><i class="pressure"></i>Pressure</span><span><i class="acoustic"></i>Acoustic</span><span><i class="risk"></i>Priority</span>
+        <div class="map-legend" aria-label="Map legend">
+          <div class="map-legend-title">MAP KEY</div>
+          <div class="map-legend-group"><small>NETWORK</small><span><i class="pipe"></i>Pipe</span><span><i class="meter"></i>Meter</span><span><i class="valve"></i>Valve</span></div>
+          <div class="map-legend-group"><small>INTELLIGENCE</small><span><i class="pressure"></i>Pressure</span><span><i class="acoustic"></i>Acoustic</span><span><i class="risk"></i>Priority</span></div>
         </div>
         <div class="selection-card" id="selectionCard">
-          <small>SELECTION</small><b>No asset selected</b><p>Click a network asset to inspect it.</p>
+          <div class="selection-kicker"><small>SELECTION</small><span>MAP</span></div><b class="selection-title">No asset selected</b><p class="selection-empty">Choose a visible network asset to inspect its engineering context.</p>
         </div>
       </section>
 
@@ -279,5 +281,6 @@
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.15.0/proj4.js"></script>
 <script src="./app.js"></script>
 <script src="./v4.js"></script>
+<script src="../aqua-shell.js"></script>
 </body>
 </html>
