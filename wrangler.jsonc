@@ -9,5 +9,18 @@
     "directory": ".",
     "binding": "ASSETS",
     "run_worker_first": ["/api/*"]
-  }
+  },
+  "d1_databases": [
+    {
+      "binding": "AQUA_DB",
+      "database_name": "aqua-projects",
+      "database_id": "82ade345-27be-4866-a856-f2201318ffda"
+    }
+  ],
+  "r2_buckets": [
+    {
+      "binding": "AQUA_PROJECTS",
+      "bucket_name": "aqua-projects"
+    }
+  ]
 }
