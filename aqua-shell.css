@@ -1,0 +1,101 @@
+/* Aqua Intelligence map-first shell */
+:root{
+  --aqua-glass:rgba(9,19,31,.88);
+  --aqua-glass-strong:rgba(8,17,29,.96);
+  --aqua-border:rgba(125,169,219,.22);
+  --aqua-cyan:#52d7ff;
+  --aqua-blue:#3785ff;
+  --aqua-muted:#8fa8c3;
+}
+html,body{width:100%;height:100%;overflow:hidden}
+body{background:#06101a}
+.top,.side,.header{display:none!important}
+.app,.main,.content{position:fixed!important;inset:0!important;width:100%!important;height:100%!important;min-height:0!important;display:block!important}
+.content{padding:0!important}
+.mapwrap{
+  position:absolute!important;inset:0!important;width:100%!important;height:100%!important;
+  min-height:100%!important;border:0!important;border-radius:0!important;background:#06101a!important;
+}
+.mapwrap #map,.map{position:absolute!important;inset:0!important;width:100%!important;height:100%!important}
+.mapbadge{top:76px!important;right:14px!important;max-width:340px;background:rgba(6,16,26,.78)!important;backdrop-filter:blur(10px)}
+.content>.left,.content>.right{display:none!important}
+.layers{display:none!important}
+#status{left:16px!important;bottom:68px!important}
+
+#aquaChrome{position:fixed;inset:0;pointer-events:none;z-index:1200}
+.aqua-topbar{
+  position:absolute;left:14px;right:14px;top:12px;height:50px;display:flex;align-items:center;gap:10px;
+  pointer-events:none
+}
+.aqua-brand,.aqua-project,.aqua-command,.aqua-mapmodes,.aqua-iconbtn{
+  pointer-events:auto;background:var(--aqua-glass);border:1px solid var(--aqua-border);
+  backdrop-filter:blur(16px);box-shadow:0 10px 30px rgba(0,0,0,.24)
+}
+.aqua-brand{height:50px;padding:8px 13px;border-radius:12px;min-width:146px}
+.aqua-brand b{display:block;font-size:14px;letter-spacing:.16em}
+.aqua-brand span{font-size:8px;letter-spacing:.24em;color:var(--aqua-cyan)}
+.aqua-project{display:flex;align-items:center;gap:6px;height:50px;border-radius:12px;padding:6px 8px}
+.aqua-project select{width:auto;max-width:180px;border:0;background:transparent;padding:5px 7px}
+.aqua-command{height:50px;flex:1;max-width:660px;margin:0 auto;border-radius:14px;display:flex;align-items:center;padding:6px 8px}
+.aqua-command input{height:36px;border:0;background:transparent!important;outline:0;padding:0 10px;font-size:13px}
+.aqua-command button{border:0;background:#174d91;color:#fff;border-radius:9px;height:34px;padding:0 14px;cursor:pointer}
+.aqua-mapmodes{height:50px;border-radius:12px;padding:5px;display:flex;gap:4px}
+.aqua-mapmodes button,.aqua-iconbtn{border:0;color:#bed0e5;cursor:pointer}
+.aqua-mapmodes button{background:transparent;border-radius:8px;padding:0 10px;font-size:10px}
+.aqua-mapmodes button.active{background:#153d78;color:#fff}
+.aqua-iconbtn{height:50px;width:50px;border-radius:12px;font-size:18px}
+
+.aqua-window{
+  position:fixed;z-index:1400;background:var(--aqua-glass-strong);border:1px solid var(--aqua-border);
+  border-radius:13px;box-shadow:0 18px 50px rgba(0,0,0,.34);backdrop-filter:blur(16px);
+  min-width:280px;min-height:160px;resize:both;overflow:hidden;pointer-events:auto
+}
+.aqua-window.is-hidden{display:none}
+.aqua-window-header{
+  height:42px;display:flex;align-items:center;justify-content:space-between;padding:0 9px 0 12px;
+  border-bottom:1px solid rgba(125,169,219,.14);cursor:move;user-select:none
+}
+.aqua-window-title{display:flex;align-items:center;gap:8px;font-size:11px;font-weight:750;letter-spacing:.03em}
+.aqua-window-title i{width:7px;height:7px;border-radius:50%;background:var(--aqua-cyan);box-shadow:0 0 9px rgba(82,215,255,.7)}
+.aqua-window-actions{display:flex;gap:3px}
+.aqua-window-actions button{width:27px;height:27px;border:0;border-radius:7px;background:transparent;color:#91a8c0;cursor:pointer;font-size:14px}
+.aqua-window-actions button:hover{background:#17304c;color:#fff}
+.aqua-window-body{height:calc(100% - 42px);overflow:auto}
+.aqua-window .section{padding:11px 12px}
+.aqua-window .ph{padding:10px 12px}
+.aqua-window .ranktable{max-height:none}
+.aqua-window .panel{border:0;background:transparent}
+.aqua-window label,.aqua-window .small{font-size:10px}
+
+#aquaDock{
+  position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:1600;display:flex;gap:6px;
+  padding:6px;background:rgba(7,16,27,.82);border:1px solid var(--aqua-border);border-radius:13px;
+  backdrop-filter:blur(16px);box-shadow:0 10px 34px rgba(0,0,0,.32);pointer-events:auto;max-width:calc(100vw - 28px);overflow:auto
+}
+#aquaDock button{
+  border:1px solid transparent;background:transparent;color:#a9bdd3;border-radius:8px;padding:7px 10px;
+  white-space:nowrap;cursor:pointer;font-size:10px
+}
+#aquaDock button:hover,#aquaDock button.active{background:#14345c;color:#fff;border-color:#28578d}
+#aquaDock button.minimized{color:#5f7894}
+
+.aqua-ai-panel{padding:12px}
+.aqua-ai-log{min-height:120px;max-height:280px;overflow:auto;border:1px solid rgba(125,169,219,.13);border-radius:9px;background:#07121e;padding:9px;font-size:11px;line-height:1.5}
+.aqua-ai-msg{padding:8px 9px;border-radius:8px;margin:5px 0}
+.aqua-ai-msg.user{background:#153d78;margin-left:22px}
+.aqua-ai-msg.ai{background:#102238;margin-right:18px}
+.aqua-ai-quick{display:flex;flex-wrap:wrap;gap:5px;margin-top:8px}
+.aqua-ai-quick button{border:1px solid #29486c;background:#0b1b2d;color:#a9c9ee;border-radius:999px;padding:5px 8px;font-size:9px;cursor:pointer}
+
+.aqua-layers-body{padding:12px;display:grid;gap:8px}
+.aqua-layers-body label{display:flex;align-items:center;gap:8px;font-size:11px;color:#d4e0ed}
+.aqua-layers-body input{width:auto}
+
+@media(max-width:800px){
+ .aqua-topbar{left:8px;right:8px;top:8px;height:auto;flex-wrap:wrap}
+ .aqua-brand{min-width:118px}.aqua-project{flex:1}.aqua-command{order:3;flex-basis:100%;max-width:none}
+ .aqua-mapmodes{display:none}
+ .mapbadge{display:none}
+ .aqua-window{left:8px!important;right:8px!important;bottom:66px!important;top:auto!important;width:auto!important;height:58vh!important;resize:none!important;border-radius:16px}
+ #aquaDock{bottom:8px;left:8px;right:8px;transform:none}
+}
