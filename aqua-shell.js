@@ -308,15 +308,17 @@
   }
 
   function registerCockpitWindows() {
+    const isMobile = matchMedia("(max-width: 800px)").matches;
     const registrations = [
       ["network", ".left-panel", "Network / DMA Planner", "Network", "N", 18, 84, 350, 620, true],
-      ["copilot", ".right-panel", "Aqua AI / Command", "Aqua", "A", () => innerWidth - 390, 84, 370, 560, true],
+      ["copilot", ".right-panel", "Aqua AI / Command", "Aqua", "A", () => innerWidth - 390, 84, 370, 560, !isMobile],
       ["analysis", ".analysis-output", "Hydraulic & NRW Analysis", "Analysis", "Σ", () => innerWidth - 760, 105, 720, 440, false],
       ["events", ".intelligence", "Leak Risk & Events", "Risk", "!", () => innerWidth - 430, 130, 400, 390, false],
       ["engineering", ".engineering", "Engineering Advisor", "Advisor", "E", () => innerWidth - 450, 150, 420, 390, false],
       ["data-health", ".data-health", "Data Health", "Data", "D", 70, 150, 340, 280, false],
       ["hydraulics", "#hydraulicsWorkbench", "EPANET Hydraulics", "Hydraulics", "H", () => innerWidth / 2 - 380, 92, 760, 650, false],
       ["acoustics", "#acousticWorkbench", "Acoustic Intelligence", "Acoustics", "S", () => innerWidth / 2 - 360, 105, 720, 620, false],
+      ["pressure-analysis", "#pressureAnalysisWorkbench", "Pressure Analysis", "Pressure", "P", () => innerWidth / 2 - 390, 92, 780, 650, false],
       ["layers", ".gis-control", "Map Layers", "Layers", "L", 30, 125, 300, 430, false]
     ];
     registrations.forEach(([id, selector, title, shortTitle, icon, left, top, width, height, open]) => {
@@ -338,13 +340,15 @@
     const command = String(raw || "").trim();
     if (!command) return;
     const normalized = command.toLowerCase();
-    const requiresProject = /topolog|connect|network graph|disconnected|water balance|non.?revenue|\bnrw\b|real loss|apparent loss|dma|district meter|hydrophone|deploy|leak|fusion|prv|pressure reducing|air valve|air release|vacuum|high point/.test(normalized);
+    const projectQuery = window.AquaProjectQueries?.matches(command);
+    const requiresProject = projectQuery || /topolog|connect|network graph|disconnected|water balance|non.?revenue|\bnrw\b|real loss|apparent loss|dma|district meter|hydrophone|deploy|leak|fusion|prv|pressure reducing|air valve|air release|vacuum|high point/.test(normalized);
     if (requiresProject && !query("#projectSelect")?.value) {
       windowManager.restore("project");
       query("#aquaCommand")?.focus();
       return;
     }
-    if (/topolog|connect|network graph|disconnected/.test(normalized)) clickControl("runTopology", "analysis");
+    if (projectQuery && window.AquaProjectQueries.handle(command)) windowManager.restore("copilot");
+    else if (/topolog|connect|network graph|disconnected/.test(normalized)) clickControl("runTopology", "analysis");
     else if (/water balance|non.?revenue|\bnrw\b|real loss|apparent loss/.test(normalized)) clickControl("runWaterBalance", "analysis");
     else if (/dma|district meter/.test(normalized)) clickControl("runDmaPlanner", "analysis");
     else if (/hydrophone|sensor.*deploy|acoustic.*deploy/.test(normalized)) clickControl("runSensorPlanner", "analysis");

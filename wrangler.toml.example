@@ -1,0 +1,16 @@
+name = "aqua-intelligence"
+compatibility_date = "2026-09-25"
+pages_build_output_dir = "."
+
+[[d1_databases]]
+binding = "AQUA_DB"
+database_name = "aqua-projects"
+database_id = "REPLACE_WITH_D1_DATABASE_ID"
+
+[[r2_buckets]]
+binding = "AQUA_PROJECTS"
+bucket_name = "aqua-projects"
+
+[vars]
+AQUA_ALLOWED_WRITERS = "reviewer@example.com"
+AQUA_REQUIRE_READ_AUTH = "false"

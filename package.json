@@ -1,0 +1,9 @@
+{
+  "name": "aqua-intelligence",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "test": "node --test tests/*.test.mjs",
+    "check": "node --check cockpit/app.js && node --check cockpit/cloud-projects.js && node --check functions/_lib/projects.js"
+  }
+}

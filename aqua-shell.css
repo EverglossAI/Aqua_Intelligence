@@ -336,7 +336,9 @@ body.aqua-map-first {
   }
 
   .aqua-brand {
+    min-width: 104px;
     height: 44px;
+    padding-inline: 10px;
   }
 
   .aqua-project {
@@ -355,6 +357,17 @@ body.aqua-map-first {
     flex-basis: 100%;
     max-width: none;
     height: 44px;
+  }
+
+  .aqua-command small,
+  .aqua-command kbd {
+    display: none;
+  }
+
+  .aqua-command input {
+    height: 32px;
+    padding-left: 4px;
+    font-size: 12px;
   }
 
   .aqua-map-modes {
@@ -377,13 +390,17 @@ body.aqua-map-first {
     left: 8px !important;
     right: 8px !important;
     top: auto !important;
-    bottom: 82px !important;
+    bottom: max(8px, env(safe-area-inset-bottom)) !important;
     width: auto !important;
-    height: min(62vh, 620px) !important;
+    height: min(46vh, 460px) !important;
     max-width: none;
-    max-height: calc(100vh - 176px);
+    max-height: calc(100dvh - 170px);
     min-width: 0;
     resize: none;
+  }
+
+  body:has(#aquaDock button.is-minimized) .aqua-window {
+    bottom: calc(68px + env(safe-area-inset-bottom)) !important;
   }
 
   .aqua-map-first .aqua-window-header {
@@ -393,7 +410,7 @@ body.aqua-map-first {
   #aquaDock {
     left: 8px;
     right: 8px;
-    bottom: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
     transform: none;
   }
 }

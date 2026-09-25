@@ -31,6 +31,48 @@
 .workspace-focus{animation:aquaFocusPulse 1.1s ease-out}
 @keyframes aquaFocusPulse{0%{box-shadow:0 0 0 0 rgba(73,214,223,.45)}100%{box-shadow:0 0 0 18px rgba(73,214,223,0)}}
 .demo-btn{margin-top:8px}
+.tree-item[role="button"]{width:100%;border:0;background:transparent;text-align:left}
+.tree-item[role="button"]::after{content:"";float:right;width:6px;height:6px;margin:5px 2px 0 8px;border-radius:50%;background:#405766}
+.tree-item[role="button"].is-active{background:#102c40;color:#eef8ff}
+.tree-item[role="button"].is-active::after{background:var(--cyan);box-shadow:0 0 6px rgba(73,214,223,.55)}
+.tree-item[role="button"].is-inactive{color:#617888}
+.tree-item[role="button"]:focus-visible{outline:2px solid var(--cyan);outline-offset:-2px}
+.persistence-notice{position:fixed;z-index:10050;right:16px;bottom:72px;display:flex;align-items:center;gap:14px;max-width:460px;padding:12px 14px;background:#27171b;border:1px solid #a94c5a;border-radius:7px;box-shadow:0 12px 36px rgba(0,0,0,.42)}
+.persistence-notice div{min-width:0}.persistence-notice b,.persistence-notice span{display:block}.persistence-notice b{font-size:12px;color:#ffd9df}.persistence-notice span{margin-top:3px;color:#d7aeb5;font-size:10px;line-height:1.4}.persistence-notice button{flex:none;border:1px solid #d06c7c;background:#54242c;color:#fff;padding:7px 9px;border-radius:5px;cursor:pointer}
+.dma-style-panel{margin-top:10px;padding-top:8px;border-top:1px solid rgba(142,166,184,.2)}
+.dma-style-panel>label,.dma-style-fields label,.dma-project-actions label{display:block;margin-top:6px;color:#8fa7b7;font-size:9px}.dma-style-panel select,.dma-style-fields input[type="number"]{width:100%;margin-top:3px;background:#08131d;color:#fff;border:1px solid var(--line);padding:6px;border-radius:4px}
+.dma-style-fields{display:grid;grid-template-columns:1fr 1fr;gap:5px 8px}.dma-style-fields input[type="color"]{display:block;width:100%;height:28px;margin-top:3px;padding:2px;border:1px solid var(--line);background:#08131d}.dma-opacity-control{grid-column:1/-1}.dma-opacity-control input,.dma-project-actions input{width:calc(100% - 42px);vertical-align:middle}.dma-opacity-control output,.dma-project-actions output{display:inline-block;width:38px;text-align:right;color:#dcecf5}.dma-style-fields button,.dma-project-actions button{border:1px solid var(--line);background:#102432;color:#cfe0e9;padding:6px;border-radius:4px;cursor:pointer}.dma-reset-one{align-self:end}.dma-project-actions{display:grid;gap:5px;margin-top:8px;padding-top:7px;border-top:1px solid rgba(142,166,184,.16)}
+.dma-style-fields.is-compact{grid-template-columns:repeat(3,minmax(0,1fr));margin-top:7px}.dma-style-fields.is-compact .dma-opacity-control{grid-column:auto}.selection-dma-style{margin-top:10px;padding-top:8px;border-top:1px solid rgba(142,166,184,.18)}.selection-dma-style>b{font-size:10px}.dma-colour-swatch{display:inline-block;width:9px;height:9px;margin-right:6px;border:1px solid rgba(255,255,255,.75);border-radius:2px;vertical-align:1px}.dma-selection-grid dd{overflow-wrap:anywhere}
+
+.telemetry-analysis-grid{display:none}
+.pressure-analysis-workbench{min-width:620px;overflow:hidden}
+.pressure-analysis-body{height:100%;overflow:auto;padding:14px;color:#c7d8e2}
+.telemetry-tabs{display:flex;gap:4px;margin-bottom:10px;border-bottom:1px solid rgba(142,166,184,.2)}
+.telemetry-tabs button{border:0;border-bottom:2px solid transparent;background:transparent;color:#829baa;padding:8px 12px;cursor:pointer}
+.telemetry-tabs button.active{border-color:var(--cyan);color:#eef8ff}
+.synthetic-notice{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:10px;padding:8px 10px;border-left:3px solid #f2cf5b;background:rgba(242,207,91,.08)}
+.synthetic-notice b,.synthetic-badge{color:#f2cf5b}
+.synthetic-notice span,.analysis-method{font-size:11px;color:#8ea6b8}
+.synthetic-badge{display:inline-block;margin:4px 0 10px;padding:3px 6px;border:1px solid rgba(242,207,91,.35);font-size:10px;text-transform:uppercase}
+.pressure-key{display:flex;flex-wrap:wrap;gap:10px;margin:8px 0;font-size:10px;color:#9cb3c1}
+.pressure-key span{display:flex;align-items:center;gap:4px}.pressure-key i{width:8px;height:8px;border-radius:50%}
+.pressure-key .critical{background:#ff5d6c}.pressure-key .low{background:#ff9f43}.pressure-key .watch{background:#f2cf5b}.pressure-key .normal{background:#52c788}.pressure-key .high{background:#4ba3ff}
+.telemetry-table{width:100%;border-collapse:collapse;font-size:11px}
+.telemetry-table th{position:sticky;top:0;background:#102432;color:#7895a7;text-align:right;padding:7px 8px;border-bottom:1px solid rgba(142,166,184,.22)}
+.telemetry-table th:first-child,.telemetry-table td:first-child{text-align:left}.telemetry-table td{text-align:right;padding:8px;border-bottom:1px solid rgba(142,166,184,.13)}
+.telemetry-table tbody tr{cursor:pointer}.telemetry-table tbody tr:hover,.telemetry-table tbody tr:focus{background:rgba(73,214,223,.08);outline:0}
+.telemetry-table td b{display:block;color:#eaf6fc}.telemetry-table td small{display:block;color:#6f8a9a}.pressure-critical{color:#ff6b78}.pressure-low{color:#ffad5c}.nrw-flag{color:#f2cf5b;font-weight:700}
+.telemetry-analysis-detail{margin-top:12px;padding-top:10px;border-top:1px solid rgba(142,166,184,.18)}
+.telemetry-analysis-detail>div{display:flex;justify-content:space-between;gap:10px}.telemetry-analysis-detail span{font-size:10px;color:#7895a7}
+.telemetry-detail-metrics{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr));gap:6px!important;margin-top:8px}.telemetry-detail-metrics span{padding:7px;background:rgba(5,19,28,.45)}.telemetry-detail-metrics small,.telemetry-detail-metrics b{display:block}.telemetry-detail-metrics b{margin-top:3px;color:#dcecf5;font-size:11px}
+.analysis-chart,.telemetry-chart{display:block;width:100%;height:160px;margin-top:8px;background:rgba(5,19,28,.5)}
+.telemetry-chart{height:145px}.selection-wide{grid-column:1/-1}
+.dma-flow-marker{background:transparent!important;border:0!important}.dma-flow-marker span{display:block;width:13px;height:13px;margin:2px;background:#55d6be;border:2px solid var(--dma-accent,#efffff);transform:rotate(45deg);box-shadow:0 0 0 2px color-mix(in srgb,var(--dma-accent,#efffff) 35%,transparent)}
+.dma-flow-marker.is-muted{opacity:.16}.dma-flow-marker.is-highlighted span{box-shadow:0 0 0 4px rgba(85,214,190,.28),0 0 12px rgba(85,214,190,.9)}.pressure-logger-marker{filter:drop-shadow(0 0 3px rgba(238,249,255,.45))}
+.map-legend i.dma-flow{border-radius:1px;background:#55d6be;transform:rotate(45deg)}
+.project-selector-group{display:flex;align-items:center;gap:8px;min-width:0}.project-selector-group select{min-width:180px}.project-sync-status{font-size:10px;font-weight:700;line-height:1;white-space:nowrap;color:#8fa4b3}.project-sync-status::before{content:"";display:inline-block;width:6px;height:6px;margin-right:5px;border-radius:50%;background:#f2b84b}.project-sync-status[data-state="synced"]{color:#6fd2a2}.project-sync-status[data-state="synced"]::before{background:#42c98a}.project-sync-status[data-state="offline"]{color:#f0ba63}.project-sync-status[data-state="offline"]::before,.project-sync-status[data-state="error"]::before{background:#ed9f3c}.project-sync-status[data-state="saving"]::before{background:#4ab7d8}
+
+@media(max-width:800px){.pressure-analysis-workbench{min-width:0}.pressure-analysis-body{padding:10px}.synthetic-notice{align-items:flex-start;flex-direction:column}.telemetry-table{min-width:620px}.pressure-analysis-body{overflow:auto}.analysis-chart{height:140px}.telemetry-detail-metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.dma-style-fields.is-compact{grid-template-columns:1fr 1fr}.persistence-notice{left:8px;right:8px;bottom:64px}.project-selector-group{align-items:flex-start;flex-direction:column;gap:3px}.project-selector-group select{min-width:150px}}
 
 /* True workspace routing */
 body[data-workspace="operations"] .analysis-grid,

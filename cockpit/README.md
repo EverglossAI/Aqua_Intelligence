@@ -20,7 +20,7 @@ Implemented on `feature/nrw-cockpit`:
 - Water-balance engine using imported system-input and authorized-consumption evidence.
 - Flow + pressure + acoustic + asset-risk fusion for leak survey prioritisation.
 - 20-hydrophone deployment planner using network risk, acoustic suitability, accessible assets and spacing.
-- Browser-local project persistence using IndexedDB.
+- Central project persistence using Cloudflare D1/R2, with revisioned IndexedDB caching and offline read fallback.
 - Local natural-language tool routing for topology, NRW, leak fusion, sensor deployment, PRV and air-valve requests.
 
 ## V3 — Engineering Intelligence

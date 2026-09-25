@@ -96,10 +96,52 @@ function aquaReprojectLayers(layers,requestedCrs){
 function normalizeShpResult(raw){if(!raw)return[];if(raw.type==='FeatureCollection')return[{name:'network',geojson:raw}];if(Array.isArray(raw))return raw.map((g,i)=>({name:g.fileName||g.name||('layer_'+(i+1)),geojson:g}));return Object.entries(raw).filter(([,g])=>g&&g.type==='FeatureCollection').map(([name,geojson])=>({name,geojson}))}
 function renderProject(){const p=state.active;if(!p)return;state.networkLayer.clearLayers();let bounds=[];p.layers.forEach(layer=>{const kind=layer.kind;const gj=L.geoJSON(layer.geojson,{style:()=>({color:colors[kind]||colors.other,weight:kind==='pipe'?3:2,fillColor:colors[kind]||colors.other,fillOpacity:kind==='dma'?.05:.18}),pointToLayer:(f,ll)=>L.circleMarker(ll,{radius:kind==='meter'?4:kind==='valve'?5:4,color:colors[kind]||colors.other,fillColor:colors[kind]||colors.other,fillOpacity:.9,weight:1}),onEachFeature:(f,l)=>{l.on('click',()=>selectFeature(layer,f,l));}});gj.addTo(state.networkLayer);try{const b=gj.getBounds();if(b.isValid())bounds.push(b)}catch(e){}});if(bounds.length){let b=bounds[0];for(let i=1;i<bounds.length;i++)b=b.extend(bounds[i]);state.map.fitBounds(b.pad(.06))}updateProjectUI()}
 function selectFeature(layer,f,l){state.selected={layer,feature:f,leaflet:l};const p=f.properties||{};const rows=Object.entries(p).slice(0,6).map(([k,v])=>k+': '+v).join(' · ');$('selectionCard').innerHTML='<small>SELECTION</small><b>'+escapeHtml(layer.name)+' · '+escapeHtml(layer.kind)+'</b><p>'+escapeHtml(rows||'No attributes')+'</p>'}
-async function createProject(){const file=$('gisInput').files[0];if(!file){alert('Choose a zipped shapefile or GeoJSON package.');return}const name=$('projectName').value.trim()||file.name.replace(/\.(zip|json|geojson)$/i,'');$('createProjectBtn').textContent='Reading GIS…';$('createProjectBtn').disabled=true;try{let raw;if(/\.zip$/i.test(file.name)){const buf=await file.arrayBuffer();raw=await shp(buf)}else{raw=JSON.parse(await file.text())}let layers=normalizeShpResult(raw).map(x=>({...x,kind:kindFor(x.name)}));const crsChoice=$('projectCrs')?.value||'auto';const projected=aquaReprojectLayers(layers,crsChoice);layers=projected.layers;const project={id:'p_'+Date.now(),name,utility:$('utilityName').value.trim(),source:file.name,sourceCrs:projected.sourceCrs,reprojected:projected.reprojected,rawLayers:normalizeShpResult(raw).map(x=>({...x,kind:kindFor(x.name)})),layers,telemetry:[],created:new Date().toISOString()};state.projects.push(project);state.active=project;const o=document.createElement('option');o.value=project.id;o.textContent=project.name;$('projectSelect').appendChild(o);$('projectSelect').value=project.id;closeModal();renderProject();addAi('Project <b>'+escapeHtml(project.name)+'</b> opened. I classified '+layers.length+' GIS layers and '+layers.reduce((s,l)=>s+l.geojson.features.length,0)+' features. Source CRS: <b>'+escapeHtml(project.sourceCrs||'unknown')+'</b>'+(project.reprojected?' → reprojected to WGS84 for display.':'.')+' You can now import flow, pressure, meter or acoustic telemetry.')}catch(e){console.error(e);alert('GIS import failed: '+e.message)}finally{$('createProjectBtn').textContent='Create & analyse project';$('createProjectBtn').disabled=false}}
+async function createProject(){
+  const file=$('gisInput').files[0];
+  if(!file){alert('Choose a zipped shapefile or GeoJSON package.');return}
+  const name=$('projectName').value.trim()||file.name.replace(/\.(zip|json|geojson)$/i,'');
+  $('createProjectBtn').textContent='Reading GIS…';$('createProjectBtn').disabled=true;
+  try{
+    let raw;
+    if(/\.zip$/i.test(file.name)){const buf=await file.arrayBuffer();raw=await shp(buf)}
+    else raw=JSON.parse(await file.text());
+    const rawLayers=normalizeShpResult(raw).map(x=>({...x,kind:kindFor(x.name)}));
+    const projected=aquaReprojectLayers(rawLayers,$('projectCrs')?.value||'auto');
+    const project={
+      id:'p_'+Date.now(),name,utility:$('utilityName').value.trim(),
+      source:file.name,sourceType:/\.zip$/i.test(file.name)?'shapefile-zip':'geojson',
+      sourceCrs:projected.sourceCrs,normalizedCrs:'EPSG:4326',reprojected:projected.reprojected,
+      rawLayers,layers:projected.layers,telemetry:[],created:new Date().toISOString(),
+      status:'active',projectVersion:0,cloudRevision:0,
+      projectConfig:{},dmaDisplay:{visible:true},dmaStyles:{},dmaFeatureMappings:[],
+      provenance:{sourceType:/\.zip$/i.test(file.name)?'shapefile-zip':'geojson',sourceFilename:file.name,telemetrySources:[],reprojected:projected.reprojected}
+    };
+    project.__aquaPendingSourceFile=file;
+    try{
+      await V23persistProject(project,{setActive:true,sourceFile:file});
+    }catch(persistenceError){
+      aquaActivateProject(project);
+      aquaShowPersistenceError(project,persistenceError);
+      closeModal();renderProject();renderTelemetry();
+      addAi('Project <b>'+escapeHtml(project.name)+'</b> is open in this session, but it was <b>not synchronized</b>. Use Retry save before reloading.');
+      return;
+    }
+    aquaActivateProject(project);closeModal();renderProject();renderTelemetry();
+    addAi('Project <b>'+escapeHtml(project.name)+'</b> was centrally saved and opened. I classified '+project.layers.length+' GIS layers and '+project.layers.reduce((s,l)=>s+l.geojson.features.length,0)+' features. Source CRS: <b>'+escapeHtml(project.sourceCrs||'unknown')+'</b>'+(project.reprojected?' → reprojected to WGS84 for display.':'.'));
+  }catch(e){console.error(e);alert('GIS import failed: '+e.message)}
+  finally{$('createProjectBtn').textContent='Create & analyse project';$('createProjectBtn').disabled=false}
+}
 function parseCSV(text){const lines=text.trim().split(/\r?\n/);if(lines.length<2)return[];const h=lines[0].split(',').map(x=>x.trim());return lines.slice(1).map(line=>{const cols=line.split(',');return Object.fromEntries(h.map((k,i)=>[k,cols[i]?.trim()]))})}
 function inferTelemetry(row){const keys=Object.keys(row).map(k=>k.toLowerCase());const has=s=>keys.some(k=>k.includes(s));return has('acoustic')||has('noise')?'acoustic':has('pressure')?'pressure':has('flow')||has('mnf')?'flow':has('meter')||has('consumption')?'meter':'other'}
-async function importTelemetry(file){if(!state.active){alert('Open a project first.');return}const rows=/\.json$/i.test(file.name)?JSON.parse(await file.text()):parseCSV(await file.text());const arr=Array.isArray(rows)?rows:(rows.records||[]);arr.forEach((r,i)=>state.active.telemetry.push({...r,_id:r.id||('T'+(i+1)),type:r.type||inferTelemetry(r)}));renderTelemetry();updateProjectUI();addAi('Imported <b>'+arr.length+'</b> telemetry records. I can now combine them with the GIS when answering network questions.')}
+async function importTelemetry(file){
+  if(!state.active){alert('Open a project first.');return}
+  const rows=/\.json$/i.test(file.name)?JSON.parse(await file.text()):parseCSV(await file.text());
+  const arr=Array.isArray(rows)?rows:(rows.records||[]);
+  arr.forEach((row,index)=>state.active.telemetry.push({...row,_id:row.id||('T'+(index+1)),type:row.type||inferTelemetry(row)}));
+  renderTelemetry();updateProjectUI();
+  const saved=await window.AquaProjectPersistence.save(state.active,{setActive:true});
+  addAi(saved?'Imported and saved <b>'+arr.length+'</b> telemetry records.':'Imported <b>'+arr.length+'</b> telemetry records into this session, but the project is <b>not saved</b>. Use Retry save before reloading.');
+}
 function renderTelemetry(){state.telemetryLayer.clearLayers();if(!state.active)return;state.active.telemetry.forEach(t=>{const lat=Number(t.lat||t.latitude),lng=Number(t.lng||t.lon||t.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lng))return;const c=t.type==='pressure'?colors.dma:t.type==='acoustic'?colors.hydrant:colors.meter;L.circleMarker([lat,lng],{radius:5,color:c,fillColor:c,fillOpacity:1}).bindTooltip((t._id||'Telemetry')+' · '+t.type).addTo(state.telemetryLayer)})}
 function renderHealth(){const p=state.active;if(!p)return;const vals=[['GIS topology',featureCount(p,'pipe')?'Ready':'Missing'],['Flow / meter',p.telemetry.some(x=>['flow','meter'].includes(x.type))?'Ready':'Missing'],['Pressure',p.telemetry.some(x=>x.type==='pressure')?'Ready':'Missing'],['Acoustic',p.telemetry.some(x=>x.type==='acoustic')?'Ready':'Missing']];$('dataHealth').innerHTML=vals.map(([a,b])=>'<div><span>'+a+'</span><b>'+b+'</b></div>').join('')}
 function renderEvents(){const p=state.active;if(!p)return;const events=[];const pipes=featureCount(p,'pipe'),meters=featureCount(p,'meter'),dmas=featureCount(p,'dma');if(pipes&&!dmas)events.push({sev:'med',title:'DMA boundaries not confirmed',body:'Network contains '+pipes+' pipe features but no recognized DMA/region layer.',tag:'DMA design'});if(pipes&&!meters)events.push({sev:'med',title:'Meter coverage unavailable',body:'Aqua cannot complete a defensible water balance until inlet/customer meter data is mapped.',tag:'Data gap'});if(!p.telemetry.length)events.push({sev:'low',title:'No live operational evidence',body:'Import flow, pressure or acoustic telemetry to move from GIS planning to event detection.',tag:'Telemetry'});if(p.telemetry.some(x=>x.type==='flow')&&!p.telemetry.some(x=>x.type==='pressure'))events.push({sev:'med',title:'Flow present without pressure context',body:'Pressure logging will improve leakage interpretation and pressure-management advice.',tag:'Pressure'});if(!events.length)events.push({sev:'low',title:'Network ready for analysis',body:'GIS and operational evidence are available. Run water balance, DMA planning or acoustic deployment.',tag:'Ready'});$('eventList').innerHTML=events.map(e=>'<div class="event '+e.sev+'"><i></i><div><b>'+e.title+'</b><p>'+e.body+'</p></div><strong>'+e.tag+'</strong></div>').join('')}
@@ -211,34 +253,212 @@ V23.dma=function(show){
   return out
 };
 
+const AQUA_DB_VERSION=2;
+const aquaProjectCache=new Map();
+const aquaSaveQueues=new Map();
+function aquaSetSyncStatus(stateName,text){
+  const status=$('projectSyncStatus');if(!status)return;
+  status.dataset.state=stateName;status.textContent=text;
+}
 async function V23db(){
   return new Promise(function(resolve,reject){
-    var req=indexedDB.open('AquaIntelligenceDB',1);
-    req.onupgradeneeded=function(){var d=req.result;if(!d.objectStoreNames.contains('projects'))d.createObjectStore('projects',{keyPath:'id'})};
+    var req=indexedDB.open('AquaIntelligenceDB',AQUA_DB_VERSION);
+    req.onupgradeneeded=function(){
+      var d=req.result;
+      if(!d.objectStoreNames.contains('projects'))d.createObjectStore('projects',{keyPath:'id'});
+      if(!d.objectStoreNames.contains('metadata'))d.createObjectStore('metadata',{keyPath:'key'});
+    };
     req.onsuccess=function(){resolve(req.result)};req.onerror=function(){reject(req.error)}
   })
 }
+function aquaProjectCounts(project){
+  var counts={};['pipe','meter','valve','hydrant','dma'].forEach(function(kind){counts[kind]=featureCount(project,kind)});return counts;
+}
+function aquaSerializableProject(project){
+  var updated=new Date().toISOString();
+  var record={
+    schemaVersion:AQUA_DB_VERSION,id:project.id,name:project.name,utility:project.utility||'',
+    customerMetadata:project.customerMetadata||{},source:project.source||'',sourceType:project.sourceType||'unknown',
+    sourceCrs:project.sourceCrs||'EPSG:4326',normalizedCrs:project.normalizedCrs||'EPSG:4326',reprojected:Boolean(project.reprojected),
+    status:project.status||'active',projectVersion:Number(project.projectVersion||project.cloudRevision||0),cloudRevision:Number(project.cloudRevision||project.projectVersion||0),
+    syncState:project.syncState||'synced',syncError:project.syncError||'',
+    r2Objects:project.r2Objects||{},localOnly:Boolean(project.localOnly),rawLayers:project.rawLayers||null,layers:project.layers||[],
+    layerClassification:(project.layers||[]).map(function(layer){return{name:layer.name,kind:layer.kind,count:layer.geojson?.features?.length||0}}),
+    projectModelCounts:aquaProjectCounts(project),telemetry:project.telemetry||[],
+    telemetryProvenance:Array.from(new Set((project.telemetry||[]).map(function(item){return item.source}).filter(Boolean))),
+    lambayDemo:project.lambayDemo||null,logicalDmas:project.logicalDmas||project.lambayDemo?.logicalDmas||[],
+    dmaFeatureMappings:project.dmaFeatureMappings||[],dmaStyles:project.dmaStyles||{},dmaStateVersion:project.dmaStateVersion||0,
+    dmaDisplay:project.dmaDisplay||{visible:true},projectConfig:project.projectConfig||{},
+    analyses:project.analyses||{},topology:project.topology||null,provenance:project.provenance||{},
+    created:project.created||updated,updated,lastOpenedAt:project.lastOpenedAt||updated
+  };
+  return JSON.parse(JSON.stringify(record));
+}
+function aquaHydrateProject(record){
+  var project={...record};
+  project.layers=Array.isArray(project.layers)?project.layers:[];
+  project.telemetry=Array.isArray(project.telemetry)?project.telemetry:[];
+  project.dmaStyles=project.dmaStyles||{};project.dmaFeatureMappings=project.dmaFeatureMappings||[];
+  project.dmaDisplay=project.dmaDisplay||{visible:true};project.projectConfig=project.projectConfig||{};
+  project.normalizedCrs=project.normalizedCrs||'EPSG:4326';project.status=project.status||'active';
+  project.cloudRevision=Number(project.cloudRevision||project.projectVersion||0);project.projectVersion=project.cloudRevision;
+  project.syncState=project.syncState||'synced';project.syncError=project.syncError||'';
+  return project;
+}
+function aquaActivateProject(project){
+  var index=state.projects.findIndex(function(item){return item.id===project.id});
+  if(index>=0)state.projects[index]=project;else state.projects.push(project);
+  state.active=project;project.lastOpenedAt=new Date().toISOString();
+  if(!Array.from($('projectSelect').options).some(function(option){return option.value===project.id})){
+    var option=document.createElement('option');option.value=project.id;option.textContent=project.name;$('projectSelect').appendChild(option);
+  }
+  $('projectSelect').value=project.id;
+}
+function aquaHidePersistenceError(){var notice=$('persistenceNotice');if(notice)notice.remove()}
+function aquaShowPersistenceError(project,error){
+  aquaHidePersistenceError();
+  var conflict=error?.status===409;
+  var notice=document.createElement('div');notice.id='persistenceNotice';notice.className='persistence-notice';
+  notice.innerHTML='<div><b>Project not synchronized</b><span>'+escapeHtml(conflict?'A newer cloud revision exists. Reload it before making this change again.':(error?.message||'Cloud write failed')+'. The project remains open and its pending changes are cached locally.')+'</span></div><button type="button">'+(conflict?'Reload cloud version':'Retry save')+'</button>';
+  notice.querySelector('button').onclick=async function(){
+    this.disabled=true;this.textContent=conflict?'Loading…':'Saving…';
+    try{
+      if(conflict){await aquaReloadCloudProject(project.id);aquaHidePersistenceError();addAi('Loaded the latest cloud revision of <b>'+escapeHtml(project.name)+'</b>. Reapply the local change if it is still required.');return}
+      await V23persistProject(project,{setActive:true});aquaHidePersistenceError();addAi('Project <b>'+escapeHtml(project.name)+'</b> was synchronized successfully.');
+    }catch(retryError){this.disabled=false;this.textContent=conflict?'Reload cloud version':'Retry save';notice.querySelector('span').textContent=(retryError?.message||'Cloud request failed')+'. Pending changes remain cached locally.'}
+  };
+  document.body.appendChild(notice);
+}
+async function aquaReadCache(){
+  var d=await V23db();
+  return new Promise(function(resolve,reject){
+    var tx=d.transaction(['projects','metadata'],'readonly'),projectReq=tx.objectStore('projects').getAll(),activeReq=tx.objectStore('metadata').get('activeProjectId'),projects=[],activeId=null;
+    projectReq.onsuccess=function(){projects=projectReq.result||[]};activeReq.onsuccess=function(){activeId=activeReq.result?.value||null};
+    tx.oncomplete=function(){resolve({projects:projects.map(aquaHydrateProject),activeId:activeId})};tx.onerror=function(){reject(tx.error)};
+  });
+}
+async function aquaCacheActiveId(projectId){
+  var d=await V23db();
+  await new Promise(function(resolve,reject){
+    var tx=d.transaction('metadata','readwrite');tx.objectStore('metadata').put({key:'activeProjectId',value:projectId,updated:new Date().toISOString()});
+    tx.oncomplete=resolve;tx.onerror=function(){reject(tx.error||new Error('IndexedDB transaction failed'))};tx.onabort=function(){reject(tx.error||new Error('IndexedDB transaction was aborted'))};
+  });
+}
+async function aquaCacheProject(project,setActive){
+  var record=aquaSerializableProject(project),d=await V23db();
+  await new Promise(function(resolve,reject){
+    var tx=d.transaction(['projects','metadata'],'readwrite');tx.objectStore('projects').put(record);
+    if(setActive!==false)tx.objectStore('metadata').put({key:'activeProjectId',value:record.id,updated:record.updated});
+    tx.oncomplete=resolve;tx.onerror=function(){reject(tx.error||new Error('IndexedDB cache transaction failed'))};tx.onabort=function(){reject(tx.error||new Error('IndexedDB cache transaction was aborted'))};
+  });
+  aquaProjectCache.set(record.id,aquaHydrateProject(record));
+  return record;
+}
+async function aquaCachePendingProject(project,error){
+  project.syncState='pending';project.syncError=error?.message||'Cloud write failed';
+  if(project.cloudRevision){
+    try{await aquaCacheProject(project,true)}catch(cacheError){console.warn('Could not cache pending project changes',cacheError)}
+  }
+}
+async function aquaPersistProjectNow(project,options){
+  var config=options||{},sourceFile=config.sourceFile||project.__aquaPendingSourceFile;
+  if(project.localOnly||config.cloud===false){
+    var localRecord=await aquaCacheProject(project,config.setActive);aquaHidePersistenceError();return localRecord;
+  }
+  if(!window.AquaCloudProjects)throw new Error('Central project service is unavailable');
+  aquaSetSyncStatus('saving','Saving…');
+  var record=aquaSerializableProject(project),metadata;record.syncState='synced';record.syncError='';
+  if(project.cloudRevision){
+    metadata=await window.AquaCloudProjects.update(record,project.cloudRevision);
+  }else{
+    if(!sourceFile)throw new Error('The original source file is required for the first central save');
+    metadata=await window.AquaCloudProjects.create(record,sourceFile,config.telemetryFiles||[]);
+  }
+  var revision=Number(metadata.version||0);
+  if(!revision)throw new Error('Central project service returned no revision');
+  Object.assign(project,{cloudRevision:revision,projectVersion:revision,updated:metadata.updated||record.updated,r2Objects:metadata.r2Objects||project.r2Objects||{},syncState:'synced',syncError:''});
+  delete project.__aquaPendingSourceFile;
+  try{await aquaCacheProject(project,config.setActive)}catch(cacheError){console.warn('Project is centrally saved but local cache failed',cacheError)}
+  aquaSetSyncStatus('synced','Cloud synced · r'+revision);aquaHidePersistenceError();return aquaSerializableProject(project);
+}
+function V23persistProject(project,options){
+  if(!project)return Promise.reject(new Error('No project is available to save'));
+  var previous=aquaSaveQueues.get(project.id)||Promise.resolve();
+  var pending=previous.catch(function(){}).then(function(){return aquaPersistProjectNow(project,options)});
+  aquaSaveQueues.set(project.id,pending);
+  return pending.finally(function(){if(aquaSaveQueues.get(project.id)===pending)aquaSaveQueues.delete(project.id)});
+}
 async function V23persist(){
-  if(!state.active)return;
-  try{var d=await V23db();await new Promise(function(resolve,reject){var tx=d.transaction('projects','readwrite');tx.objectStore('projects').put(state.active);tx.oncomplete=resolve;tx.onerror=function(){reject(tx.error)}})}catch(e){console.warn('Aqua project persistence unavailable',e)}
+  if(!state.active)return false;
+  try{await V23persistProject(state.active,{setActive:true});return true}catch(e){console.warn('Aqua cloud persistence unavailable',e);await aquaCachePendingProject(state.active,e);aquaSetSyncStatus('error','Not synchronized');aquaShowPersistenceError(state.active,e);return false}
 }
-async function V23restore(){
+function aquaRenderProjectIndex(projects){
+  var select=$('projectSelect');select.innerHTML='<option value="">Select project…</option>';
+  projects.forEach(function(project){var option=document.createElement('option');option.value=project.id;option.textContent=project.name;select.appendChild(option)});
+}
+async function aquaOpenProjectById(projectId){
+  if(!projectId){state.active=null;return}
+  var project=state.projects.find(function(item){return item.id===projectId}),openedOffline=false;
+  if(!project)return;
+  if(project.__cloudStub){
+    aquaSetSyncStatus('saving','Loading cloud…');
+    try{
+      var loaded=await window.AquaCloudProjects.data(project.id);
+      project=aquaHydrateProject(loaded.project);project.cloudRevision=loaded.version;project.projectVersion=loaded.version;
+      await aquaCacheProject(project,true).catch(function(error){console.warn('Could not cache cloud project',error)});
+    }catch(error){
+      if(!project.__cachedFallback)throw error;
+      project=project.__cachedFallback;openedOffline=true;aquaSetSyncStatus('offline','Offline / cached · r'+project.cloudRevision);
+    }
+  }else{
+    await aquaCacheActiveId(project.id).catch(function(error){console.warn('Could not update active cache project',error)});
+  }
+  aquaActivateProject(project);renderProject();renderTelemetry();
+  if(project.syncState==='pending'&&!openedOffline){
+    aquaSetSyncStatus('error','Pending synchronization · r'+project.cloudRevision);
+    await window.AquaProjectPersistence.save(project,{setActive:true});
+  }else if(project.cloudRevision&&!openedOffline)aquaSetSyncStatus('synced','Cloud synced · r'+project.cloudRevision);
+  return project;
+}
+async function aquaReloadCloudProject(projectId){
+  aquaSetSyncStatus('saving','Loading cloud…');
+  var loaded=await window.AquaCloudProjects.data(projectId),project=aquaHydrateProject(loaded.project);
+  project.cloudRevision=loaded.version;project.projectVersion=loaded.version;project.syncState='synced';project.syncError='';
+  await aquaCacheProject(project,true);aquaActivateProject(project);renderProject();renderTelemetry();
+  aquaSetSyncStatus('synced','Cloud synced · r'+loaded.version);return project;
+}
+async function aquaStartupProjects(){
+  var cache={projects:[],activeId:null};
+  try{cache=await aquaReadCache()}catch(error){console.warn('Could not read Aqua project cache',error)}
+  cache.projects.forEach(function(project){aquaProjectCache.set(project.id,project)});
   try{
-    var d=await V23db(),projects=await new Promise(function(resolve,reject){var req=d.transaction('projects','readonly').objectStore('projects').getAll();req.onsuccess=function(){resolve(req.result||[])};req.onerror=function(){reject(req.error)}});
-    if(!projects.length)return;
-    state.projects=projects;
-    projects.forEach(function(p){if(!Array.from($('projectSelect').options).some(function(o){return o.value===p.id})){var o=document.createElement('option');o.value=p.id;o.textContent=p.name;$('projectSelect').appendChild(o)}});
-    if(!state.active){state.active=projects[0];$('projectSelect').value=state.active.id;renderProject();renderTelemetry();addAi('Restored <b>'+escapeHtml(state.active.name)+'</b> from the local project database.')}
-  }catch(e){console.warn('Could not restore Aqua projects',e)}
+    var cloudProjects=await window.AquaCloudProjects.list(),cloudIds=new Set(cloudProjects.map(function(project){return project.id}));
+    var projects=cloudProjects.map(function(metadata){
+      var cached=aquaProjectCache.get(metadata.id),revision=Number(metadata.version||0);
+      if(cached&&Number(cached.cloudRevision||cached.projectVersion||0)===revision)return Object.assign(cached,metadata,{cloudRevision:revision,projectVersion:revision});
+      return Object.assign({},metadata,{cloudRevision:revision,projectVersion:revision,layers:[],telemetry:[],__cloudStub:true,__cachedFallback:cached||null});
+    });
+    projects.push(...cache.projects.filter(function(project){return project.localOnly&&!cloudIds.has(project.id)}));
+    state.projects=projects;aquaRenderProjectIndex(projects);aquaSetSyncStatus('synced','Cloud connected');
+    if(cache.activeId&&projects.some(function(project){return project.id===cache.activeId}))await aquaOpenProjectById(cache.activeId);
+  }catch(error){
+    console.warn('Central project index unavailable; using IndexedDB cache',error);
+    state.projects=cache.projects;aquaRenderProjectIndex(state.projects);aquaSetSyncStatus('offline','Offline / cached');
+    var fallback=state.projects.find(function(project){return project.id===cache.activeId})||state.projects.slice().sort(function(a,b){return String(b.lastOpenedAt||b.updated||'').localeCompare(String(a.lastOpenedAt||a.updated||''))})[0];
+    if(fallback){aquaActivateProject(fallback);renderProject();renderTelemetry();$('projectSelect').value=fallback.id;addAi('Opened <b>'+escapeHtml(fallback.name)+'</b> from the local cache. Cloud changes are not synchronized while offline.')}
+  }
+  $('projectSelect').onchange=async function(event){
+    try{await aquaOpenProjectById(event.target.value)}catch(error){console.error(error);aquaSetSyncStatus('error','Load failed');alert('Could not open project: '+error.message)}
+  };
 }
-var V23oldCreate=createProject;
-createProject=async function(){await V23oldCreate();if(state.active){if(!state.active.topology)state.active.topology=V23.topology(false);await V23persist()}};
-var V23oldImport=importTelemetry;
-importTelemetry=async function(file){await V23oldImport(file);await V23persist()};
+window.AquaProjectPersistence={
+  version:AQUA_DB_VERSION,persist:V23persistProject,retry:function(){return V23persist()},serialize:aquaSerializableProject,exportActive:function(){if(!state.active)throw new Error('No active project');return aquaSerializableProject(state.active)},startup:aquaStartupProjects,open:aquaOpenProjectById,cache:aquaCacheProject,
+  save:async function(project,options){try{await V23persistProject(project,options);return true}catch(error){await aquaCachePendingProject(project,error);aquaSetSyncStatus('error','Not synchronized');aquaShowPersistenceError(project,error);return false}}
+};
 
 window.addEventListener('load',function(){
   if($('runDmaPlanner'))$('runDmaPlanner').onclick=function(){var r=V23.dma(true);addAi(r.length?'Validated '+r.length+' DMA/region feature(s) against pipes, valves and meters.':'No DMA polygon layer is available for validation.')};
-  setTimeout(V23restore,150);
+  setTimeout(aquaStartupProjects,150);
 });
 
 function createDemoProject(){
@@ -267,6 +487,7 @@ function createDemoProject(){
     id:'demo_nrw_project',
     name:'Demo NRW Network',
     utility:'Aqua Intelligence Demo',
+    localOnly:true,
     source:'Built-in demo',
     layers:[
       {name:'pipe',kind:'pipe',geojson:{type:'FeatureCollection',features:pipes}},
@@ -502,6 +723,7 @@ async function aquaLoadDemoBundle(file){
       id:'demo_data',
       name:'demo data',
       utility:'Taiwan Demo Networks',
+      localOnly:true,
       source:file.name,
       sourceCrs:'MIXED',
       reprojected:true,
@@ -576,6 +798,7 @@ function aquaFeatureInFocus(f,kind){
 }
 function aquaSelectionAllows(kind){
   const m=state.selectionMode||'any';
+  if(kind==='dma')return true;
   if(m==='any')return true;
   if(m==='point')return['meter','valve','hydrant'].includes(kind);
   if(m==='pipe')return kind==='pipe';
@@ -597,9 +820,71 @@ function aquaApplyLayerVisibility(){
     if(state.layerVisibility.analysis&&!state.map.hasLayer(state.analysisLayer))state.analysisLayer.addTo(state.map);
     if(!state.layerVisibility.analysis&&state.map.hasLayer(state.analysisLayer))state.map.removeLayer(state.analysisLayer);
   }
+  aquaSyncLayerControls();
+}
+function aquaSyncLayerControls(){
+  ['pipe','meter','valve','hydrant','dma'].forEach(kind=>{
+    const visible=state.layerVisibility[kind]!==false;
+    const checkbox=document.querySelector('[data-layer-toggle="'+kind+'"]');
+    if(checkbox)checkbox.checked=visible;
+    const row=document.querySelector('.tree-item[data-filter="'+kind+'"]');
+    if(!row)return;
+    row.classList.toggle('is-active',visible);
+    row.classList.toggle('is-inactive',!visible);
+    row.setAttribute('aria-pressed',String(visible));
+  });
+}
+function aquaProjectLayerBounds(kind){
+  const group=state.kindLayers[kind];
+  if(!group)return null;
+  const bounds=L.latLngBounds([]);
+  group.eachLayer(layer=>{
+    try{
+      if(layer.getBounds){const layerBounds=layer.getBounds();if(layerBounds.isValid())bounds.extend(layerBounds)}
+      else if(layer.getLatLng)bounds.extend(layer.getLatLng());
+    }catch(e){}
+  });
+  return bounds.isValid()?bounds:null;
+}
+function aquaBringLayerToFront(kind){
+  const group=state.kindLayers[kind];
+  if(!group)return;
+  group.eachLayer(layer=>{
+    try{if(layer.bringToFront)layer.bringToFront();else if(layer.eachLayer)layer.eachLayer(child=>child.bringToFront?.())}catch(e){}
+  });
+}
+function aquaSetProjectLayer(kind,visible,options={}){
+  if(!['pipe','meter','valve','hydrant','dma'].includes(kind))return false;
+  state.layerVisibility[kind]=Boolean(visible);
+  if(kind==='dma'&&visible&&options.showAllDmas&&state.focusDma){
+    state.focusDma=null;
+    renderProject();
+    renderTelemetry();
+  }else{
+    aquaApplyLayerVisibility();
+  }
+  if(visible){
+    aquaBringLayerToFront(kind);
+    if(options.fit!==false){
+      const bounds=aquaProjectLayerBounds(kind);
+      if(bounds)state.map.fitBounds(bounds.pad(kind==='dma'?.08:.12),{maxZoom:kind==='pipe'?18:17});
+    }
+  }
+  aquaSyncLayerControls();
+  return true;
+}
+function aquaToggleProjectLayer(kind){
+  return aquaSetProjectLayer(kind,state.layerVisibility[kind]===false,{showAllDmas:kind==='dma'});
 }
 function aquaBaseStyle(kind){
-  return{color:colors[kind]||colors.other,weight:kind==='pipe'?2.3:kind==='dma'?2:1.5,fillColor:colors[kind]||colors.other,fillOpacity:kind==='dma'?.04:.2,opacity:kind==='pipe'?.72:.9};
+  return{color:colors[kind]||colors.other,weight:kind==='pipe'?2.3:kind==='dma'?2.5:1.5,fillColor:colors[kind]||colors.other,fillOpacity:kind==='dma'?.12:.2,opacity:kind==='pipe'?.72:.9};
+}
+function aquaFeatureStyle(kind,feature){
+  if(kind==='dma'&&window.AquaDmaStyles?.forFeature){
+    const style=window.AquaDmaStyles.forFeature(feature);
+    if(style)return style;
+  }
+  return aquaBaseStyle(kind);
 }
 function aquaSelectionLabel(key){
   return String(key).replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());
@@ -646,7 +931,7 @@ function aquaSelectionMarkup(layer,feature){
 function aquaEnhancedSelect(layer,f,l){
   if(!aquaSelectionAllows(layer.kind))return;
   if(state.selected&&state.selected.leaflet&&state.selected.leaflet.setStyle){
-    try{state.selected.leaflet.setStyle(aquaBaseStyle(state.selected.layer.kind))}catch(e){}
+    try{state.selected.leaflet.setStyle(aquaFeatureStyle(state.selected.layer.kind,state.selected.feature))}catch(e){}
   }
   state.selected={layer,feature:f,leaflet:l};
   if(l&&l.setStyle)try{l.setStyle({color:'#ffffff',weight:5,fillOpacity:.35,opacity:1})}catch(e){}
@@ -665,7 +950,7 @@ renderProject=function(){
     (layer.geojson?.features||[]).forEach(f=>{
       if(!aquaFeatureInFocus(f,kind))return;
       const gj=L.geoJSON(f,{
-        style:()=>aquaBaseStyle(kind),
+        style:()=>aquaFeatureStyle(kind,f),
         pointToLayer:(feature,ll)=>L.circleMarker(ll,{radius:kind==='meter'?4.5:kind==='valve'?4.5:4,color:colors[kind]||colors.other,fillColor:colors[kind]||colors.other,fillOpacity:.85,weight:1}),
         onEachFeature:(feature,ll)=>ll.on('click',()=>aquaEnhancedSelect(layer,feature,ll))
       });
@@ -808,12 +1093,57 @@ function aquaInitialRisk(showResults=true){
   return ranked;
 }
 
+function aquaProjectQueryKind(value){
+  const query=String(value||'').toLowerCase();
+  if(/\b(dma|dmas|regions?)\b/.test(query))return'dma';
+  if(/\bhydrants?\b/.test(query))return'hydrant';
+  if(/\bvalves?\b/.test(query))return'valve';
+  if(/\bmeters?\b/.test(query))return'meter';
+  if(/\bpipes?\b/.test(query))return'pipe';
+  return null;
+}
+function aquaRunProjectQuery(value){
+  if(!state.active)return null;
+  const query=String(value||'').trim().toLowerCase(),kind=aquaProjectQueryKind(query);
+  if(!kind)return null;
+  const labels={pipe:'pipes',meter:'meters',valve:'valves',hydrant:'hydrants',dma:'DMA/regions'};
+  if(/\bhow many\b|\bcount\b|\bnumber of\b/.test(query)){
+    return'<b>'+featureCount(state.active,kind).toLocaleString()+'</b> '+labels[kind]+' are loaded in '+escapeHtml(state.active.name)+'.';
+  }
+  const action=query.match(/\b(show|hide)\b/);
+  if(!action)return null;
+  const visible=action[1]==='show';
+  aquaSetProjectLayer(kind,visible,{fit:visible,showAllDmas:kind==='dma'});
+  return(visible?'Showing ':'Hiding ')+featureCount(state.active,kind).toLocaleString()+' '+labels[kind]+'.';
+}
+
+window.AquaProjectQueries={
+  matches(value){return Boolean(aquaProjectQueryKind(value)&&(/\bhow many\b|\bcount\b|\bnumber of\b|\bshow\b|\bhide\b/.test(String(value||'').toLowerCase())))},
+  run:aquaRunProjectQuery,
+  handle(value){
+    const answer=aquaRunProjectQuery(value);
+    if(!answer)return false;
+    addUser(value);addAi(answer);return true;
+  }
+};
+
 window.addEventListener('load',function(){
   document.querySelectorAll('[data-layer-toggle]').forEach(cb=>{
     const kind=cb.dataset.layerToggle;
     cb.checked=state.layerVisibility[kind]!==false;
-    cb.onchange=function(){state.layerVisibility[kind]=cb.checked;aquaApplyLayerVisibility()};
+    cb.onchange=function(){
+      if(['pipe','meter','valve','hydrant','dma'].includes(kind))aquaSetProjectLayer(kind,cb.checked,{fit:false,showAllDmas:kind==='dma'});
+      else{state.layerVisibility[kind]=cb.checked;aquaApplyLayerVisibility()}
+    };
   });
+  document.querySelectorAll('.tree-item[data-filter]').forEach(row=>{
+    const kind=row.dataset.filter;
+    if(!['pipe','meter','valve','hydrant','dma'].includes(kind))return;
+    row.setAttribute('role','button');row.setAttribute('tabindex','0');
+    row.onclick=function(){aquaToggleProjectLayer(kind)};
+    row.onkeydown=function(event){if(event.key==='Enter'||event.key===' '){event.preventDefault();row.click()}};
+  });
+  aquaSyncLayerControls();
   if($('selectionMode'))$('selectionMode').onchange=function(){state.selectionMode=this.value};
   if($('focusSelection'))$('focusSelection').onclick=aquaFocusSelectedDma;
   if($('showAllAssets'))$('showAllAssets').onclick=aquaShowAllAssets;
@@ -876,6 +1206,8 @@ function aquaApiIntent(data){
 askCopilot=async function(q){
   addUser(q);
   if(!state.active){addAi('Open a project first.');return}
+  const projectAnswer=aquaRunProjectQuery(q);
+  if(projectAnswer){addAi(projectAnswer);return}
   const suggestedIntent=V23intent(q);
   if(suggestedIntent){
     const local=V23execute(suggestedIntent);

@@ -1,0 +1,366 @@
+{
+  "type": "FeatureCollection",
+  "name": "Lambay synthetic pressure loggers and DMA inlet meters",
+  "features": [
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.37262508535267,
+          22.341992676684153
+        ]
+      },
+      "properties": {
+        "id": "FM-01-IN",
+        "asset_type": "dma_flow_meter",
+        "demo": true,
+        "dma_code": "1350-00-01-01",
+        "dma_name": "東港所琉球鄉本福村等小區計劃-琉球白沙線",
+        "dma_uid": "1342001910750000101A",
+        "role": "DMA inlet",
+        "pipe_diameter_mm": 300,
+        "pipe_material": "DIP",
+        "pipe_id": "134000718524716011D001",
+        "units": "L/s",
+        "source": "Synthetic demo based on GIS boundary crossing"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.37308819089212,
+          22.342470628010556
+        ]
+      },
+      "properties": {
+        "id": "PL-01-IN",
+        "asset_type": "pressure_logger",
+        "demo": true,
+        "dma_code": "1350-00-01-01",
+        "dma_name": "東港所琉球鄉本福村等小區計劃-琉球白沙線",
+        "dma_uid": "1342001910750000101A",
+        "role": "inlet_pressure",
+        "units": "mH2O",
+        "nominal_pressure_m": 43,
+        "source": "Synthetic demo positioned on/near imported pipe network"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.38326637011187,
+          22.346053417386926
+        ]
+      },
+      "properties": {
+        "id": "PL-01-MID",
+        "asset_type": "pressure_logger",
+        "demo": true,
+        "dma_code": "1350-00-01-01",
+        "dma_name": "東港所琉球鄉本福村等小區計劃-琉球白沙線",
+        "dma_uid": "1342001910750000101A",
+        "role": "mid_zone_pressure",
+        "units": "mH2O",
+        "nominal_pressure_m": 38,
+        "source": "Synthetic demo positioned on/near imported pipe network"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.38871948455719,
+          22.348457401688528
+        ]
+      },
+      "properties": {
+        "id": "PL-01-DIST",
+        "asset_type": "pressure_logger",
+        "demo": true,
+        "dma_code": "1350-00-01-01",
+        "dma_name": "東港所琉球鄉本福村等小區計劃-琉球白沙線",
+        "dma_uid": "1342001910750000101A",
+        "role": "distal_pressure",
+        "units": "mH2O",
+        "nominal_pressure_m": 33,
+        "source": "Synthetic demo positioned on/near imported pipe network"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.37262508535267,
+          22.341992676684153
+        ]
+      },
+      "properties": {
+        "id": "FM-02-IN",
+        "asset_type": "dma_flow_meter",
+        "demo": true,
+        "dma_code": "1350-00-01-02",
+        "dma_name": "東港所琉球大南線小區",
+        "dma_uid": "1342001910750000102A",
+        "role": "DMA inlet",
+        "pipe_diameter_mm": 300,
+        "pipe_material": "DIP",
+        "pipe_id": "134000718524716011D001",
+        "units": "L/s",
+        "source": "Synthetic demo based on GIS boundary crossing"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.37235668625858,
+          22.341417770288626
+        ]
+      },
+      "properties": {
+        "id": "PL-02-IN",
+        "asset_type": "pressure_logger",
+        "demo": true,
+        "dma_code": "1350-00-01-02",
+        "dma_name": "東港所琉球大南線小區",
+        "dma_uid": "1342001910750000102A",
+        "role": "inlet_pressure",
+        "units": "mH2O",
+        "nominal_pressure_m": 39,
+        "source": "Synthetic demo positioned on/near imported pipe network"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.36517969772872,
+          22.330813042593014
+        ]
+      },
+      "properties": {
+        "id": "PL-02-MID",
+        "asset_type": "pressure_logger",
+        "demo": true,
+        "dma_code": "1350-00-01-02",
+        "dma_name": "東港所琉球大南線小區",
+        "dma_uid": "1342001910750000102A",
+        "role": "mid_zone_pressure",
+        "units": "mH2O",
+        "nominal_pressure_m": 33,
+        "source": "Synthetic demo positioned on/near imported pipe network"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.35616752384507,
+          22.323333706309246
+        ]
+      },
+      "properties": {
+        "id": "PL-02-DIST",
+        "asset_type": "pressure_logger",
+        "demo": true,
+        "dma_code": "1350-00-01-02",
+        "dma_name": "東港所琉球大南線小區",
+        "dma_uid": "1342001910750000102A",
+        "role": "distal_pressure",
+        "units": "mH2O",
+        "nominal_pressure_m": 27,
+        "source": "Synthetic demo positioned on/near imported pipe network"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.36993575650745,
+          22.34105298958595
+        ]
+      },
+      "properties": {
+        "id": "FM-03-IN",
+        "asset_type": "dma_flow_meter",
+        "demo": true,
+        "dma_code": "1350-00-01-03",
+        "dma_name": "東港所琉球上杉線小區",
+        "dma_uid": "1342001910750000103A",
+        "role": "DMA inlet",
+        "pipe_diameter_mm": 100,
+        "pipe_material": "PVCP",
+        "pipe_id": "1341004184847130158005",
+        "units": "L/s",
+        "source": "Synthetic demo based on GIS boundary crossing"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.36931015607746,
+          22.341477485484216
+        ]
+      },
+      "properties": {
+        "id": "PL-03-IN",
+        "asset_type": "pressure_logger",
+        "demo": true,
+        "dma_code": "1350-00-01-03",
+        "dma_name": "東港所琉球上杉線小區",
+        "dma_uid": "1342001910750000103A",
+        "role": "inlet_pressure",
+        "units": "mH2O",
+        "nominal_pressure_m": 36,
+        "source": "Synthetic demo positioned on/near imported pipe network"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.3660209285277,
+          22.343843998186454
+        ]
+      },
+      "properties": {
+        "id": "PL-03-MID",
+        "asset_type": "pressure_logger",
+        "demo": true,
+        "dma_code": "1350-00-01-03",
+        "dma_name": "東港所琉球上杉線小區",
+        "dma_uid": "1342001910750000103A",
+        "role": "mid_zone_pressure",
+        "units": "mH2O",
+        "nominal_pressure_m": 32,
+        "source": "Synthetic demo positioned on/near imported pipe network"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.36964122684486,
+          22.35069828124368
+        ]
+      },
+      "properties": {
+        "id": "PL-03-DIST",
+        "asset_type": "pressure_logger",
+        "demo": true,
+        "dma_code": "1350-00-01-03",
+        "dma_name": "東港所琉球上杉線小區",
+        "dma_uid": "1342001910750000103A",
+        "role": "distal_pressure",
+        "units": "mH2O",
+        "nominal_pressure_m": 28,
+        "source": "Synthetic demo positioned on/near imported pipe network"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.37104180020927,
+          22.34122899006861
+        ]
+      },
+      "properties": {
+        "id": "FM-04-IN",
+        "asset_type": "dma_flow_meter",
+        "demo": true,
+        "dma_code": "1350-00-01-04",
+        "dma_name": "東港所琉球天福線小區",
+        "dma_uid": "1342001910750000104A",
+        "role": "DMA inlet",
+        "pipe_diameter_mm": 300,
+        "pipe_material": "DIP",
+        "pipe_id": "072900618514714011D007",
+        "units": "L/s",
+        "source": "Synthetic demo based on GIS boundary crossing"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.37059916321,
+          22.34134300754143
+        ]
+      },
+      "properties": {
+        "id": "PL-04-IN",
+        "asset_type": "pressure_logger",
+        "demo": true,
+        "dma_code": "1350-00-01-04",
+        "dma_name": "東港所琉球天福線小區",
+        "dma_uid": "1342001910750000104A",
+        "role": "inlet_pressure",
+        "units": "mH2O",
+        "nominal_pressure_m": 42,
+        "source": "Synthetic demo positioned on/near imported pipe network"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.36902989208963,
+          22.342124609383944
+        ]
+      },
+      "properties": {
+        "id": "PL-04-MID",
+        "asset_type": "pressure_logger",
+        "demo": true,
+        "dma_code": "1350-00-01-04",
+        "dma_name": "東港所琉球天福線小區",
+        "dma_uid": "1342001910750000104A",
+        "role": "mid_zone_pressure",
+        "units": "mH2O",
+        "nominal_pressure_m": 35,
+        "source": "Synthetic demo positioned on/near imported pipe network"
+      }
+    },
+    {
+      "type": "Feature",
+      "geometry": {
+        "type": "Point",
+        "coordinates": [
+          120.35549042694166,
+          22.32944566635029
+        ]
+      },
+      "properties": {
+        "id": "PL-04-DIST",
+        "asset_type": "pressure_logger",
+        "demo": true,
+        "dma_code": "1350-00-01-04",
+        "dma_name": "東港所琉球天福線小區",
+        "dma_uid": "1342001910750000104A",
+        "role": "distal_pressure",
+        "units": "mH2O",
+        "nominal_pressure_m": 29,
+        "source": "Synthetic demo positioned on/near imported pipe network"
+      }
+    }
+  ]
+}

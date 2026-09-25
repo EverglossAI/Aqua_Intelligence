@@ -31,7 +31,10 @@
         <h1 id="projectTitle">No project open</h1>
       </div>
       <div class="top-actions">
-        <select id="projectSelect"><option value="">Select project…</option></select>
+        <div class="project-selector-group">
+          <select id="projectSelect"><option value="">Select project…</option></select>
+          <span id="projectSyncStatus" class="project-sync-status" data-state="connecting">Connecting…</span>
+        </div>
         <button id="newProjectBtn" class="ghost">＋ New Project</button>
         <button id="demoProjectBtn" class="ghost">Load Demo Data</button>
         <input id="demoBundleInput" type="file" accept=".json,application/json" hidden>
@@ -113,7 +116,9 @@
             <label><input type="checkbox" data-layer-toggle="valve"> Valves</label>
             <label><input type="checkbox" data-layer-toggle="hydrant"> Hydrants</label>
             <label><input type="checkbox" data-layer-toggle="dma" checked> DMA</label>
-            <label><input type="checkbox" data-layer-toggle="telemetry" checked> Telemetry</label>
+            <label><input type="checkbox" data-telemetry-toggle="flow" checked> DMA inlet meters</label>
+            <label><input type="checkbox" data-telemetry-toggle="pressure" checked> Pressure loggers</label>
+            <label><input type="checkbox" data-telemetry-toggle="acoustic"> Acoustic sensors</label>
             <label><input type="checkbox" data-layer-toggle="analysis" checked> Analysis</label>
             <div class="gis-row top-gap"><span>Select</span>
               <select id="selectionMode"><option value="any">Any</option><option value="point">Points</option><option value="pipe">Pipes</option><option value="dma">DMA</option></select>
@@ -122,12 +127,14 @@
               <button id="focusSelection">Focus DMA</button>
               <button id="showAllAssets">Show All</button>
             </div>
+            <div id="dmaStylePanel" class="dma-style-panel hidden" aria-label="Logical DMA styles"></div>
           </div>
         </div>
         <div class="map-legend" aria-label="Map legend">
           <div class="map-legend-title">MAP KEY</div>
           <div class="map-legend-group"><small>NETWORK</small><span><i class="pipe"></i>Pipe</span><span><i class="meter"></i>Meter</span><span><i class="valve"></i>Valve</span></div>
-          <div class="map-legend-group"><small>INTELLIGENCE</small><span><i class="pressure"></i>Pressure</span><span><i class="acoustic"></i>Acoustic</span><span><i class="risk"></i>Priority</span></div>
+          <div class="map-legend-group"><small>OPERATIONS</small><span><i class="pressure"></i>Pressure logger</span><span><i class="dma-flow"></i>DMA inlet meter</span><span><i class="acoustic"></i>Acoustic</span></div>
+          <div class="map-legend-group"><small>INTELLIGENCE</small><span><i class="risk"></i>Priority</span></div>
         </div>
         <div class="selection-card" id="selectionCard">
           <div class="selection-kicker"><small>SELECTION</small><span>MAP</span></div><b class="selection-title">No asset selected</b><p class="selection-empty">Choose a visible network asset to inspect its engineering context.</p>
@@ -181,6 +188,14 @@
         </div>
       </article>
     </section>
+
+    <section class="telemetry-analysis-grid">
+      <article class="panel pressure-analysis-workbench" id="pressureAnalysisWorkbench">
+        <div class="panel-head"><div><small>DETERMINISTIC OPERATIONS</small><h2>Pressure Analysis</h2></div><span class="brain">DEMO</span></div>
+        <div id="pressureAnalysisBody" class="pressure-analysis-body"><div class="empty-row">Open Lambay Island to load its synthetic pressure and DMA inlet telemetry.</div></div>
+      </article>
+    </section>
+
     <section class="advanced-grid">
       <article class="panel hydraulic-workbench" id="hydraulicsWorkbench">
         <div class="panel-head"><div><small>HYDRAULICS</small><h2>EPANET Planning</h2></div><span class="brain">OWA-EPANET</span></div>
@@ -272,8 +287,11 @@
 <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
 <script src="https://unpkg.com/shpjs@6.2.0/dist/shp.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.15.0/proj4.js"></script>
+<script src="./cloud-projects.js"></script>
 <script src="./app.js"></script>
 <script src="./v4.js"></script>
+<script src="./lambay-demo.js"></script>
+<script src="./lambay-dma-styles.js"></script>
 <script src="../aqua-shell.js"></script>
 </body>
 </html>
