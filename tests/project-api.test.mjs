@@ -1,8 +1,9 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { onRequestGet as listProjects, onRequestPost as createProject } from "../functions/api/projects/index.js";
-import { onRequestPut as updateProject } from "../functions/api/projects/[id].js";
-import { onRequestGet as getProjectData } from "../functions/api/projects/[id]/data.js";
+import worker from "../worker/index.js";
+import {
+  createProject, getProject, getProjectData, listProjects, routeProjectRequest, updateProject
+} from "../worker/routes/projects.js";
 
 class FakeBucket {
   constructor() { this.objects = new Map(); }
@@ -97,8 +98,15 @@ test("project API stores payloads in R2 and metadata in D1 with optimistic revis
   assert.equal(definitions[0].readingCount, 2);
   assert.equal("readings" in definitions[0], false);
 
-  const list = await listProjects({ env });
+  const list = await listProjects({ request: new Request("http://local/api/projects"), env });
   assert.equal((await list.json()).projects[0].name, "Lambay Island");
+
+  const details = await getProject({
+    request: new Request("http://local/api/projects/lambay-island"),
+    params: { id: "lambay-island" }, env
+  });
+  assert.equal(details.status, 200);
+  assert.equal((await details.json()).project.logicalDmas.length, 1);
 
   const changed = sampleProject();
   changed.dmaStyles["dma-1"].fillOpacity = 0.47;
@@ -118,7 +126,7 @@ test("project API stores payloads in R2 and metadata in D1 with optimistic revis
   assert.equal(stale.status, 409);
   assert.equal(env.AQUA_DB.rows.get("lambay-island").version, 2);
 
-  const data = await getProjectData({ params: { id: "lambay-island" }, env });
+  const data = await getProjectData({ request: new Request("http://local/api/projects/lambay-island/data"), params: { id: "lambay-island" }, env });
   assert.equal(data.status, 200);
   assert.equal(data.headers.get("x-aqua-project-version"), "2");
   assert.equal((await data.json()).dmaStyles["dma-1"].fillOpacity, 0.47);
@@ -171,4 +179,23 @@ test("failed D1 create removes partially uploaded R2 objects", async () => {
   console.error = originalError;
   assert.equal(response.status, 500);
   assert.equal(bucket.objects.size, 0);
+});
+
+test("Worker router dispatches APIs before falling through to static assets", async () => {
+  const env = { AQUA_DB: new FakeDb(), AQUA_PROJECTS: new FakeBucket() };
+  const apiResponse = await routeProjectRequest(new Request("http://local/api/projects"), env);
+  assert.equal(apiResponse.status, 200);
+  assert.deepEqual(await apiResponse.json(), { projects: [] });
+
+  const staticResponse = await worker.fetch(new Request("http://local/cockpit/"), {
+    ...env,
+    ASSETS: { fetch: request => new Response(`asset:${new URL(request.url).pathname}`) }
+  });
+  assert.equal(await staticResponse.text(), "asset:/cockpit/");
+
+  const missingApi = await worker.fetch(new Request("http://local/api/unknown"), {
+    ...env,
+    ASSETS: { fetch: () => { throw new Error("API must not fall through to assets"); } }
+  });
+  assert.equal(missingApi.status, 404);
 });

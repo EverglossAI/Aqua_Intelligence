@@ -1,0 +1,13 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "aqua-intelligence",
+  "main": "worker/index.js",
+  "compatibility_date": "2026-09-25",
+  "workers_dev": false,
+  "keep_vars": true,
+  "assets": {
+    "directory": ".",
+    "binding": "ASSETS",
+    "run_worker_first": ["/api/*"]
+  }
+}

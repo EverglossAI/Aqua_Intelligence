@@ -1,0 +1,17 @@
+.git/
+.github/
+.wrangler/
+architecture/
+functions/
+migrations/
+projects/
+scripts/
+tests/
+worker/
+.assetsignore
+AQUA_UX_SPEC.md
+README.md
+package.json
+start-aqua.ps1
+wrangler.jsonc
+wrangler.toml.example

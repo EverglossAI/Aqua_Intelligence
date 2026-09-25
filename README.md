@@ -8,7 +8,7 @@ The active application is the static, framework-free cockpit in `cockpit/`. The 
 python -m http.server 8000
 ```
 
-Open `http://localhost:8000/`.
+Open `http://localhost:8000/`. Use `npx wrangler dev` when testing the Worker API and static-assets integration.
 
 ## Application structure
 
@@ -19,7 +19,9 @@ Open `http://localhost:8000/`.
 - `cockpit/styles.css`: cockpit controls and engineering-result styling.
 - `aqua-shell.js`: persistent floating-window manager, command bar, taskbar, and basemap management.
 - `aqua-shell.css`: full-screen map-first shell and responsive window presentation.
-- `functions/api/projects/`: Cloudflare Pages Functions backed by D1 and R2.
+- `worker/index.js`: Cloudflare Worker entrypoint and static-assets fallback.
+- `worker/routes/projects.js`: D1/R2 project API routing and handlers.
+- `worker/lib/projects.js`: shared persistence, authorization, and serialization helpers.
 - `migrations/`: D1 schema migrations.
 
 Project persistence is cloud-first: D1 owns the project index/state, R2 owns source and normalized payloads, and IndexedDB is a revisioned local cache. See [architecture/PROJECT_PERSISTENCE.md](architecture/PROJECT_PERSISTENCE.md).

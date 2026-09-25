@@ -52,7 +52,19 @@ Mutation requests require one of:
 - a Cloudflare Access identity in `CF-Access-Authenticated-User-Email`, optionally restricted by `AQUA_ALLOWED_WRITERS`; or
 - `Authorization: Bearer` matching the `AQUA_PROJECT_WRITE_TOKEN` secret.
 
-`AQUA_ALLOW_LOCAL_WRITES=true` is only for local Workers/Pages development.
+`AQUA_ALLOW_LOCAL_WRITES=true` is only for local Worker development.
+
+## Worker routing
+
+The existing `aqua-intelligence` Worker owns both the API and static cockpit:
+
+```text
+Request
+  /api/projects... -> worker/index.js -> worker/routes/projects.js
+  everything else -> ASSETS binding -> repository static files
+```
+
+`wrangler.jsonc` uses selective Worker-first routing for `/api/*`. Static assets such as `/cockpit/` retain asset-first delivery. The custom domain remains dashboard-managed, so the configuration intentionally declares no `route` or `routes` key and sets `workers_dev` to `false`.
 
 Reads are public by default so a fresh browser can discover production projects. Set `AQUA_REQUIRE_READ_AUTH=true` to require Cloudflare Access identity (or `AQUA_PROJECT_READ_TOKEN`) for project index, metadata, and payload reads.
 
@@ -72,12 +84,31 @@ Built-in demonstration projects are marked `localOnly` and remain in IndexedDB.
 
 ## Cloudflare setup after review
 
-1. Copy `wrangler.toml.example` to `wrangler.toml` and enter the created D1 database ID and writer policy.
-2. Create D1 database `aqua-projects` and R2 bucket `aqua-projects`.
-3. Apply `migrations/0001_projects.sql` to D1.
-4. Bind D1 as `AQUA_DB` and R2 as `AQUA_PROJECTS` to the Pages project.
-5. Configure Cloudflare Access for project writers, or add `AQUA_PROJECT_WRITE_TOKEN` as an encrypted secret.
-6. Deploy only after review, then perform the Lambay migration below.
+1. Enable R2 for the account, if it is not already enabled.
+2. Create D1 database `aqua-projects` and R2 bucket `aqua-projects`, after confirming neither exists.
+3. Add the real resources to `wrangler.jsonc`; never deploy a placeholder database ID:
+
+```jsonc
+"d1_databases": [
+  {
+    "binding": "AQUA_DB",
+    "database_name": "aqua-projects",
+    "database_id": "<actual D1 database ID>",
+    "migrations_dir": "migrations"
+  }
+],
+"r2_buckets": [
+  {
+    "binding": "AQUA_PROJECTS",
+    "bucket_name": "aqua-projects"
+  }
+]
+```
+
+4. Apply `migrations/0001_projects.sql` through `wrangler d1 migrations apply aqua-projects --remote`.
+5. Configure Cloudflare Access for project writers, or add `AQUA_PROJECT_WRITE_TOKEN` as an encrypted Worker secret.
+6. Verify `npx wrangler deploy --dry-run`, then deploy the existing `aqua-intelligence` Worker only after review.
+7. Perform the Lambay migration only after the production persistence checkpoint passes.
 
 ## Lambay migration
 
