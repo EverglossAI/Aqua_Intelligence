@@ -61,7 +61,7 @@ input[type=range]{padding:0;accent-color:var(--blue)}
 .manual-ring{stroke:#fff;stroke-width:2}
 
 </style>
-</head>
+<link rel="stylesheet" href="aqua-shell.css">\n</head>
 <body>
 <div class="top"><b>INTERACTIVE GIS PROTOTYPE</b><span class="chip">v14 DOM FIXED</span><span>Four uploaded utility GIS datasets · sensor deployment optimisation demo</span></div>
 <div class="app">
@@ -214,7 +214,7 @@ window.addEventListener("error",e=>fail("Runtime error: "+e.message));
 function init(){
  if(!window.L){fail("Leaflet did not load. Check internet/CDN access.");return}
  map=L.map("map",{preferCanvas:true}).setView([23.7,120.9],8);
- base=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map);
+ base=L.tileLayer("https://tile.openstreetmap.org/{z}/{x}/{y}.png",{maxZoom:19,attribution:"© OpenStreetMap contributors"}).addTo(map); window.aquaMap=map; window.aquaBase=base;
  base.on("tileerror",()=>{ $("mapTitle").textContent="GIS overlay (basemap unavailable)"; });
  map.on("click",e=>{
    if(!addMode)return;
@@ -778,4 +778,4 @@ $("showCoverage").addEventListener("change",e=>{if(!coverageLayer)return;e.targe
 window.addEventListener("load",()=>{bindUI();init();setTimeout(()=>{updateOverrideSummary();updateSelectionHint()},150)});
 </script>
 
-</body></html>
+<script src="aqua-shell.js"></script>\n</body></html>
