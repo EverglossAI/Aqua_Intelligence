@@ -20,12 +20,13 @@ function mockRuntime(fetchImplementation) {
   const originalFetch = globalThis.fetch;
   const originalCaches = globalThis.caches;
   const stored = new Map();
+  const operations = { matches: 0, puts: 0, fetches: 0 };
   globalThis.caches = { default: {
-    async match(key) { return stored.get(key.url)?.clone() || null; },
-    async put(key, value) { stored.set(key.url, value.clone()); }
+    async match(key) { operations.matches++; return stored.get(key.url)?.clone() || null; },
+    async put(key, value) { operations.puts++; stored.set(key.url, value.clone()); }
   } };
-  globalThis.fetch = fetchImplementation;
-  return { stored, restore() { globalThis.fetch = originalFetch; globalThis.caches = originalCaches; } };
+  globalThis.fetch = (...args) => { operations.fetches++; return fetchImplementation(...args); };
+  return { stored, operations, restore() { globalThis.fetch = originalFetch; globalThis.caches = originalCaches; } };
 }
 
 function elevationsFor(url) {
@@ -37,22 +38,7 @@ function elevationsFor(url) {
   return latitudes.map((latitude, index) => latitude * 10 + longitudes[index]);
 }
 
-test("single batch returns normalized Open-Meteo provenance and ordered elevations", async () => {
-  let calls = 0;
-  const runtime = mockRuntime(async url => { calls++; return Response.json({ elevation: elevationsFor(url) }); });
-  try {
-    const response = await routeElevationRequest(request(points(20)));
-    const body = await response.json();
-    assert.equal(response.status, 200);
-    assert.equal(calls, 1);
-    assert.deepEqual({ provider: body.provider, dataset: body.dataset, resolution_m: body.resolution_m, units: body.units }, {
-      provider: "open-meteo", dataset: "Copernicus DEM GLO-90", resolution_m: 90, units: "m"
-    });
-    assert.deepEqual(body.points.map(point => point.elevation), points(20).map(point => point.lat * 10 + point.lng));
-  } finally { runtime.restore(); }
-});
-
-test("profiles over 100 points are batched and restored to original order", async () => {
+for (const count of [2, 50, 100, 101, 175, 200]) test(`${count}-point profiles use ordered batches of at most 100 coordinates`, async () => {
   const batchSizes = [];
   const runtime = mockRuntime(async url => {
     const elevations = elevationsFor(url);
@@ -60,22 +46,28 @@ test("profiles over 100 points are batched and restored to original order", asyn
     return Response.json({ elevation: elevations });
   });
   try {
-    const response = await routeElevationRequest(request(points(175)));
+    const response = await routeElevationRequest(request(points(count)));
     const body = await response.json();
+    const expectedBatches = Math.ceil(count / 100);
     assert.equal(response.status, 200);
-    assert.deepEqual(batchSizes, [100, 75]);
-    assert.deepEqual(body.points.map(point => point.elevation), points(175).map(point => point.lat * 10 + point.lng));
+    assert.equal(body.points.length, count);
+    assert.deepEqual(batchSizes, count <= 100 ? [count] : [100, count - 100]);
+    assert.deepEqual(body.points.map(point => point.elevation), points(count).map(point => point.lat * 10 + point.lng));
+    assert.deepEqual(runtime.operations, { matches: expectedBatches, puts: expectedBatches, fetches: expectedBatches });
+    assert.deepEqual({ provider: body.provider, dataset: body.dataset, resolution_m: body.resolution_m, units: body.units }, {
+      provider: "open-meteo", dataset: "Copernicus DEM GLO-90", resolution_m: 90, units: "m"
+    });
+    assert.ok(runtime.operations.matches + runtime.operations.puts + runtime.operations.fetches <= 6);
   } finally { runtime.restore(); }
 });
 
 test("invalid coordinates are rejected without an upstream request", async () => {
-  let calls = 0;
-  const runtime = mockRuntime(async () => { calls++; return Response.json({ elevation: [1, 2] }); });
+  const runtime = mockRuntime(async () => Response.json({ elevation: [1, 2] }));
   try {
     const response = await routeElevationRequest(request([{ lat: 91, lng: 0 }, { lat: 0, lng: -181 }]));
     assert.equal(response.status, 400);
     assert.equal((await routeElevationRequest(request([{ lat: null, lng: 0 }, { lat: 0, lng: 1 }]))).status, 400);
-    assert.equal(calls, 0);
+    assert.equal(runtime.operations.fetches, 0);
   } finally { runtime.restore(); }
 });
 
@@ -99,13 +91,14 @@ test("malformed and partial elevation responses are rejected without caching", a
   }
 });
 
-test("cached coordinates avoid repeated upstream requests", async () => {
-  let calls = 0;
-  const runtime = mockRuntime(async url => { calls++; return Response.json({ elevation: elevationsFor(url) }); });
+test("cached coordinate batches avoid repeated upstream requests", async () => {
+  const runtime = mockRuntime(async url => Response.json({ elevation: elevationsFor(url) }));
   try {
-    assert.equal((await routeElevationRequest(request(points()))).status, 200);
-    assert.equal((await routeElevationRequest(request(points()))).status, 200);
-    assert.equal(calls, 1);
+    assert.equal((await routeElevationRequest(request(points(175)))).status, 200);
+    assert.equal((await routeElevationRequest(request(points(175)))).status, 200);
+    assert.equal(runtime.operations.fetches, 2);
+    assert.equal(runtime.operations.matches, 4);
+    assert.equal(runtime.operations.puts, 2);
     assert.equal(runtime.stored.size, 2);
   } finally { runtime.restore(); }
 });
