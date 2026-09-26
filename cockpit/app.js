@@ -1,6 +1,16 @@
 const $=id=>document.getElementById(id);
-const state={projects:[],active:null,map:null,networkLayer:null,telemetryLayer:null,selected:null,mapMode:'inspect',engMode:'prv'};
+const state={projects:[],active:null,map:null,networkLayer:null,telemetryLayer:null,selected:null,mapMode:'inspect',engMode:'prv',investigationContext:{selectedProject:null,selectedDMA:null,selectedAsset:null,selectedMapPoint:null,selectedPipe:null,activeProfile:null,contextSource:null}};
 window.aquaState=state;
+function aquaUpdateInvestigationContext(patch,source){
+  state.investigationContext={...state.investigationContext,...patch,contextSource:source||patch.contextSource||state.investigationContext.contextSource};
+  window.dispatchEvent(new CustomEvent('aqua:context-changed',{detail:{context:state.investigationContext,source:state.investigationContext.contextSource}}));
+  return state.investigationContext;
+}
+window.AquaInvestigationContext={
+  update:aquaUpdateInvestigationContext,
+  reset(project){return aquaUpdateInvestigationContext({selectedProject:project||null,selectedDMA:null,selectedAsset:null,selectedMapPoint:null,selectedPipe:null,activeProfile:null},'project')},
+  get current(){return state.investigationContext}
+};
 const assetKinds={pipe:['pipe','eupipe','main','waterline'],meter:['meter','eumeter','flowmeter'],valve:['valve','gate','prv'],hydrant:['hydrant'],dma:['regionnet','dma','zone','district']};
 const colors={pipe:'#5c8da9',meter:'#ffc65c',valve:'#aa82ff',hydrant:'#ff7f6d',dma:'#36a3ff',other:'#72879a'};
 function kindFor(name=''){const n=name.toLowerCase();for(const[k,terms]of Object.entries(assetKinds))if(terms.some(t=>n.includes(t)))return k;return'other'}
@@ -340,6 +350,7 @@ function aquaActivateProject(project){
     var option=document.createElement('option');option.value=project.id;option.textContent=project.name;$('projectSelect').appendChild(option);
   }
   $('projectSelect').value=project.id;
+  window.AquaInvestigationContext.reset(project);
   window.dispatchEvent(new CustomEvent('aqua:project-activated',{detail:{project:project}}));
 }
 function aquaHidePersistenceError(){var notice=$('persistenceNotice');if(notice)notice.remove()}
@@ -924,11 +935,13 @@ function aquaBaseStyle(kind){
   return{color:colors[kind]||colors.other,weight:kind==='pipe'?2.3:kind==='dma'?2.5:1.5,fillColor:colors[kind]||colors.other,fillOpacity:kind==='dma'?.12:.2,opacity:kind==='pipe'?.72:.9};
 }
 function aquaFeatureStyle(kind,feature){
+  let base;
   if(kind==='dma'&&window.AquaDmaStyles?.forFeature){
     const style=window.AquaDmaStyles.forFeature(feature);
-    if(style)return style;
+    if(style)base=style;
   }
-  const base=aquaBaseStyle(kind);
+  base=base||aquaBaseStyle(kind);
+  if(window.AquaMapModes?.style)base=window.AquaMapModes.style(kind,feature,base);
   return kind==='pipe'&&window.AquaDmaPipeFilters?.style?window.AquaDmaPipeFilters.style(feature,base):base;
 }
 function aquaSelectionLabel(key){
@@ -987,6 +1000,7 @@ selectFeature=aquaEnhancedSelect;
 
 renderProject=function(){
   const p=state.active;if(!p)return;
+  if(state.investigationContext.selectedProject!==p)window.AquaInvestigationContext.reset(p);
   try{state.networkLayer.clearLayers()}catch(e){}
   Object.values(state.kindLayers||{}).forEach(grp=>{try{if(state.map.hasLayer(grp))state.map.removeLayer(grp)}catch(e){}});
   state.kindLayers={pipe:L.layerGroup(),meter:L.layerGroup(),valve:L.layerGroup(),hydrant:L.layerGroup(),dma:L.layerGroup()};

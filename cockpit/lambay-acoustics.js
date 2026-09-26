@@ -213,6 +213,7 @@
     sensors().forEach(sensor => {
       const marker = L.circleMarker([sensor.lat, sensor.lng], { radius: 7, weight: 2, color: "#d9fff5", fillColor: COLORS.sensor, fillOpacity: .92 })
         .bindTooltip(`Sensor ${sensor.sensorId} | ${sensor.status}`);
+      marker.__aquaAcoustic = sensor;
       marker.on("click", () => selectSensor(sensor));
       marker.addTo(state.acousticLayers.sensors);
       state.acousticMarkers.sensors.set(sensor.sensorId, marker);
@@ -222,6 +223,7 @@
       if (!first || !second) return;
       const line = L.polyline([[first.lat, first.lng], [second.lat, second.lng]], { color: COLORS.couple, weight: 3, opacity: .72, dashArray: "7 5" })
         .bindTooltip(`Couple ${couple.coupleId} | ${couple.pathLength} m | ${couple.material}`);
+      line.__aquaAcoustic = couple;
       line.on("click", () => selectCouple(couple));
       line.addTo(state.acousticLayers.couples);
       state.acousticMarkers.couples.set(couple.coupleId, line);
@@ -230,6 +232,7 @@
       const layerName = alert.status === "Located" ? "located" : alert.stateGroup === "historical" ? "closed" : "active";
       const marker = L.circleMarker([alert.lat, alert.lng], { radius: layerName === "closed" ? 5 : 8, weight: 2, color: "#07131b", fillColor: COLORS[layerName], fillOpacity: layerName === "closed" ? .68 : .96 })
         .bindTooltip(`Alert ${alert.alertId} | ${alert.alertType} | ${alert.status} | ${alert.probability}%`);
+      marker.__aquaAcoustic = alert;
       marker.on("click", () => selectAlert(alert));
       marker.addTo(state.acousticLayers[layerName]);
       state.acousticMarkers.alerts.set(alert.alertId, marker);
@@ -283,6 +286,7 @@
         renderMap();
         renderAnalytics();
         updateCounts();
+        window.AquaMapModes?.refresh();
         window.AquaComparison?.render();
         window.AquaLeakRisk?.render();
       }

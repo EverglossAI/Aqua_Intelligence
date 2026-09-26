@@ -87,6 +87,11 @@
     const identity = core.assetIdentity(selection.kind, selection.entity, selection.layer);
     const fields = core.presentAssetFields(selection.entity, { kind: selection.kind });
     const evidence = evidenceFor(selection);
+    window.AquaInvestigationContext?.update({
+      selectedAsset: { ...selection, coordinate, identity },
+      selectedMapPoint: null,
+      selectedPipe: selection.layer?.kind === "pipe" ? { feature: selection.entity, id: evidence.pipeId, coordinate } : null
+    }, "selection");
     const comparable = sourceId(selection.kind, selection.entity);
     const hasRisk = evidence.pipeId != null;
     body.innerHTML = `<div class="context-heading"><div><small>${escape(identity.type)}</small><h3>${escape(identity.id)}</h3>${identity.layer ? `<span>${escape(identity.layer)}</span>` : ""}</div><span class="context-coordinate">${escape(coordinateText(coordinate))}</span></div>
@@ -194,6 +199,7 @@
     const core = window.AquaContextualCore;
     const body = element("dmaDetailsBody");
     if (!core || !body) return;
+    const dmaContext = core.logicalDmaContext(project(), selection.entity);
     const summary = core.summarizeDma(project(), selection.entity, window.AquaLeakRisk?.results || []);
     if (view.pipeFilters.dmaId !== summary.id) {
       view.pipeFilters.dmaId = summary.id;
@@ -201,6 +207,7 @@
       view.pipeFilters.diameters.clear();
     }
     view.dma = summary;
+    window.AquaInvestigationContext?.update({ selectedDMA: { ...dmaContext, summary }, selectedAsset: null, selectedMapPoint: null, selectedPipe: null }, "selection");
     const elevation = summary.elevation ? `${format(summary.elevation.minimum)}-${format(summary.elevation.maximum)} m · ${escape(summary.elevation.provenance.source)}` : "Elevation data unavailable";
     body.innerHTML = `<div class="context-heading"><div><small>DMA ${escape(summary.code)}</small><h3>${escape(summary.name)}</h3></div><span>${summary.pipeCount} mapped pipes</span></div>
       <div class="dma-metrics"><div><span>Pipe length</span><b>${format(summary.totalPipeLength / 1000, 2)} km</b></div><div><span>Pressure loggers</span><b>${summary.pressureLoggers.length}</b></div><div><span>Flow meters</span><b>${summary.flowMeters.length}</b></div><div><span>Acoustic sensors</span><b>${summary.acousticSensors.length}</b></div><div><span>Active alerts</span><b>${summary.activeAlerts.length}</b></div><div><span>Historical alerts</span><b>${summary.historicalAlerts.length}</b></div></div>
@@ -214,7 +221,7 @@
     body.querySelectorAll("[data-dma-telemetry]").forEach(button => button.addEventListener("click", () => selectTelemetry(button.dataset.dmaTelemetry)));
     bindDmaFilters(selection);
     element("openDmaElevation")?.addEventListener("click", () => openDmaProfile(summary));
-    element("openDmaEnvironment")?.addEventListener("click", () => window.AquaEnvironmental?.open({ coordinate: core.featureCoordinate(summary.feature), label: `DMA ${summary.code}`, dma: summary.name, alerts: [...summary.activeAlerts, ...summary.historicalAlerts] }));
+    element("openDmaEnvironment")?.addEventListener("click", () => window.AquaEnvironmental?.open());
     window.AquaWindowManager?.restore("dma-details");
   }
 
@@ -348,6 +355,7 @@
     view.profileLine = record.geometry.map(coordinate => [...coordinate]);
     view.profileLabel = record.name;
     view.profile = profileFromRecord(record);
+    window.AquaInvestigationContext?.update({ activeProfile: record }, "profile");
     ensureProfileLayer()?.setLatLngs([]);
     renderProfile();
     window.AquaWindowManager?.restore("elevation-profile");
@@ -357,6 +365,7 @@
     view.savedProfileId = null;
     view.profileLine = line;
     view.profileLabel = label;
+    window.AquaInvestigationContext?.update({ activeProfile: line.length > 1 ? { label, geometry: line } : null }, "profile");
     ensureProfileLayer()?.setLatLngs(line);
     if (line.length > 1) window.aquaState.map.fitBounds(L.latLngBounds(line).pad(0.2), { maxZoom: 18 });
     renderProfile();

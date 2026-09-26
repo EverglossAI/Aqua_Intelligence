@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildElevationProfile, buildSampledElevationProfile, describeElevationSource, featureCoordinate, filterDmaPipes, filteredPipeSummary, interpolateProfileElevation, navigationUrl, presentAssetFields, projectCoordinateToProfile, resolveElevationSource, sampleProfileLine, streetViewUrl, summarizeDma } from "../cockpit/contextual-core.js";
+import { buildElevationProfile, buildSampledElevationProfile, describeElevationSource, featureCoordinate, filterDmaPipes, filteredPipeSummary, interpolateProfileElevation, logicalDmaContext, navigationUrl, pointInFeature, presentAssetFields, projectCoordinateToProfile, resolveElevationSource, sampleProfileLine, streetViewUrl, summarizeDma } from "../cockpit/contextual-core.js";
 
 const dma = { type: "Feature", properties: { dma_code: "DMA-1", name: "North" }, geometry: { type: "Polygon", coordinates: [[[120, 22], [120.01, 22], [120.01, 22.01], [120, 22.01], [120, 22]]] } };
 const pipe = (id, latitude, material = "CI", diameter = 100) => ({ type: "Feature", properties: { unific_id: id, pipe_mtr: material, pipe_size: diameter }, geometry: { type: "LineString", coordinates: [[120.001, latitude], [120.009, latitude]] } });
@@ -31,6 +31,63 @@ test("DMA summary derives counts and linked evidence from project data", () => {
   assert.equal(summary.activeAlerts.length, 1);
   assert.equal(summary.priority.high, 1);
   assert.equal(summary.elevation, null);
+});
+
+test("logical DMA context combines mapped polygons and returns an interior representative point", () => {
+  const region = (id, west, east) => ({
+    type: "Feature",
+    properties: { __aquaLogicalDmaId: "dma-danan", dma_code: "DAN", id },
+    geometry: { type: "Polygon", coordinates: [[[west, 53.48], [east, 53.48], [east, 53.49], [west, 53.49], [west, 53.48]]] }
+  });
+  const west = region("west", -6.08, -6.07);
+  const east = region("east", -6.03, -6.01);
+  const project = {
+    logicalDmas: [{ logical_dma_uid: "dma-danan", dma_code: "DAN", label: "Danan" }],
+    layers: [{ kind: "dma", geojson: { features: [west, east] } }]
+  };
+  const context = logicalDmaContext(project, west);
+  assert.equal(context.name, "Danan");
+  assert.equal(context.features.length, 2);
+  assert.equal(context.sourceFeature, west);
+  assert.equal(context.locationBasis, "DMA representative point");
+  assert.ok(context.features.some(feature => pointInFeature(context.coordinate, feature)));
+});
+
+test("DMA summary includes assets from every mapped region in one logical DMA", () => {
+  const region = (id, west, east) => ({ type: "Feature", properties: { __aquaLogicalDmaId: "dma-danan", dma_code: "DAN", id }, geometry: { type: "Polygon", coordinates: [[[west, 53.48], [east, 53.48], [east, 53.49], [west, 53.49], [west, 53.48]]] } });
+  const west = region("west", -6.08, -6.07);
+  const east = region("east", -6.03, -6.01);
+  const project = {
+    logicalDmas: [{ logical_dma_uid: "dma-danan", dma_code: "DAN", label: "Danan" }],
+    layers: [
+      { kind: "dma", geojson: { features: [west, east] } },
+      { kind: "pipe", geojson: { features: [
+        { type: "Feature", properties: { id: "west-pipe" }, geometry: { type: "LineString", coordinates: [[-6.079, 53.485], [-6.071, 53.485]] } },
+        { type: "Feature", properties: { id: "east-pipe" }, geometry: { type: "LineString", coordinates: [[-6.029, 53.485], [-6.011, 53.485]] } }
+      ] } }
+    ]
+  };
+  const summary = summarizeDma(project, west);
+  assert.equal(summary.name, "Danan");
+  assert.equal(summary.features.length, 2);
+  assert.equal(summary.pipeCount, 2);
+  assert.ok(summary.features.some(feature => pointInFeature(summary.representativeCoordinate, feature)));
+});
+
+test("all four Lambay logical DMAs resolve by their authoritative IDs", () => {
+  const dmas = [
+    ["1350-00-01-01", "Baisha"],
+    ["1350-00-01-02", "Danan"],
+    ["1350-00-01-03", "Shangshan"],
+    ["1350-00-01-04", "Tianfu"]
+  ];
+  const features = dmas.map(([id], index) => ({ type: "Feature", properties: { __aquaLogicalDmaId: id }, geometry: { type: "Polygon", coordinates: [[[index, 0], [index + .8, 0], [index + .8, .8], [index, .8], [index, 0]]] } }));
+  const project = { logicalDmas: dmas.map(([id, label]) => ({ logical_dma_uid: id, dma_code: id, label })), layers: [{ kind: "dma", geojson: { features } }] };
+  assert.deepEqual(features.map(feature => logicalDmaContext(project, feature)?.name), ["Baisha", "Danan", "Shangshan", "Tianfu"]);
+  features.forEach(feature => {
+    const context = logicalDmaContext(project, feature);
+    assert.ok(pointInFeature(context.coordinate, feature));
+  });
 });
 
 test("synthetic hydraulic fallback is never accepted as map elevation", () => {

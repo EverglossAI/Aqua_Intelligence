@@ -109,6 +109,95 @@ export function pointInFeature(coordinate, feature) {
   return polygons.some(polygon => polygon[0] && pointInRing(coordinate, polygon[0]) && !polygon.slice(1).some(ring => pointInRing(coordinate, ring)));
 }
 
+function ringAreaCentroid(ring) {
+  let twiceArea = 0, longitude = 0, latitude = 0;
+  for (let index = 0; index < ring.length - 1; index++) {
+    const [leftLongitude, leftLatitude] = ring[index];
+    const [rightLongitude, rightLatitude] = ring[index + 1];
+    const cross = leftLongitude * rightLatitude - rightLongitude * leftLatitude;
+    twiceArea += cross;
+    longitude += (leftLongitude + rightLongitude) * cross;
+    latitude += (leftLatitude + rightLatitude) * cross;
+  }
+  if (Math.abs(twiceArea) < 1e-15) return null;
+  return { area: Math.abs(twiceArea / 2), coordinate: [latitude / (3 * twiceArea), longitude / (3 * twiceArea)] };
+}
+
+function polygonAreaCentroid(polygon) {
+  const outer = ringAreaCentroid(polygon?.[0] || []);
+  if (!outer) return null;
+  const holes = polygon.slice(1).map(ringAreaCentroid).filter(Boolean);
+  const area = Math.max(0, outer.area - holes.reduce((sum, hole) => sum + hole.area, 0));
+  if (!area) return outer;
+  const latitude = (outer.coordinate[0] * outer.area - holes.reduce((sum, hole) => sum + hole.coordinate[0] * hole.area, 0)) / area;
+  const longitude = (outer.coordinate[1] * outer.area - holes.reduce((sum, hole) => sum + hole.coordinate[1] * hole.area, 0)) / area;
+  return { area, coordinate: [latitude, longitude] };
+}
+
+function interiorPoint(feature, preferred) {
+  if (preferred && pointInFeature(preferred, feature)) return preferred;
+  const geometry = feature?.geometry;
+  const polygons = geometry?.type === "Polygon" ? [geometry.coordinates] : geometry?.type === "MultiPolygon" ? geometry.coordinates : [];
+  for (const polygon of polygons) {
+    const ring = polygon[0] || [];
+    const centroid = polygonAreaCentroid(polygon)?.coordinate;
+    if (centroid && pointInFeature(centroid, feature)) return centroid;
+    if (!ring.length) continue;
+    const bounds = ring.reduce((result, [longitude, latitude]) => ({
+      minLatitude: Math.min(result.minLatitude, latitude), maxLatitude: Math.max(result.maxLatitude, latitude),
+      minLongitude: Math.min(result.minLongitude, longitude), maxLongitude: Math.max(result.maxLongitude, longitude)
+    }), { minLatitude: Infinity, maxLatitude: -Infinity, minLongitude: Infinity, maxLongitude: -Infinity });
+    for (let row = 1; row < 20; row += 2) {
+      for (let column = 1; column < 20; column += 2) {
+        const candidate = [bounds.minLatitude + (bounds.maxLatitude - bounds.minLatitude) * row / 20, bounds.minLongitude + (bounds.maxLongitude - bounds.minLongitude) * column / 20];
+        if (pointInFeature(candidate, feature)) return candidate;
+      }
+    }
+  }
+  return featureCoordinate(feature);
+}
+
+export function logicalDmaContext(project = {}, feature) {
+  if (!feature) return null;
+  const properties = feature.properties || {};
+  const logicalId = property(properties, ["__aquaLogicalDmaId", "logical_dma_uid", "dma_uid"]);
+  const code = property(properties, ["dma_code", "smallare_1", "code", "dma", "name"]);
+  const logical = (project.logicalDmas || project.lambayDemo?.logicalDmas || []).find(item => String(item.logical_dma_uid || "") === String(logicalId || "") || String(item.dma_code || "") === String(code || "")) || null;
+  const matches = candidate => {
+    const candidateProperties = candidate?.properties || {};
+    const candidateId = property(candidateProperties, ["__aquaLogicalDmaId", "logical_dma_uid", "dma_uid"]);
+    const candidateCode = property(candidateProperties, ["dma_code", "smallare_1", "code", "dma", "name"]);
+    return logical
+      ? String(candidateId || "") === String(logical.logical_dma_uid || "") || String(candidateCode || "") === String(logical.dma_code || "")
+      : candidate === feature;
+  };
+  const features = (project.layers || []).filter(layer => layer.kind === "dma").flatMap(layer => layer.geojson?.features || []).filter(matches);
+  if (!features.includes(feature)) features.unshift(feature);
+  const polygons = features.flatMap(item => {
+    const geometry = item.geometry;
+    return geometry?.type === "Polygon" ? [geometry.coordinates] : geometry?.type === "MultiPolygon" ? geometry.coordinates : [];
+  });
+  const centroids = polygons.map(polygonAreaCentroid).filter(Boolean);
+  const totalArea = centroids.reduce((sum, item) => sum + item.area, 0);
+  const weighted = totalArea ? [
+    centroids.reduce((sum, item) => sum + item.coordinate[0] * item.area, 0) / totalArea,
+    centroids.reduce((sum, item) => sum + item.coordinate[1] * item.area, 0) / totalArea
+  ] : null;
+  const coordinate = features.some(item => weighted && pointInFeature(weighted, item))
+    ? weighted
+    : features.map(item => interiorPoint(item, weighted)).find(Boolean) || null;
+  return {
+    id: String(logical?.logical_dma_uid || logicalId || code || "Unavailable"),
+    code: String(logical?.dma_code || code || logicalId || "Unavailable"),
+    name: logical?.label || logical?.dma_name || property(properties, ["name", "dma_name", "smallare_1"]) || String(code || logicalId || "Unavailable"),
+    logical,
+    sourceFeature: feature,
+    features,
+    coordinate,
+    locationBasis: "DMA representative point"
+  };
+}
+
 function pipeId(feature, index = 0) {
   return String(property(feature?.properties, ["unific_id", "pipe_id", "id", "gid", "objectid", "fid"]) || `pipe-${index + 1}`);
 }
@@ -311,33 +400,36 @@ export function buildElevationProfile(line, source, options = {}) {
 
 export function summarizeDma(project = {}, feature, riskResults = []) {
   const properties = feature?.properties || {};
-  const logicalId = property(properties, ["__aquaLogicalDmaId", "logical_dma_uid", "dma_uid"]);
-  const code = property(properties, ["dma_code", "smallare_1", "code", "dma", "name"]);
-  const logical = (project.logicalDmas || project.lambayDemo?.logicalDmas || []).find(item => String(item.logical_dma_uid || "") === String(logicalId || "") || String(item.dma_code || "") === String(code || "")) || null;
-  const dmaCode = logical?.dma_code || code || logicalId || "Unavailable";
+  const context = logicalDmaContext(project, feature);
+  const logicalId = context?.id;
+  const logical = context?.logical;
+  const dmaCode = context?.code || "Unavailable";
+  const dmaFeatures = context?.features?.length ? context.features : [feature];
   const pipeFeatures = (project.layers || []).filter(layer => layer.kind === "pipe").flatMap(layer => layer.geojson?.features || []).filter(pipe => {
     const coordinate = featureCoordinate(pipe);
-    return coordinate && pointInFeature(coordinate, feature);
+    return coordinate && dmaFeatures.some(dmaFeature => pointInFeature(coordinate, dmaFeature));
   });
   const pipeIds = new Set(pipeFeatures.map(pipeId));
   const inDma = entity => {
     const entityCode = entity.dmaCode ?? entity.dma_code ?? entity.dma;
     if (entityCode != null && String(entityCode) === String(dmaCode)) return true;
     const coordinate = entityCoordinate("telemetry", entity);
-    return coordinate ? pointInFeature(coordinate, feature) : false;
+    return coordinate ? dmaFeatures.some(dmaFeature => pointInFeature(coordinate, dmaFeature)) : false;
   };
   const telemetry = (project.telemetry || []).filter(inDma);
   const sensors = (project.acousticSensor || []).filter(inDma);
   const alerts = (project.acousticAlert || []).filter(alert => pipeIds.has(String(alert.matchedPipeId || "")) || inDma(alert));
   const relevantRisk = riskResults.filter(result => pipeIds.has(String(result.pipeId)));
   const elevationSource = resolveElevationSource(project);
-  const elevations = elevationSource?.points.filter(point => pointInFeature([point.lat, point.lng], feature)).map(point => point.elevation) || [];
+  const elevations = elevationSource?.points.filter(point => dmaFeatures.some(dmaFeature => pointInFeature([point.lat, point.lng], dmaFeature))).map(point => point.elevation) || [];
   const inletIds = new Set([logical?.flow_summary?.meter_id, ...telemetry.filter(item => item.type === "flow").map(item => item.id || item._id)].filter(Boolean).map(String));
   return {
     id: String(logicalId || dmaCode),
     code: String(dmaCode),
-    name: logical?.label || logical?.dma_name || property(properties, ["name", "dma_name", "smallare_1"]) || String(dmaCode),
+    name: context?.name || logical?.label || logical?.dma_name || property(properties, ["name", "dma_name", "smallare_1"]) || String(dmaCode),
     feature,
+    features: dmaFeatures,
+    representativeCoordinate: context?.coordinate || featureCoordinate(feature),
     logical,
     pipes: pipeFeatures,
     pipeCount: pipeFeatures.length,
@@ -360,4 +452,4 @@ export function summarizeDma(project = {}, feature, riskResults = []) {
   };
 }
 
-if (typeof window !== "undefined") window.AquaContextualCore = { assetIdentity, buildElevationProfile, buildSampledElevationProfile, describeElevationSource, distanceMetres, entityCoordinate, featureCoordinate, filterDmaPipes, filteredPipeSummary, navigationUrl, pipeFilterAttributes, pointInFeature, presentAssetFields, resolveElevationSource, sampleProfileLine, streetViewUrl, summarizeDma };
+if (typeof window !== "undefined") window.AquaContextualCore = { assetIdentity, buildElevationProfile, buildSampledElevationProfile, describeElevationSource, distanceMetres, entityCoordinate, featureCoordinate, filterDmaPipes, filteredPipeSummary, logicalDmaContext, navigationUrl, pipeFilterAttributes, pointInFeature, presentAssetFields, resolveElevationSource, sampleProfileLine, streetViewUrl, summarizeDma };

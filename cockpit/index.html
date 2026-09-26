@@ -100,13 +100,14 @@
       <section class="map-panel panel">
         <div id="map"></div>
         <div class="map-toolbar">
-          <button data-map-mode="inspect" class="active">Inspect</button>
-          <button data-map-mode="topology">Topology</button>
-          <button data-map-mode="dma">DMA</button>
-          <button data-map-mode="sensor">Hydrophones</button>
-          <button data-map-mode="prv">PRV</button>
-          <button data-map-mode="air">Air valve</button>
+          <button data-map-mode="inspect" class="active"><span>Inspect</span></button>
+          <button data-map-mode="topology"><span>Topology</span><small data-mode-count>0</small></button>
+          <button data-map-mode="dma"><span>DMA</span><small data-mode-count>0</small></button>
+          <button data-map-mode="acoustic"><span>Acoustic</span><small data-mode-count>0</small></button>
+          <button data-map-mode="prv"><span>PRV</span><small data-mode-count>0</small></button>
+          <button data-map-mode="air"><span>Air valve</span><small data-mode-count>0</small></button>
         </div>
+        <div id="mapModeIndicator" class="map-mode-indicator"><b>Map mode: Inspect</b><span>Selectable network and operational assets</span></div>
         <div class="gis-control">
           <div class="gis-control-head"><b>Map</b><button id="toggleGisControl">−</button></div>
           <div id="gisControlBody">
@@ -300,12 +301,16 @@
         <div class="panel-head"><div><small>EXTERNAL MODEL / REANALYSIS</small><h2>Environmental Context</h2></div></div>
         <div class="environmental-body">
           <div class="environmental-controls">
+            <div class="environmental-context-mode" role="group" aria-label="Environmental location behavior">
+              <button type="button" id="followEnvironmentalContext" class="active">Follow selection</button><button type="button" id="pinEnvironmentalContext">Pinned context</button>
+            </div>
             <div id="environmentalPresets" class="environmental-segmented" role="group" aria-label="Environmental period">
               <button type="button" data-environment-days="1">24h</button><button type="button" data-environment-days="3">3d</button><button type="button" data-environment-days="7">7d</button><button type="button" data-environment-days="14">14d</button><button type="button" data-environment-days="30" class="active">30d</button><button type="button" data-environment-days="custom">Custom</button>
             </div>
             <label>From<input id="environmentalStart" type="date"></label><label>To<input id="environmentalEnd" type="date"></label>
             <button type="button" id="loadEnvironmentalContext" class="primary">Load context</button>
           </div>
+          <div id="environmentalLocation" class="environmental-location hidden"></div>
           <div id="environmentalStatus" class="environmental-status"><b>Select a mapped location.</b><span>Environmental context does not change investigation priority.</span></div>
           <div id="environmentalContent"></div>
         </div>
@@ -385,12 +390,14 @@
 <script type="module" src="./leak-risk-core.js"></script>
 <script type="module" src="./contextual-core.js"></script>
 <script type="module" src="./environmental-core.js"></script>
+<script type="module" src="./map-mode-core.js"></script>
 <script src="./cloud-projects.js"></script>
 <script src="./app.js"></script>
 <script src="./v4.js"></script>
 <script src="./lambay-demo.js"></script>
 <script src="./lambay-acoustics.js"></script>
 <script src="./lambay-dma-styles.js"></script>
+<script src="./map-modes.js"></script>
 <script src="./comparison-ui.js"></script>
 <script src="./leak-risk-ui.js"></script>
 <script src="./elevation-providers.js"></script>

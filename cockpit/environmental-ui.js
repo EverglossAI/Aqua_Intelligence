@@ -7,7 +7,7 @@
     soilMoisture: { label: "Soil moisture", unit: "m³/m³", color: "#7ed6a7" },
     evapotranspiration: { label: "Evapotranspiration", unit: "mm", color: "#d6b36a" }
   };
-  const view = { coordinate: null, label: "", pipeId: null, dma: null, alerts: [], days: 30, metric: "precipitation", result: null, events: [], request: 0 };
+  const view = { coordinate: null, label: "", pipeId: null, dma: null, alerts: [], days: 30, metric: "precipitation", result: null, events: [], request: 0, followSelection: true, locationBasis: null };
   const element = id => document.getElementById(id);
   const escape = value => String(value ?? "-").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
   const format = (value, digits = 1) => Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "-";
@@ -37,6 +37,38 @@
     if (!target) return;
     target.className = `environmental-status ${kind}`.trim();
     target.innerHTML = `<b>${escape(title)}</b><span>${escape(detail)}</span>`;
+  }
+
+  function syncContextMode() {
+    element("followEnvironmentalContext")?.classList.toggle("active", view.followSelection);
+    element("pinEnvironmentalContext")?.classList.toggle("active", !view.followSelection);
+  }
+
+  function sharedLocation() {
+    const context = window.AquaInvestigationContext?.current;
+    if (context?.selectedMapPoint?.coordinate) return { ...context.selectedMapPoint, locationBasis: context.selectedMapPoint.locationBasis || "Selected map point" };
+    if (context?.selectedDMA?.coordinate) {
+      const dma = context.selectedDMA;
+      return { coordinate: dma.coordinate, label: `DMA ${dma.name}`, dma: dma.name, alerts: [...(dma.summary?.activeAlerts || []), ...(dma.summary?.historicalAlerts || [])], locationBasis: dma.locationBasis };
+    }
+    if (context?.selectedAsset?.coordinate) {
+      const asset = context.selectedAsset;
+      return { coordinate: asset.coordinate, label: `${asset.identity?.type || "Asset"} ${asset.identity?.id || ""}`.trim(), pipeId: context.selectedPipe?.id || null, alerts: [], locationBasis: "Selected asset location" };
+    }
+    const selected = window.aquaState?.selected;
+    const coordinate = window.AquaContextualCore?.featureCoordinate(selected?.feature);
+    return coordinate ? { coordinate, label: "Selected map feature", locationBasis: "Selected feature location" } : null;
+  }
+
+  function applyLocation(options) {
+    if (!options?.coordinate) return false;
+    Object.assign(view, { coordinate: options.coordinate, label: options.label || "Map location", pipeId: options.pipeId || null, dma: options.dma || null, alerts: options.alerts || [], locationBasis: options.locationBasis || "Explicit map location", result: null, events: [] });
+    const location = element("environmentalLocation");
+    if (location) {
+      location.classList.remove("hidden");
+      location.innerHTML = `<b>${escape(view.label)}</b><span>Location basis: ${escape(view.locationBasis)}</span><span>Lat/Lon: ${format(view.coordinate[0], 6)}, ${format(view.coordinate[1], 6)}</span><span>Open-Meteo · external model/reanalysis</span>`;
+    }
+    return true;
   }
 
   function chart(samples, events) {
@@ -133,9 +165,15 @@
   }
 
   function open(options = {}) {
-    if (!options.coordinate) return;
-    Object.assign(view, { coordinate: options.coordinate, label: options.label || "Map location", pipeId: options.pipeId || null, dma: options.dma || null, alerts: options.alerts || [], result: null, events: [] });
-    setPeriod(30);
+    const explicit = Boolean(options.coordinate);
+    view.followSelection = !explicit;
+    syncContextMode();
+    const resolved = explicit ? options : sharedLocation();
+    if (!applyLocation(resolved)) {
+      window.AquaWindowManager?.restore("environmental-context");
+      return status("Location unavailable", "Select an asset, DMA, risk result, or map point.", "error");
+    }
+    if (explicit && options.label === "Map location") window.AquaInvestigationContext?.update({ selectedMapPoint: { coordinate: options.coordinate, label: options.label, locationBasis: "Selected map point" } }, "map-point");
     window.AquaWindowManager?.restore("environmental-context");
     load();
   }
@@ -147,6 +185,8 @@
   }
 
   function bind() {
+    if (!element("environmentalStart")?.value) setPeriod(30);
+    syncContextMode();
     document.querySelectorAll("[data-environment-days]").forEach(button => button.addEventListener("click", () => {
       if (button.dataset.environmentDays === "custom") {
         view.days = "custom";
@@ -161,9 +201,27 @@
       document.querySelectorAll("[data-environment-days]").forEach(button => button.classList.toggle("active", button.dataset.environmentDays === "custom"));
     }));
     element("loadEnvironmentalContext")?.addEventListener("click", load);
+    element("followEnvironmentalContext")?.addEventListener("click", () => {
+      view.followSelection = true;
+      syncContextMode();
+      if (applyLocation(sharedLocation())) load();
+    });
+    element("pinEnvironmentalContext")?.addEventListener("click", () => { view.followSelection = false; syncContextMode(); });
+    window.addEventListener("aqua:context-changed", event => {
+      if (!view.followSelection || event.detail?.source === "profile" || element("environmentalContextWorkbench")?.classList.contains("is-hidden")) return;
+      const location = sharedLocation();
+      if (!location?.coordinate || location.coordinate.every((value, index) => value === view.coordinate?.[index])) return;
+      if (applyLocation(location)) load();
+    });
+    window.addEventListener("aqua:window-restored", event => {
+      if (event.detail?.id !== "environmental-context" || !view.followSelection) return;
+      const location = sharedLocation();
+      if (!location?.coordinate || location.coordinate.every((value, index) => value === view.coordinate?.[index])) return;
+      if (applyLocation(location)) load();
+    });
     element("projectSelect")?.addEventListener("change", () => { view.result = null; view.coordinate = null; view.events = []; element("environmentalContent").innerHTML = ""; status("Select a mapped location.", "Environmental context does not change investigation priority."); });
   }
 
-  window.AquaEnvironmental = { open, openForRisk, load, get result() { return view.result; }, get comparisonSources() { return view.result ? window.AquaEnvironmentalCore.buildEnvironmentalComparisonSources(view.result, view.events) : []; } };
+  window.AquaEnvironmental = { open, openForRisk, load, get context() { return { ...view }; }, get result() { return view.result; }, get comparisonSources() { return view.result ? window.AquaEnvironmentalCore.buildEnvironmentalComparisonSources(view.result, view.events) : []; } };
   window.addEventListener("load", bind);
 })();

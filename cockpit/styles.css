@@ -427,6 +427,9 @@ body[data-workspace="assets"] .right-panel{display:block!important}
 
 .environmental-metrics small{display:block;margin-top:4px;color:#7895a7;font-size:8px;line-height:1.35}.environmental-provenance strong{color:#dcecf5}
 
+.environmental-controls{grid-template-columns:auto auto minmax(110px,1fr) minmax(110px,1fr) auto}.environmental-context-mode{display:flex;height:32px}.environmental-context-mode button{border:1px solid var(--line);background:#0b1d2a;color:#91a9b9;padding:6px 9px;cursor:pointer}.environmental-context-mode button:first-child{border-radius:5px 0 0 5px}.environmental-context-mode button:last-child{border-radius:0 5px 5px 0}.environmental-context-mode button.active{border-color:#3c829f;background:#18425a;color:#fff}.environmental-location{display:flex;flex-wrap:wrap;gap:5px 14px;margin-top:10px;padding:8px 10px;border:1px solid var(--line);background:#0a1824;font-size:9px}.environmental-location b{color:#fff}.environmental-location span{color:var(--muted)}
+.map-toolbar button{display:flex;align-items:center;gap:5px;white-space:nowrap}.map-toolbar button small{display:inline-grid;min-width:17px;height:17px;padding:0 4px;place-items:center;border:1px solid rgba(151,185,207,.28);border-radius:3px;color:#bcd1df;font-size:8px}.map-toolbar button:disabled{opacity:.38;cursor:not-allowed}.map-toolbar button:disabled:hover{background:transparent;color:#94aabd}.map-mode-indicator{position:absolute;z-index:699;top:54px;left:10px;display:flex;gap:8px;align-items:center;max-width:min(520px,calc(100% - 20px));padding:6px 8px;border:1px solid var(--line);border-radius:5px;background:rgba(7,16,25,.93);font-size:9px}.map-mode-indicator b{white-space:nowrap}.map-mode-indicator span{min-width:0;color:var(--muted);overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+
 @media(max-width:800px){
   .comparison-workbench{min-width:0}
   .comparison-sources,.comparison-controls,.spatial-comparison-controls{grid-template-columns:1fr 1fr}
@@ -437,4 +440,6 @@ body[data-workspace="assets"] .right-panel{display:block!important}
   .contextual-workbench{min-width:0}.context-fields,.profile-provenance{grid-template-columns:1fr}.dma-metrics,.profile-metrics{grid-template-columns:1fr 1fr}#mapActionsButton{right:10px;bottom:68px}
   .dma-filter-summary{align-items:flex-start;flex-direction:column}.dma-filter-summary button{margin-left:0}.context-breakdown{max-width:100%;overflow-wrap:anywhere}
   .environmental-workbench{min-width:0}.environmental-controls{grid-template-columns:1fr 1fr}.environmental-segmented{grid-column:1/-1;overflow-x:auto}.environmental-metrics{grid-template-columns:1fr 1fr}.environmental-chart{height:220px}.environmental-groups{grid-template-columns:1fr 1fr}.environmental-transition{grid-template-columns:1fr}.environmental-transition>span{grid-column:auto}
+  .environmental-context-mode{grid-column:1/-1;overflow-x:auto}
+  .map-toolbar{right:8px;left:8px;overflow-x:auto}.map-toolbar button{flex:0 0 auto}.map-mode-indicator{top:53px;right:8px;left:8px}.selection-card{top:92px;max-width:calc(100% - 20px)}
 }

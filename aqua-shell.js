@@ -201,6 +201,7 @@
       this.clampToViewport(entry);
       this.focus(id);
       this.save();
+      window.dispatchEvent(new CustomEvent("aqua:window-restored", { detail: { id } }));
     }
 
     async close(id) {

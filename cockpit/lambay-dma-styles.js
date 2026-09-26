@@ -146,7 +146,7 @@
     const project = activeProject();
     if (!project) return;
     state.kindLayers?.dma?.eachLayer(wrapper => wrapper.eachLayer?.(polygon => {
-      const base = featureStyle(polygon.__aquaFeature);
+      const base = aquaFeatureStyle("dma", polygon.__aquaFeature);
       if (!base || !polygon.setStyle) return;
       const selected = state.selected?.feature === polygon.__aquaFeature;
       polygon.setStyle(selected ? { ...base, color: "#ffffff", weight: Math.max(4, base.weight) } : base);
