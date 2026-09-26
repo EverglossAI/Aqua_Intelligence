@@ -342,7 +342,7 @@
   }
 
   function pressureMarkerColor(asset) {
-    return PRESSURE_COLORS[pressureClass(summarizePressureAsset(asset).latest ?? 0)];
+    return window.AquaVisualStyles?.color("monitoring.pressure") || PRESSURE_COLORS[pressureClass(summarizePressureAsset(asset).latest ?? 0)];
   }
 
   function telemetrySelection(asset, marker) {
@@ -385,7 +385,7 @@
           <div class="selection-wide"><dt>Latest reading</dt><dd>${escapeHtml(result.timestamp || "—")}</dd></div>
         </dl>
         <canvas class="telemetry-chart" id="selectionTelemetryChart" aria-label="Average daily flow profile"></canvas>`;
-      setTimeout(() => drawSeriesChart("selectionTelemetryChart", [{ label: asset.id, color: "#55d6be", values: averageDailyProfile(asset, "flow") }], "L/s"), 0);
+      setTimeout(() => drawSeriesChart("selectionTelemetryChart", [{ label: asset.id, color: window.AquaVisualStyles?.color("monitoring.flow") || "#55d6be", values: averageDailyProfile(asset, "flow") }], "L/s"), 0);
     }
     if (window.innerWidth <= 800) {
       window.AquaWindowManager?.restore("pressure-analysis");
@@ -421,13 +421,15 @@
         const coincident = (state.active.telemetry || []).filter(item => item.type === "flow" && number(item.lat) === number(asset.lat) && number(item.lng) === number(asset.lng));
         const displayOffset = (coincident.indexOf(asset) - (coincident.length - 1) / 2) * 16;
         const dmaAccent = window.AquaDmaStyles?.accentForCode(asset.dmaCode) || "#efffff";
-        const icon = L.divIcon({ className: "dma-flow-marker", html: `<span style="--dma-accent:${dmaAccent}"></span>`, iconSize: [18, 18], iconAnchor: [9 - displayOffset, 9] });
+        const flowColor = window.AquaVisualStyles?.color("monitoring.flow") || "#43c59e";
+        const icon = L.divIcon({ className: "dma-flow-marker", html: `<span style="--dma-accent:${dmaAccent};--flow-color:${flowColor}"></span>`, iconSize: [18, 18], iconAnchor: [9 - displayOffset, 9] });
         const marker = L.marker([asset.lat, asset.lng], { icon, keyboard: true, title: `${asset.id} · ${asset.dmaLabel}` }).bindTooltip(`${asset.id} · ${asset.dmaLabel} inlet`);
         marker.on("click", () => telemetrySelection(asset, marker));
         marker.__aquaTelemetry = asset;
         marker.addTo(state.telemetryKindLayers.flow);
       } else if (asset.type === "acoustic") {
-        const marker = L.circleMarker([asset.lat, asset.lng], { radius: 6, color: "#5edc9a", fillColor: "#5edc9a", fillOpacity: .9 });
+        const color = window.AquaVisualStyles?.color("monitoring.acoustic") || "#ffad4d";
+        const marker = L.circleMarker([asset.lat, asset.lng], { radius: 6, color, fillColor: color, fillOpacity: .9 });
         marker.__aquaTelemetry = asset;
         marker.addTo(state.telemetryKindLayers.acoustic);
       }

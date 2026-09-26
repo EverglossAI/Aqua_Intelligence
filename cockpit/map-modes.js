@@ -2,6 +2,12 @@
   "use strict";
 
   const MODE_IDS = ["inspect", "topology", "dma", "acoustic", "prv", "air"];
+  const MODE_DETAILS = Object.freeze({
+    inspect: "Select network and monitoring assets",
+    topology: "Inspect network connectivity and unresolved links",
+    dma: "Inspect DMA boundaries, meters and monitoring assets",
+    acoustic: "Inspect acoustic sensors, couples and alerts"
+  });
   let summary = {};
 
   function selectedLayer() {
@@ -115,7 +121,7 @@
     });
     const current = summary[state.mapMode] || summary.inspect;
     const indicator = document.getElementById("mapModeIndicator");
-    if (indicator && current) indicator.innerHTML = `<b>Map mode: ${escapeHtml(current.label)}</b><span>${escapeHtml(current.detail)}</span>`;
+    if (indicator && current) indicator.innerHTML = `<b>Map mode: ${escapeHtml(current.label)}</b><span>${escapeHtml(MODE_DETAILS[state.mapMode] || current.detail)}</span>`;
   }
 
   function refresh() {

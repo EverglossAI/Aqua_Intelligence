@@ -13,6 +13,8 @@ window.AquaInvestigationContext={
 };
 const assetKinds={pipe:['pipe','eupipe','main','waterline'],meter:['meter','eumeter','flowmeter'],valve:['valve','gate','prv'],hydrant:['hydrant'],dma:['regionnet','dma','zone','district']};
 const colors={pipe:'#5c8da9',meter:'#ffc65c',valve:'#aa82ff',hydrant:'#ff7f6d',dma:'#36a3ff',other:'#72879a'};
+function aquaVisualColor(key,fallback){return window.AquaVisualStyles?.color(key)||fallback}
+function aquaKindColor(kind){return aquaVisualColor('network.'+kind,colors[kind]||colors.other)}
 function kindFor(name=''){const n=name.toLowerCase();for(const[k,terms]of Object.entries(assetKinds))if(terms.some(t=>n.includes(t)))return k;return'other'}
 function initMap(){
   state.map=L.map('map',{zoomControl:true,preferCanvas:true}).setView([23.7,120.95],8);
@@ -827,7 +829,7 @@ window.addEventListener('load',function(){
 });
 
 /* === GIS layer controls, selection and initial risk === */
-state.layerVisibility=state.layerVisibility||{pipe:true,meter:false,valve:false,hydrant:false,dma:true,telemetry:true,analysis:true};
+state.layerVisibility=state.layerVisibility||{pipe:window.AquaVisualStyles?.visible('network.pipe')!==false,meter:window.AquaVisualStyles?.visible('network.meter')===true,valve:window.AquaVisualStyles?.visible('network.valve')===true,hydrant:false,dma:true,telemetry:true,analysis:true};
 state.kindLayers=state.kindLayers||{};
 state.focusDma=null;
 state.selectionMode='any';
@@ -932,7 +934,8 @@ function aquaToggleProjectLayer(kind){
   return aquaSetProjectLayer(kind,state.layerVisibility[kind]===false,{showAllDmas:kind==='dma'});
 }
 function aquaBaseStyle(kind){
-  return{color:colors[kind]||colors.other,weight:kind==='pipe'?2.3:kind==='dma'?2.5:1.5,fillColor:colors[kind]||colors.other,fillOpacity:kind==='dma'?.12:.2,opacity:kind==='pipe'?.72:.9};
+  const color=aquaKindColor(kind);
+  return{color,weight:kind==='pipe'?2.3:kind==='dma'?2.5:1.5,fillColor:color,fillOpacity:kind==='dma'?.12:.2,opacity:kind==='pipe'?.72:.9};
 }
 function aquaFeatureStyle(kind,feature){
   let base;
@@ -1011,7 +1014,7 @@ renderProject=function(){
       if(!aquaFeatureInFocus(f,kind))return;
       const gj=L.geoJSON(f,{
         style:()=>aquaFeatureStyle(kind,f),
-        pointToLayer:(feature,ll)=>L.circleMarker(ll,{radius:kind==='meter'?4.5:kind==='valve'?4.5:4,color:colors[kind]||colors.other,fillColor:colors[kind]||colors.other,fillOpacity:.85,weight:1}),
+        pointToLayer:(feature,ll)=>{const color=aquaKindColor(kind);return L.circleMarker(ll,{radius:kind==='meter'?4.5:kind==='valve'?4.5:4,color,fillColor:color,fillOpacity:.85,weight:1})},
         onEachFeature:(feature,ll)=>ll.on('click',()=>aquaEnhancedSelect(layer,feature,ll))
       });
       gj.eachLayer(ll=>{ll.__aquaFeature=f;ll.__aquaKind=kind;ll.__aquaLayer=layer});
@@ -1047,12 +1050,24 @@ renderTelemetry=function(){
   state.telemetryLayer.clearLayers();if(!state.active)return;
   state.active.telemetry.forEach(t=>{
     if(!aquaTelemetryInFocus(t))return;
+    if(window.AquaVisualStyles?.visible('monitoring.'+t.type)===false)return;
     const lat=Number(t.lat||t.latitude),lng=Number(t.lng||t.lon||t.longitude);if(!Number.isFinite(lat)||!Number.isFinite(lng))return;
-    const col=t.type==='pressure'?colors.dma:t.type==='acoustic'?'#5edc9a':colors.meter;
+    const col=aquaVisualColor('monitoring.'+t.type,t.type==='pressure'?colors.dma:t.type==='acoustic'?'#5edc9a':colors.meter);
     L.circleMarker([lat,lng],{radius:5,color:col,fillColor:col,fillOpacity:1}).bindTooltip((t._id||'Telemetry')+' · '+t.type).addTo(state.telemetryLayer);
   });
   aquaApplyLayerVisibility();
 };
+
+window.addEventListener('aqua:visual-style-changed',()=>{
+  Object.entries(state.kindLayers||{}).forEach(([kind,group])=>group.eachLayer?.(wrapper=>wrapper.eachLayer?.(layer=>{
+    if(layer.__aquaFeature&&layer.setStyle)layer.setStyle(aquaFeatureStyle(kind,layer.__aquaFeature));
+  })));
+  renderTelemetry();
+  if(state.selected?.leaflet?.setStyle){
+    state.selected.leaflet.setStyle({color:'#ffffff',weight:5,fillOpacity:.35,opacity:1});
+    state.selected.leaflet.bringToFront?.();
+  }
+});
 
 function aquaAttr(f,names){
   const p=f?.properties||{},keys=Object.keys(p);

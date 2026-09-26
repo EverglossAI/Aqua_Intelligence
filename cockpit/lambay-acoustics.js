@@ -3,7 +3,7 @@
 
   const DATA_URL = "../projects/lambay-island/acoustic/lambay-acoustic-operational-data.json";
   const LAYER_NAMES = ["sensors", "couples", "active", "located", "closed"];
-  const COLORS = { sensor: "#48d5ad", couple: "#58a6d8", active: "#ff5d6c", located: "#f2cf5b", closed: "#8999a5" };
+  const COLORS = { sensor: window.AquaVisualStyles?.color("monitoring.acoustic") || "#ffad4d", couple: "#58a6d8", active: "#ff5d6c", located: "#f2cf5b", closed: "#8999a5" };
   let loadingProjectId = null;
   let highlightedPipes = [];
 
@@ -317,5 +317,10 @@
   };
 
   window.AquaAcoustics = { renderMap, renderAnalytics, selectSensor, selectCouple, selectAlert };
+  window.addEventListener("aqua:visual-style-changed", event => {
+    if (event.detail?.key !== "monitoring.acoustic" && event.detail?.key !== "all") return;
+    COLORS.sensor = window.AquaVisualStyles?.color("monitoring.acoustic") || "#ffad4d";
+    if (acousticProject()) renderMap();
+  });
   bindControls();
 })();

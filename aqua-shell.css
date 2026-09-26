@@ -47,9 +47,21 @@ body.aqua-map-first {
   min-height: 0 !important;
 }
 
-.aqua-map-first .map-toolbar {
-  top: 82px;
-  left: 14px;
+.aqua-map-first .map-guide-stack {
+  position: absolute;
+  top: calc(100% + 12px);
+  left: 0;
+  z-index: 2100;
+  display: grid;
+  justify-items: start;
+  gap: 5px;
+  pointer-events: none;
+}
+
+.aqua-map-first .map-guide-stack .map-toolbar,
+.aqua-map-first .map-guide-stack .map-mode-indicator {
+  position: static;
+  pointer-events: auto;
 }
 
 .aqua-map-first .map-legend {
@@ -76,7 +88,7 @@ body.aqua-map-first {
   pointer-events: none;
 }
 
-#aquaChrome > * {
+#aquaChrome > :not(.map-guide-stack) {
   pointer-events: auto;
   background: var(--aqua-glass);
   border: 1px solid var(--aqua-border);
@@ -374,15 +386,19 @@ body.aqua-map-first {
     display: none;
   }
 
-  .aqua-map-first .map-toolbar {
-    top: 112px;
-    left: 8px;
+  .aqua-map-first .map-guide-stack {
+    top: calc(100% + 8px);
+    left: 0;
     right: 8px;
+    justify-items: stretch;
+  }
+
+  .aqua-map-first .map-toolbar {
+    width: 100%;
     overflow-x: auto;
   }
 
-  .aqua-map-first .selection-card,
-  .aqua-map-first .map-legend {
+  .aqua-map-first .selection-card {
     display: none;
   }
 
@@ -605,8 +621,20 @@ body:has(#aquaDock button.is-minimized) .map-legend { bottom: 70px; }
 .map-legend-title { color: #6f98ae; font-size: 7px; letter-spacing: .14em; }
 .map-legend-group { display: flex; align-items: center; gap: 9px; }
 .map-legend-group small { width: 64px; color: #58798d; font-size: 7px; letter-spacing: .08em; }
-.map-legend-group span { margin: 0; color: #b6c9d5; font-size: 9px; }
-.map-legend-group i { width: 6px; height: 6px; margin-right: 4px; box-shadow: 0 0 0 2px rgba(255,255,255,.06); }
+.map-legend-item { display:flex;align-items:center;gap:4px;margin:0;padding:2px;border:0;border-radius:3px;background:transparent;color:#b6c9d5;cursor:pointer;font-size:9px; }
+.map-legend-item:hover,.map-legend-item:focus-visible { background:#15384d;color:#fff;outline:1px solid #3c829f; }
+.map-legend-item i { width:7px;height:7px;flex:0 0 7px;border-radius:50%;background:var(--legend-color);box-shadow:0 0 0 2px rgba(255,255,255,.06); }
+.map-legend-item[data-style-key="monitoring.flow"] i { border-radius:1px;transform:rotate(45deg); }
+.map-legend-item .legend-eye { margin-left:1px;color:#68d5a4;font-size:7px; }
+.map-legend-item.is-hidden-layer { opacity:.52; }
+.map-legend-item.is-hidden-layer .legend-eye { color:#607583; }
+.map-legend-reset { justify-self:end;border:0;background:transparent;color:#6f98ae;cursor:pointer;font-size:8px; }
+.map-legend-reset:hover,.map-legend-reset:focus-visible { color:#d9edf7;outline:0;text-decoration:underline; }
+.map-legend-popover { position:absolute;left:68px;bottom:calc(100% + 6px);display:grid;grid-template-columns:1fr auto;gap:8px 14px;width:190px;padding:10px;border:1px solid #365e75;border-radius:6px;background:#07131d;box-shadow:0 14px 36px rgba(0,0,0,.45); }
+.map-legend-popover>b { grid-column:1/-1;font-size:11px; }
+.map-legend-popover label { display:flex;align-items:center;justify-content:space-between;gap:8px;color:#9db5c4;font-size:9px; }
+.map-legend-popover input[type="color"] { width:34px;height:24px;padding:1px;border:1px solid #31566d;background:#0a1b28; }
+.map-legend-popover button { grid-column:1/-1;justify-self:end;border:0;background:transparent;color:#74bddc;cursor:pointer;font-size:9px; }
 
 .aqua-map-first .selection-card {
   width: min(330px, calc(100vw - 28px));
@@ -642,7 +670,12 @@ body:has(#aquaDock button.is-minimized) .map-legend { bottom: 70px; }
 @media (max-width: 800px) {
   .aqua-tools { width: 50px; flex-basis: 50px; }
   .aqua-map-first .aqua-window::after { display: none; }
-  .aqua-map-first .map-legend { display: none; }
+  .aqua-map-first .map-legend { left:8px;right:8px;bottom:max(8px,env(safe-area-inset-bottom));display:flex;align-items:center;min-width:0;max-height:92px;overflow-x:auto; }
+  body:has(.aqua-window:not(.is-hidden)) .map-legend { bottom:calc(min(46vh,460px) + 16px + env(safe-area-inset-bottom)); }
+  body:has(#aquaDock button.is-minimized):has(.aqua-window:not(.is-hidden)) .map-legend { bottom:calc(min(46vh,460px) + 76px + env(safe-area-inset-bottom)); }
+  .map-legend-title,.map-legend-group>small,.map-legend-reset { display:none; }
+  .map-legend-group { flex:0 0 auto; }
+  .map-legend-popover { right:0;left:0;width:auto; }
   #aquaDock button > b { display: none; }
   #aquaToolMenu { top: 106px; left: 8px; right: 8px; width: auto; max-height: calc(100vh - 180px); }
 }

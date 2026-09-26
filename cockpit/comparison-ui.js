@@ -1,7 +1,6 @@
 (() => {
   "use strict";
 
-  const COLORS = { pressure: "#53a8ff", elevation: "#55d6be", flow: "#55d6be", acoustic: "#ffbf59", "environment-rainfall": "#5ac8fa", "environment-temperature": "#ff7b62", "environment-soil-moisture": "#7ed6a7", "environment-evapotranspiration": "#d6b36a" };
   const PLOT = Object.freeze({ left: 76, right: 684, top: 24, bottom: 258, splitTopBottom: 120, splitBottomTop: 154 });
   const view = { sourceA: null, sourceB: null, domain: "temporal", layout: "overlay", scaleMode: "actual", zoom: 1, visible: { A: true, B: true }, picking: null, styledLayers: [], spatialMarkers: [] };
 
@@ -101,6 +100,17 @@
     }).join(" ");
   }
 
+  function pointMarks(source, key, range, yScale, top, bottom, color) {
+    return source.points.filter(point => point.time >= range.start && point.time <= range.end).map(point => {
+      const x = PLOT.left + (point.time - range.start) / Math.max(1, range.end - range.start) * (PLOT.right - PLOT.left);
+      const y = Math.max(top, Math.min(bottom, yScale(point.value)));
+      const title = `${key} · ${source.label} · ${format(point.value)} ${source.unit}`;
+      return key === "B"
+        ? `<rect x="${(x - 2.5).toFixed(1)}" y="${(y - 2.5).toFixed(1)}" width="5" height="5" fill="${color}"><title>${escape(title)}</title></rect>`
+        : `<circle cx="${x.toFixed(1)}" cy="${y.toFixed(1)}" r="2.5" fill="${color}"><title>${escape(title)}</title></circle>`;
+    }).join("");
+  }
+
   function eventMarks(source, range, top, bottom, color) {
     return source.events.filter(event => event.time >= range.start && event.time <= range.end).map(event => {
       const x = PLOT.left + (event.time - range.start) / Math.max(1, range.end - range.start) * (PLOT.right - PLOT.left);
@@ -156,9 +166,11 @@
     const sameUnit = comparison.sourceA.unit === comparison.sourceB.unit;
     const dualAxis = view.scaleMode === "dual" || !sameUnit;
     const commonScale = scaleDetails(normalized ? [0, 100] : allValues, PLOT.top, PLOT.bottom, !normalized);
+    const pair = window.AquaVisualStyles.comparisonPair(comparison.sourceA.type, comparison.sourceB.type);
+    view.colors = pair;
     const sourcesToDraw = [
-      { key: "A", source: comparison.sourceA, color: COLORS[comparison.sourceA.type], top: PLOT.top, bottom: split ? PLOT.splitTopBottom : PLOT.bottom },
-      { key: "B", source: comparison.sourceB, color: COLORS[comparison.sourceB.type], top: split ? PLOT.splitBottomTop : PLOT.top, bottom: PLOT.bottom }
+      { key: "A", source: comparison.sourceA, color: pair.A, top: PLOT.top, bottom: split ? PLOT.splitTopBottom : PLOT.bottom },
+      { key: "B", source: comparison.sourceB, color: pair.B, top: split ? PLOT.splitBottomTop : PLOT.top, bottom: PLOT.bottom }
     ];
     const scales = {};
     const content = sourcesToDraw.map(item => {
@@ -172,7 +184,7 @@
       scales[item.key] = details;
       if (!view.visible[item.key]) return "";
       const yScale = normalized ? value => normalizedScale.value((value - normalizationMinimum) / normalizationSpread * 100) : details.value;
-      const path = item.source.eventOnly ? "" : `<path d="${linePath(item.source.points, range, yScale, item.top, item.bottom)}" fill="none" stroke="${item.color}" stroke-width="2.5"/>`;
+      const path = item.source.eventOnly ? "" : `<path d="${linePath(item.source.points, range, yScale, item.top, item.bottom)}" fill="none" stroke="${item.color}" stroke-width="2.5"${item.key === "B" ? ' stroke-dasharray="7 4"' : ""}/>${pointMarks(item.source, item.key, range, yScale, item.top, item.bottom, item.color)}`;
       return `${split ? `<text x="12" y="${item.top + 10}" fill="${item.color}" font-size="10">${item.key}</text>` : ""}${path}${eventMarks(item.source, range, item.top, item.bottom, item.color)}`;
     }).join("");
     let axes;
@@ -191,12 +203,12 @@
     svg.innerHTML = `<rect x="${PLOT.left}" y="${PLOT.top}" width="${PLOT.right - PLOT.left}" height="${PLOT.bottom - PLOT.top}" fill="#07141e" stroke="#294150"/>${axes}${timeAxis(range)}<line id="comparisonCursorLine" x1="${PLOT.left}" x2="${PLOT.left}" y1="${PLOT.top}" y2="${PLOT.bottom}" stroke="#ffffff" stroke-width="1" opacity="0"/>${content}`;
   }
 
-  function summaryCard(key, source) {
+  function summaryCard(key, source, color) {
     const stats = source.statistics;
     const details = source.eventOnly
       ? `<b>${source.events.length}</b><span>events / snapshots</span>`
       : `<b>${format(stats.min)} / ${format(stats.average)} / ${format(stats.max)}</b><span>min / average / max · ${stats.count} samples</span>`;
-    return `<label class="comparison-summary-card"><input type="checkbox" data-comparison-visible="${key}"${view.visible[key] ? " checked" : ""}><i style="background:${COLORS[source.type]}"></i><strong>${key} · ${escape(source.label)}</strong>${details}<small>${escape(source.unit)}</small></label>`;
+    return `<label class="comparison-summary-card comparison-source-${key.toLowerCase()}" style="--series-color:${color}"><input type="checkbox" data-comparison-visible="${key}"${view.visible[key] ? " checked" : ""}><i></i><strong>${key} · ${escape(source.label)}</strong>${details}<small>${escape(source.unit)}</small></label>`;
   }
 
   function spatialInputOptions() {
@@ -243,15 +255,16 @@
     const totalDistance = comparison.elevation.distance || comparison.elevation.statistics?.totalDistance || samples.at(-1)?.distance || 1;
     const terrainScale = scaleDetails(samples.map(sample => sample.elevation), PLOT.top, PLOT.bottom);
     const pressureScale = scaleDetails(comparison.loggers.map(logger => logger.pressure), PLOT.top, PLOT.bottom);
-    const terrain = `<path d="${spatialPath(samples, totalDistance, terrainScale.value)}" fill="none" stroke="${COLORS.elevation}" stroke-width="3"/>`;
+    const pair = window.AquaVisualStyles.comparisonPair("elevation", "pressure");
+    const terrain = `<path d="${spatialPath(samples, totalDistance, terrainScale.value)}" fill="none" stroke="${pair.A}" stroke-width="3"/>`;
     const loggers = comparison.loggers.map(logger => {
       const x = PLOT.left + logger.chainage / Math.max(1, totalDistance) * (PLOT.right - PLOT.left);
       const y = pressureScale.value(logger.pressure);
-      return `<circle data-spatial-logger="${escape(logger.entityId)}" cx="${x}" cy="${y}" r="6" fill="${COLORS.pressure}" stroke="#fff" stroke-width="2"><title>${escape(logger.label)} · ${format(logger.pressure)} m · offset ${format(logger.offset)} m</title></circle>`;
+      return `<circle data-spatial-logger="${escape(logger.entityId)}" cx="${x}" cy="${y}" r="6" fill="${pair.B}" stroke="#fff" stroke-width="2"><title>${escape(logger.label)} · ${format(logger.pressure)} m · offset ${format(logger.offset)} m</title></circle>`;
     }).join("");
     const svg = element("comparisonChart");
     svg.setAttribute("viewBox", "0 0 760 300");
-    svg.innerHTML = `<rect x="${PLOT.left}" y="${PLOT.top}" width="${PLOT.right - PLOT.left}" height="${PLOT.bottom - PLOT.top}" fill="#07141e" stroke="#294150"/>${valueTicks(terrainScale, PLOT.left, PLOT.top, PLOT.bottom, COLORS.elevation, "left", "Terrain elevation (m)")}${valueTicks(pressureScale, PLOT.right, PLOT.top, PLOT.bottom, COLORS.pressure, "right", "Pressure (m)")}${chainageAxis(totalDistance)}${terrain}${loggers}`;
+    svg.innerHTML = `<rect x="${PLOT.left}" y="${PLOT.top}" width="${PLOT.right - PLOT.left}" height="${PLOT.bottom - PLOT.top}" fill="#07141e" stroke="#294150"/>${valueTicks(terrainScale, PLOT.left, PLOT.top, PLOT.bottom, pair.A, "left", "Terrain elevation (m)")}${valueTicks(pressureScale, PLOT.right, PLOT.top, PLOT.bottom, pair.B, "right", "Pressure (m)")}${chainageAxis(totalDistance)}${terrain}${loggers}`;
     const modeLabel = comparison.pressureMode.replace(/^./, value => value.toUpperCase());
     element("comparisonSummary").innerHTML = `<div class="comparison-stat"><span>Profile</span><b>${escape(elevation.label)}</b></div><div class="comparison-stat"><span>Corridor</span><b>${format(comparison.corridorMetres, 0)} m · ${comparison.loggers.length} logger(s)</b></div><div class="comparison-stat"><span>Pressure value</span><b>${escape(modeLabel)}</b></div><div class="spatial-results">${comparison.loggers.map(logger => `<button type="button" data-spatial-result="${escape(logger.entityId)}"><b>${escape(logger.label)}</b><span>${format(logger.chainage)} m chainage · ${format(logger.offset)} m offset</span><span>Terrain ${format(logger.terrainElevation)} m · pressure ${format(logger.pressure)} m</span><span>Δ terrain ${format(logger.terrainElevationDifference)} m · Δ pressure ${format(logger.pressureDifference)} m · pressure head minus terrain ${format(logger.pressureHeadMinusTerrain)} m</span></button>`).join("") || '<div class="empty-row">No pressure loggers fall inside this corridor.</div>'}</div><p class="comparison-caveat">Terrain is external DEM evidence, not surveyed pipe elevation. Pressure head minus terrain is descriptive and is not HGL.</p>`;
     element("comparisonProvenance").innerHTML = `<span><b>${escape(elevation.id)}</b> ${escape(elevation.provenance?.source || elevation.provenance?.provider || "unknown")} · ${escape(elevation.provenance?.dataset || "dataset not stated")} · ${escape(elevation.provenance?.resolution || "resolution not stated")}</span>${comparison.loggers.map(logger => `<span><b>pressure:${escape(logger.entityId)}</b> ${escape(typeof logger.provenance === "string" ? logger.provenance : logger.provenance?.filename || logger.provenance?.type || "unknown")}</span>`).join("")}`;
@@ -281,7 +294,8 @@
     view.comparison = comparison;
     const correlation = comparison.correlation.value == null ? comparison.correlation.reason : `${comparison.correlation.value.toFixed(3)} (${comparison.correlation.sampleCount} aligned)`;
     const overlap = comparison.overlap.start ? `${new Date(comparison.overlap.start).toLocaleString()} to ${new Date(comparison.overlap.end).toLocaleString()}` : "No overlapping period";
-    element("comparisonSummary").innerHTML = `${summaryCard("A", comparison.sourceA)}${summaryCard("B", comparison.sourceB)}<div class="comparison-stat"><span>Overlap</span><b>${escape(overlap)}</b></div><div class="comparison-stat"><span>Correlation</span><b>${escape(correlation)}</b></div>`;
+    const pair = window.AquaVisualStyles.comparisonPair(comparison.sourceA.type, comparison.sourceB.type);
+    element("comparisonSummary").innerHTML = `${summaryCard("A", comparison.sourceA, pair.A)}${summaryCard("B", comparison.sourceB, pair.B)}<div class="comparison-stat"><span>Overlap</span><b>${escape(overlap)}</b></div><div class="comparison-stat"><span>Correlation</span><b>${escape(correlation)}</b></div>`;
     element("comparisonProvenance").innerHTML = comparison.provenance.map(item => `<span><b>${escape(item.id)}</b> ${escape(typeof item.provenance === "string" ? item.provenance : item.provenance?.filename || item.provenance?.dataset || item.provenance?.provider || item.provenance?.type || "unknown")}${item.eventOnly ? " · event-only" : ""}</span>`).join("");
     element("comparisonZoomReset").textContent = `${view.zoom}×`;
     renderChart(comparison);
@@ -402,13 +416,14 @@
       const time = view.range.start + fraction * (view.range.end - view.range.start);
       const line = element("comparisonCursorLine");
       line?.setAttribute("x1", x); line?.setAttribute("x2", x); line?.setAttribute("opacity", "0.8");
-      const rows = [view.comparison.sourceA, view.comparison.sourceB].map(source => {
+      const rows = [view.comparison.sourceA, view.comparison.sourceB].map((source, index) => {
         const item = nearest(chartItems(source), time);
-        if (!item) return `${source.label}: no data`;
-        return `${source.label}: ${source.eventOnly ? item.label : `${format(item.value)} ${source.unit}`}`;
+        const key = index ? "B" : "A";
+        if (!item) return { key, text: `${source.label}: no data` };
+        return { key, text: `${source.label}: ${source.eventOnly ? item.label : `${format(item.value)} ${source.unit}`}` };
       });
       const cursor = element("comparisonCursor");
-      cursor.innerHTML = `<b>${new Date(time).toLocaleString()}</b><span>${escape(rows[0])}</span><span>${escape(rows[1])}</span>`;
+      cursor.innerHTML = `<b>${new Date(time).toLocaleString()}</b><span style="color:${view.colors.A}">A · ${escape(rows[0].text)}</span><span style="color:${view.colors.B}">B · ${escape(rows[1].text)}</span>`;
       cursor.style.left = `${Math.min(bounds.width - 190, Math.max(4, event.clientX - bounds.left + 10))}px`;
       cursor.classList.remove("hidden");
     });
@@ -467,6 +482,7 @@
     element("projectSelect")?.addEventListener("change", () => setTimeout(render, 100));
     window.addEventListener("aqua:project-activated", render);
     window.addEventListener("aqua:elevation-profiles-changed", render);
+    window.addEventListener("aqua:visual-style-changed", render);
     window.addEventListener("aqua:selection", handleSelection);
     window.addEventListener("keydown", event => {
       if (event.key === "Escape" && view.picking) {

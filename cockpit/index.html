@@ -99,15 +99,17 @@
 
       <section class="map-panel panel">
         <div id="map"></div>
-        <div class="map-toolbar">
-          <button data-map-mode="inspect" class="active"><span>Inspect</span></button>
-          <button data-map-mode="topology"><span>Topology</span><small data-mode-count>0</small></button>
-          <button data-map-mode="dma"><span>DMA</span><small data-mode-count>0</small></button>
-          <button data-map-mode="acoustic"><span>Acoustic</span><small data-mode-count>0</small></button>
-          <button data-map-mode="prv"><span>PRV</span><small data-mode-count>0</small></button>
-          <button data-map-mode="air"><span>Air valve</span><small data-mode-count>0</small></button>
+        <div class="map-guide-stack">
+          <div class="map-toolbar">
+            <button data-map-mode="inspect" class="active"><span>Inspect</span></button>
+            <button data-map-mode="topology"><span>Topology</span><small data-mode-count>0</small></button>
+            <button data-map-mode="dma"><span>DMA</span><small data-mode-count>0</small></button>
+            <button data-map-mode="acoustic"><span>Acoustic</span><small data-mode-count>0</small></button>
+            <button data-map-mode="prv"><span>PRV</span><small data-mode-count>0</small></button>
+            <button data-map-mode="air"><span>Air valve</span><small data-mode-count>0</small></button>
+          </div>
+          <div id="mapModeIndicator" class="map-mode-indicator"><b>Map mode: Inspect</b><span>Select network and monitoring assets</span></div>
         </div>
-        <div id="mapModeIndicator" class="map-mode-indicator"><b>Map mode: Inspect</b><span>Selectable network and operational assets</span></div>
         <div class="gis-control">
           <div class="gis-control-head"><b>Map</b><button id="toggleGisControl">−</button></div>
           <div id="gisControlBody">
@@ -136,11 +138,18 @@
             <div id="dmaStylePanel" class="dma-style-panel hidden" aria-label="Logical DMA styles"></div>
           </div>
         </div>
-        <div class="map-legend" aria-label="Map legend">
+        <div class="map-legend" aria-label="Interactive map key">
           <div class="map-legend-title">MAP KEY</div>
-          <div class="map-legend-group"><small>NETWORK</small><span><i class="pipe"></i>Pipe</span><span><i class="meter"></i>Meter</span><span><i class="valve"></i>Valve</span></div>
-          <div class="map-legend-group"><small>OPERATIONS</small><span><i class="pressure"></i>Pressure logger</span><span><i class="dma-flow"></i>DMA inlet meter</span><span><i class="acoustic"></i>Acoustic</span></div>
-          <div class="map-legend-group"><small>INTELLIGENCE</small><span><i class="risk"></i>Priority</span></div>
+          <div class="map-legend-group"><small>NETWORK</small><button type="button" class="map-legend-item" data-style-key="network.pipe" title="Change colour / visibility"><i></i><span>Pipe</span><span class="legend-eye" aria-hidden="true">●</span></button><button type="button" class="map-legend-item" data-style-key="network.meter" title="Change colour / visibility"><i></i><span>Meter</span><span class="legend-eye" aria-hidden="true">●</span></button><button type="button" class="map-legend-item" data-style-key="network.valve" title="Change colour / visibility"><i></i><span>Valve</span><span class="legend-eye" aria-hidden="true">●</span></button></div>
+          <div class="map-legend-group"><small>OPERATIONS</small><button type="button" class="map-legend-item" data-style-key="monitoring.pressure" title="Change colour / visibility"><i></i><span>Pressure logger</span><span class="legend-eye" aria-hidden="true">●</span></button><button type="button" class="map-legend-item" data-style-key="monitoring.flow" title="Change colour / visibility"><i></i><span>DMA inlet meter</span><span class="legend-eye" aria-hidden="true">●</span></button><button type="button" class="map-legend-item" data-style-key="monitoring.acoustic" title="Change colour / visibility"><i></i><span>Acoustic</span><span class="legend-eye" aria-hidden="true">●</span></button></div>
+          <div class="map-legend-group"><small>INTELLIGENCE</small><button type="button" class="map-legend-item" data-style-key="intelligence.priority" title="Change colour / visibility"><i></i><span>Priority</span><span class="legend-eye" aria-hidden="true">●</span></button></div>
+          <button type="button" class="map-legend-reset" id="resetLegendStyles">Reset legend styles</button>
+          <div class="map-legend-popover hidden" id="mapLegendPopover" role="dialog" aria-label="Map key style">
+            <b id="mapLegendPopoverTitle"></b>
+            <label><span>Colour</span><input id="mapLegendColor" type="color" aria-label="Layer colour"></label>
+            <label><span>Visible</span><input id="mapLegendVisible" type="checkbox"></label>
+            <button type="button" id="mapLegendResetItem">Reset</button>
+          </div>
         </div>
         <div class="selection-card" id="selectionCard">
           <div class="selection-kicker"><small>SELECTION</small><span>MAP</span></div><b class="selection-title">No asset selected</b><p class="selection-empty">Choose a visible network asset to inspect its engineering context.</p>
@@ -391,6 +400,7 @@
 <script type="module" src="./contextual-core.js"></script>
 <script type="module" src="./environmental-core.js"></script>
 <script type="module" src="./map-mode-core.js"></script>
+<script src="./visual-styles.js"></script>
 <script src="./cloud-projects.js"></script>
 <script src="./app.js"></script>
 <script src="./v4.js"></script>

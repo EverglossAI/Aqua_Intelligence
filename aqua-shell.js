@@ -265,6 +265,8 @@
       </div>
       <button type="button" class="aqua-tools" id="aquaOpenTools" title="Open tools" aria-label="Open tools"><span aria-hidden="true">⊞</span><b>Tools</b></button>`;
     document.body.append(chrome);
+    const guideStack = query(".map-guide-stack");
+    if (guideStack) chrome.append(guideStack);
 
     const dock = document.createElement("nav");
     dock.id = "aquaDock";
