@@ -328,6 +328,7 @@
       ["engineering", ".engineering", "Engineering Advisor", "Advisor", "E", () => innerWidth - 450, 150, 420, 390, false],
       ["data-health", ".data-health", "Data Health", "Data", "D", 70, 150, 340, 280, false],
       ["hydraulics", "#hydraulicsWorkbench", "EPANET Hydraulics", "Hydraulics", "H", () => innerWidth / 2 - 380, 92, 760, 650, false],
+      ["hydraulic-diagnosis", "#hydraulicDiagnosisWorkbench", "Hydraulic Diagnosis", "Diagnosis", "D", () => innerWidth - 550, 105, 520, 690, false],
       ["acoustics", "#acousticWorkbench", "Acoustic Intelligence", "Acoustics", "S", () => innerWidth / 2 - 360, 105, 720, 620, false],
       ["pressure-analysis", "#pressureAnalysisWorkbench", "Pressure Analysis", "Pressure", "P", () => innerWidth / 2 - 390, 92, 780, 650, false],
       ["comparison", "#comparisonWorkbench", "Compare Monitoring Sources", "Compare", "C", () => innerWidth / 2 - 410, 92, 820, 650, false],

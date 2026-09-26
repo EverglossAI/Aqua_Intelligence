@@ -221,8 +221,9 @@
               <span>Aqua converts the active pipe network into an EPANET model.</span>
             </div>
             <label>Source head (m)<input id="gisSourceHead" type="number" step="1" value="55"></label>
-            <label>Demand / node (L/s)<input id="gisDemand" type="number" step="0.01" value="0.05"></label>
+            <label>Model<select id="hydModelVariant"><option value="full-network">Full network</option><option value="distribution-main">Distribution main</option></select></label>
             <button id="buildRunGisHydraulics" class="primary">Build & Run</button>
+            <button id="compareHydraulicVariants" class="secondary">Compare models</button>
           </div>
           <div class="workbench-controls">
             <label>Result<select id="hydraulicMetric"><option value="pressure">Pressure</option><option value="flow">Flow</option><option value="velocity">Velocity</option><option value="headloss">Headloss</option></select></label>
@@ -230,13 +231,36 @@
             <button id="runHydraulics" class="secondary advanced-inp">Run .inp</button>
           </div>
           <div class="scenario-grid">
-            <label>What-if<select id="hydScenarioType"><option value="none">Baseline</option><option value="close">Close link</option><option value="prv">PRV setpoint</option><option value="leak">Leak emitter</option><option value="demand">Demand multiplier</option></select></label>
-            <label>Target<input id="hydTargetId" placeholder="Link / node ID"></label>
-            <label>Value<input id="hydScenarioValue" type="number" step="0.1"></label>
+            <label>Demand scenario<select id="hydScenarioType"><option value="base">Baseline</option><option value="peak">Peak demand</option><option value="mnf">Minimum night flow</option></select></label>
+            <label>Peak multiplier<input id="hydScenarioValue" type="number" min="1" step="0.1" value="1.5"></label>
             <button id="runScenario" class="secondary">Run Scenario</button>
+          </div>
+          <details class="hydraulic-assumptions">
+            <summary>Hydraulic assumptions</summary>
+            <div class="roughness-grid">
+              <label>PVC / HDPE<input data-roughness="PVC" type="number" value="145"></label>
+              <label>DIP / DI<input data-roughness="DIP" type="number" value="130"></label>
+              <label>Steel / GI<input data-roughness="STEEL" type="number" value="120"></label>
+              <label>CI / AC<input data-roughness="CI" type="number" value="110"></label>
+              <label>Unknown<input data-roughness="UNKNOWN" type="number" value="120"></label>
+            </div>
+          </details>
+          <div class="topology-tool">
+            <div class="topology-tool-head"><div><b>Hydraulic topology</b><span id="topologyStatus">Source GIS unchanged</span></div><button id="buildDerivedTopology" class="secondary">Build topology</button></div>
+            <div class="topology-layer-toggles" aria-label="Topology map layers">
+              <label><input id="showOriginalGis" type="checkbox" checked> Original GIS</label>
+              <label><input id="showDerivedTopology" type="checkbox"> Derived topology</label>
+              <label><input id="showConnectionFixes" type="checkbox" checked> Connection fixes</label>
+            </div>
+            <div id="topologyDiagnostics" class="topology-diagnostics"><div class="empty-row">Build the derived graph to inspect review-required connections.</div></div>
           </div>
           <div id="hydraulicResults" class="workbench-results"><div class="empty-row">Open a GIS project, then Build & Run. Aqua uses the open-source EPANET engine locally.</div></div>
         </div>
+      </article>
+
+      <article class="panel hydraulic-diagnosis-workbench" id="hydraulicDiagnosisWorkbench">
+        <div class="panel-head"><div><small>DETERMINISTIC REASONING</small><h2>Hydraulic Diagnosis</h2></div></div>
+        <div id="hydraulicDiagnosisBody" class="hydraulic-diagnosis-body"><div class="empty-row">Run a hydraulic diagnosis to review model confidence, evidence and recommended checks.</div></div>
       </article>
 
       <article class="panel acoustic-workbench" id="acousticWorkbench">
@@ -395,6 +419,11 @@
 <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
 <script src="https://unpkg.com/shpjs@6.2.0/dist/shp.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.15.0/proj4.js"></script>
+<script type="module" src="./topology-core.js"></script>
+<script type="module" src="./hydraulic-model.js"></script>
+<script type="module" src="./hydraulic-diagnostics.js"></script>
+<script type="module" src="./hydraulic-reasoning.js"></script>
+<script type="module" src="./epanet-adapter.js"></script>
 <script type="module" src="./comparison-core.js"></script>
 <script type="module" src="./leak-risk-core.js"></script>
 <script type="module" src="./contextual-core.js"></script>
@@ -413,6 +442,10 @@
 <script src="./elevation-providers.js"></script>
 <script src="./environmental-ui.js"></script>
 <script src="./contextual-ui.js"></script>
+<script src="./topology-ui.js"></script>
+<script src="./hydraulic-reasoning-ui.js"></script>
+<script src="./hydraulic-integration.js"></script>
 <script src="../aqua-shell.js"></script>
+<script src="./ai-command.js"></script>
 </body>
 </html>

@@ -144,7 +144,7 @@
 
   function applyFilters() {
     const current = filters();
-    const filtered = window.AquaLeakRiskCore.filterLeakRisk(results, current);
+    const filtered = window.AquaLeakRiskCore.filterLeakRisk(results, current).filter(result => window.AquaDmaPipeFilters?.matchesFeature?.(result.pipe?.feature || result.pipe) !== false);
     element("eventList").innerHTML = panelMarkup(filtered);
     bindPanel(current);
     renderOverlay(filtered);

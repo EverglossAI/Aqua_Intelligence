@@ -495,6 +495,12 @@
     render();
   }
 
-  window.AquaComparison = { render, openForSource(id) { view.sourceA = id; if (id.startsWith("elevation:")) view.domain = "spatial"; render(); window.AquaWindowManager?.restore("comparison"); }, openSpatialForSource(id) { view.domain = "spatial"; view.sourceA = id; render(); window.AquaWindowManager?.restore("comparison"); }, cancelPicking };
+  window.AquaComparison = {
+    render,
+    openForSource(id) { view.sourceA = id; if (id.startsWith("elevation:")) view.domain = "spatial"; render(); window.AquaWindowManager?.restore("comparison"); },
+    openForSources(sourceA, sourceB) { view.domain = sourceA.startsWith("elevation:") || sourceB.startsWith("elevation:") ? "spatial" : "temporal"; view.sourceA = sourceA; view.sourceB = sourceB; render(); window.AquaWindowManager?.restore("comparison"); },
+    openSpatialForSource(id) { view.domain = "spatial"; view.sourceA = id; render(); window.AquaWindowManager?.restore("comparison"); },
+    cancelPicking
+  };
   window.addEventListener("load", bind);
 })();

@@ -647,7 +647,33 @@
     renderProfile();
   }
 
-  window.AquaContextual = { renderAsset, renderDma, setProfileLine, savedProfiles, openSavedProfile, selectTelemetry, streetViewUrl: coordinate => window.AquaContextualCore.streetViewUrl(coordinate), navigationUrl: coordinate => window.AquaContextualCore.navigationUrl(coordinate) };
+  function dmaSelection(dmaCode) {
+    const active = project();
+    const mapping = (active?.dmaFeatureMappings || []).find(item => String(item.dmaCode) === String(dmaCode));
+    const layer = (active?.layers || []).find(item => item.name === mapping?.sourceLayer);
+    const entity = layer?.geojson?.features?.[mapping?.featureIndex];
+    return entity ? { kind: "dma", entity, layer } : null;
+  }
+
+  function filterPipes(options = {}) {
+    const selection = dmaSelection(options.dmaCode);
+    if (selection) renderDma(selection);
+    view.pipeFilters.materials = new Set((options.materials || []).map(value => String(value).toUpperCase()));
+    view.pipeFilters.diameters = new Set((options.diameters || []).map(value => String(Number(value))));
+    if (selection) renderDma(selection);
+    applyPipeFilterStyles();
+    return view.dma ? window.AquaContextualCore.filteredPipeSummary(view.dma.pipes, view.pipeFilters) : { pipes: [], count: 0, totalLength: 0 };
+  }
+
+  function openDmaElevation(dmaCode) {
+    const selection = dmaSelection(dmaCode);
+    if (!selection) return false;
+    renderDma(selection);
+    openDmaProfile(view.dma);
+    return true;
+  }
+
+  window.AquaContextual = { renderAsset, renderDma, setProfileLine, savedProfiles, openSavedProfile, selectTelemetry, filterPipes, openDmaElevation, streetViewUrl: coordinate => window.AquaContextualCore.streetViewUrl(coordinate), navigationUrl: coordinate => window.AquaContextualCore.navigationUrl(coordinate) };
   window.AquaDmaPipeFilters = {
     matchesFeature: matchesFilteredPipe,
     style(feature, base) { return filtersActive() ? { ...base, opacity: matchesFilteredPipe(feature) ? 0.95 : 0.08, weight: matchesFilteredPipe(feature) ? Math.max(3.5, base.weight || 0) : 1.2 } : base; },
