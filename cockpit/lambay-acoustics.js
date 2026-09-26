@@ -166,6 +166,7 @@
         <div class="selection-wide"><dt>Connected couples</dt><dd>${escape(connected.map(item => item.coupleId).join(", "))}</dd></div>
         <div class="selection-wide"><dt>Address</dt><dd>${escape(sensor.address)}</dd></div>
       </dl>${evidence(sensor)}`;
+    window.dispatchEvent(new CustomEvent("aqua:selection", { detail: { kind: "acoustic-sensor", entity: sensor, leaflet: state.acousticMarkers?.sensors?.get(sensor.sensorId) } }));
   }
 
   function selectCouple(couple) {
@@ -199,6 +200,7 @@
         <div><dt>Distances M / F</dt><dd>${formatNumber(alert.distances?.metres, 1)} / ${formatNumber(alert.distances?.feet, 1)}</dd></div><div><dt>Repair evidence</dt><dd>${escape(alert.repair?.essence)}</dd></div>
         <div class="selection-wide"><dt>Comments</dt><dd>${escape(alert.comments)}</dd></div><div class="selection-wide"><dt>Duplicate / shadow links</dt><dd>${escape((alert.relationships || []).map(item => `${item.type} ${item.alertId}${item.coupleId ? ` (couple ${item.coupleId})` : ""}`).join(", "))}</dd></div>
       </dl>${evidence(alert)}`;
+    window.dispatchEvent(new CustomEvent("aqua:selection", { detail: { kind: "acoustic-alert", entity: alert, leaflet: state.acousticMarkers?.alerts?.get(alert.alertId) } }));
   }
 
   function renderMap() {
@@ -281,6 +283,8 @@
         renderMap();
         renderAnalytics();
         updateCounts();
+        window.AquaComparison?.render();
+        window.AquaLeakRisk?.render();
       }
     } catch (error) {
       console.warn(error.message);

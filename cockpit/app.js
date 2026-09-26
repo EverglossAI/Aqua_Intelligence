@@ -1,5 +1,6 @@
 const $=id=>document.getElementById(id);
 const state={projects:[],active:null,map:null,networkLayer:null,telemetryLayer:null,selected:null,mapMode:'inspect',engMode:'prv'};
+window.aquaState=state;
 const assetKinds={pipe:['pipe','eupipe','main','waterline'],meter:['meter','eumeter','flowmeter'],valve:['valve','gate','prv'],hydrant:['hydrant'],dma:['regionnet','dma','zone','district']};
 const colors={pipe:'#5c8da9',meter:'#ffc65c',valve:'#aa82ff',hydrant:'#ff7f6d',dma:'#36a3ff',other:'#72879a'};
 function kindFor(name=''){const n=name.toLowerCase();for(const[k,terms]of Object.entries(assetKinds))if(terms.some(t=>n.includes(t)))return k;return'other'}
@@ -978,6 +979,7 @@ function aquaEnhancedSelect(layer,f,l){
   state.selected={layer,feature:f,leaflet:l};
   if(l&&l.setStyle)try{l.setStyle({color:'#ffffff',weight:5,fillOpacity:.35,opacity:1})}catch(e){}
   $('selectionCard').innerHTML=aquaSelectionMarkup(layer,f);
+  window.dispatchEvent(new CustomEvent('aqua:selection',{detail:{kind:'network',entity:f,layer,leaflet:l}}));
 }
 selectFeature=aquaEnhancedSelect;
 

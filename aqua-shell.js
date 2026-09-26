@@ -319,6 +319,10 @@
       ["hydraulics", "#hydraulicsWorkbench", "EPANET Hydraulics", "Hydraulics", "H", () => innerWidth / 2 - 380, 92, 760, 650, false],
       ["acoustics", "#acousticWorkbench", "Acoustic Intelligence", "Acoustics", "S", () => innerWidth / 2 - 360, 105, 720, 620, false],
       ["pressure-analysis", "#pressureAnalysisWorkbench", "Pressure Analysis", "Pressure", "P", () => innerWidth / 2 - 390, 92, 780, 650, false],
+      ["comparison", "#comparisonWorkbench", "Compare Monitoring Sources", "Compare", "C", () => innerWidth / 2 - 410, 92, 820, 650, false],
+      ["asset-details", "#assetDetailsWorkbench", "Asset Details", "Asset", "i", () => innerWidth - 430, 92, 400, 560, false],
+      ["dma-details", "#dmaDetailsWorkbench", "DMA Details", "DMA", "D", 26, 105, 440, 610, false],
+      ["elevation-profile", "#elevationProfileWorkbench", "Elevation Profile", "Elevation", "↗", () => innerWidth / 2 - 370, 110, 740, 520, false],
       ["layers", ".gis-control", "Map Layers", "Layers", "L", 30, 125, 300, 430, false]
     ];
     registrations.forEach(([id, selector, title, shortTitle, icon, left, top, width, height, open]) => {
@@ -352,7 +356,10 @@
     else if (/water balance|non.?revenue|\bnrw\b|real loss|apparent loss/.test(normalized)) clickControl("runWaterBalance", "analysis");
     else if (/dma|district meter/.test(normalized)) clickControl("runDmaPlanner", "analysis");
     else if (/hydrophone|sensor.*deploy|acoustic.*deploy/.test(normalized)) clickControl("runSensorPlanner", "analysis");
-    else if (/suspected leak|leak risk|leak priority|fusion|fuse/.test(normalized)) clickControl("runFusion", "analysis");
+    else if (/suspected leak|leak risk|leak priority|fusion|fuse/.test(normalized)) {
+      window.AquaLeakRisk?.render();
+      windowManager.restore("events");
+    }
     else if (/\bprv\b|pressure reducing/.test(normalized)) clickControl("runPrvAdvisor", "analysis");
     else if (/air valve|air release|vacuum|high point/.test(normalized)) clickControl("runAirAdvisor", "analysis");
     else if (/layer|basemap/.test(normalized)) windowManager.restore("layers");

@@ -123,6 +123,7 @@
             <label><input type="checkbox" data-acoustic-toggle="active" checked> Active alerts</label>
             <label><input type="checkbox" data-acoustic-toggle="located" checked> Located alerts</label>
             <label><input type="checkbox" data-acoustic-toggle="closed"> Closed alert history</label>
+            <label><input type="checkbox" id="showLeakRiskOverlay" checked> Leak investigation priority</label>
             <label><input type="checkbox" data-layer-toggle="analysis" checked> Analysis</label>
             <div class="gis-row top-gap"><span>Select</span>
               <select id="selectionMode"><option value="any">Any</option><option value="point">Points</option><option value="pipe">Pipes</option><option value="dma">DMA</option></select>
@@ -245,9 +246,59 @@
           <div id="acousticAnalysisResults" class="workbench-results"><div class="empty-row">Import logger/sensor readings to analyse persistence, anomalies, trends and cross-sensor evidence.</div></div>
         </div>
       </article>
+
+      <article class="panel comparison-workbench" id="comparisonWorkbench">
+        <div class="panel-head"><div><small>MULTI-SOURCE EVIDENCE</small><h2>Compare Monitoring Sources</h2></div></div>
+        <div class="comparison-body">
+          <div class="comparison-sources">
+            <label>Source A<select id="comparisonSourceA" aria-label="Comparison source A"></select></label>
+            <button type="button" id="comparisonPickA" class="secondary">Change A on map</button>
+            <label>Source B<select id="comparisonSourceB" aria-label="Comparison source B"></select></label>
+            <button type="button" id="comparisonPickB" class="secondary">Change B on map</button>
+          </div>
+          <div id="comparisonPickNotice" class="comparison-pick-notice hidden"><span>Select an eligible source on the map.</span><button type="button" id="comparisonCancelPick">Cancel</button></div>
+          <div class="comparison-controls">
+            <div class="comparison-segmented" role="group" aria-label="Chart layout"><button type="button" data-comparison-layout="overlay" class="active">Overlay</button><button type="button" data-comparison-layout="split">Split</button></div>
+            <label>Period<select id="comparisonPeriod"><option value="all">All data</option><option value="1">Last 24 hours</option><option value="3">Last 3 days</option><option value="7">Last 7 days</option><option value="custom">Custom</option></select></label>
+            <label>From<input id="comparisonStart" type="datetime-local"></label>
+            <label>To<input id="comparisonEnd" type="datetime-local"></label>
+            <label>Daily window (UTC)<span><input id="comparisonTimeStart" type="time" value="00:00"><input id="comparisonTimeEnd" type="time" value="23:59"></span></label>
+            <label>Aggregation<select id="comparisonAggregation"><option value="raw">Raw</option><option value="hour">Hourly mean</option><option value="day">Daily mean</option></select></label>
+            <label>Scale<select id="comparisonScale"><option value="actual">Actual</option><option value="dual">Dual axis</option><option value="normalized">Normalized</option></select></label>
+            <div class="comparison-zoom" aria-label="Shared chart zoom"><button type="button" id="comparisonZoomOut" title="Zoom out" aria-label="Zoom out">−</button><button type="button" id="comparisonZoomReset" title="Reset zoom">1×</button><button type="button" id="comparisonZoomIn" title="Zoom in" aria-label="Zoom in">+</button></div>
+          </div>
+          <div id="comparisonSummary" class="comparison-summary"><div class="empty-row">Choose two monitoring sources.</div></div>
+          <div class="comparison-chart-wrap"><svg id="comparisonChart" class="comparison-chart" role="img" aria-label="Monitoring source comparison"></svg><div id="comparisonCursor" class="comparison-cursor hidden"></div></div>
+          <div id="comparisonProvenance" class="comparison-provenance"></div>
+        </div>
+      </article>
+
+      <article class="panel contextual-workbench" id="assetDetailsWorkbench">
+        <div class="panel-head"><div><small>CONTEXTUAL INVESTIGATION</small><h2>Asset Details</h2></div></div>
+        <div id="assetDetailsBody" class="contextual-body"><div class="empty-row">Select a mapped asset or monitoring source.</div></div>
+      </article>
+
+      <article class="panel contextual-workbench" id="dmaDetailsWorkbench">
+        <div class="panel-head"><div><small>NETWORK CONTEXT</small><h2>DMA Details</h2></div></div>
+        <div id="dmaDetailsBody" class="contextual-body"><div class="empty-row">Select a mapped DMA.</div></div>
+      </article>
+
+      <article class="panel contextual-workbench elevation-workbench" id="elevationProfileWorkbench">
+        <div class="panel-head"><div><small>TERRAIN INVESTIGATION</small><h2>Elevation Profile</h2></div></div>
+        <div id="elevationProfileBody" class="contextual-body"><div class="empty-row">Draw a line or open a DMA profile.</div></div>
+      </article>
     </section>
 
   </main>
+</div>
+
+<button type="button" id="mapActionsButton" title="Map actions" aria-label="Open map actions">+</button>
+<div id="mapContextMenu" class="map-context-menu hidden" role="menu" aria-label="Map actions">
+  <div class="map-context-coordinate"></div>
+  <button type="button" role="menuitem" data-map-action="street-view">Street View here</button>
+  <button type="button" role="menuitem" data-map-action="navigate">Navigate here</button>
+  <button type="button" role="menuitem" data-map-action="copy">Copy coordinates</button>
+  <button type="button" role="menuitem" data-map-action="profile">Start elevation profile here</button>
 </div>
 
 <div id="projectModal" class="modal hidden">
@@ -292,12 +343,18 @@
 <script src="https://unpkg.com/@maplibre/maplibre-gl-leaflet@0.1.4/leaflet-maplibre-gl.js"></script>
 <script src="https://unpkg.com/shpjs@6.2.0/dist/shp.js"></script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/proj4js/2.15.0/proj4.js"></script>
+<script type="module" src="./comparison-core.js"></script>
+<script type="module" src="./leak-risk-core.js"></script>
+<script type="module" src="./contextual-core.js"></script>
 <script src="./cloud-projects.js"></script>
 <script src="./app.js"></script>
 <script src="./v4.js"></script>
 <script src="./lambay-demo.js"></script>
 <script src="./lambay-acoustics.js"></script>
 <script src="./lambay-dma-styles.js"></script>
+<script src="./comparison-ui.js"></script>
+<script src="./leak-risk-ui.js"></script>
+<script src="./contextual-ui.js"></script>
 <script src="../aqua-shell.js"></script>
 </body>
 </html>

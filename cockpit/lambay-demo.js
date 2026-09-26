@@ -391,6 +391,7 @@
       window.AquaWindowManager?.restore("pressure-analysis");
       renderAnalysis(asset.type === "flow" ? "flow" : "pressure", asset.dmaCode);
     }
+    window.dispatchEvent(new CustomEvent("aqua:selection", { detail: { kind: "telemetry", entity: asset, leaflet: marker } }));
   }
 
   function renderTelemetryLayers() {
