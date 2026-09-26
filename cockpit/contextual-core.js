@@ -223,7 +223,7 @@ export function sampleProfileLine(line, options = {}) {
   const segments = line.slice(1).map((end, index) => ({ start: line[index], end, length: distanceMetres(line[index], end) }));
   const totalDistance = segments.reduce((sum, segment) => sum + segment.length, 0);
   if (!totalDistance) return [];
-  const requested = Math.round(finite(options.sampleCount) ?? Math.max(50, Math.min(200, totalDistance / 20)));
+  const requested = Math.round(finite(options.sampleCount) ?? Math.max(50, Math.min(200, Math.ceil(totalDistance / 75) + 1)));
   const sampleCount = Math.max(2, Math.min(200, requested));
   return Array.from({ length: sampleCount }, (_item, index) => {
     const distance = totalDistance * index / (sampleCount - 1);

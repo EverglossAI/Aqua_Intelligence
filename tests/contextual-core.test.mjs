@@ -77,6 +77,9 @@ test("external elevation providers receive bounded evenly spaced samples", () =>
   assert.ok(Math.abs(points.at(-1).lng - 120.01) < 1e-10);
   assert.ok(points[30].distance > points[29].distance);
   assert.equal(sampleProfileLine([[22, 120], [22, 121]], { sampleCount: 500 }).length, 200);
+  const longRoute = sampleProfileLine([[22, 120], [22.1, 120]]);
+  const spacing = longRoute.at(-1).distance / (longRoute.length - 1);
+  assert.ok(spacing >= 50 && spacing <= 100);
 });
 
 test("external DEM samples retain cumulative distance and statistics", () => {
@@ -84,7 +87,7 @@ test("external DEM samples retain cumulative distance and statistics", () => {
     { lat: 22, lng: 120, distance: 0, elevation: 8 },
     { lat: 22, lng: 120.001, distance: 100, elevation: 13 },
     { lat: 22, lng: 120.002, distance: 200, elevation: 10 }
-  ], { source: "Mapbox Terrain DEM", kind: "external DEM" });
+  ], { source: "Open-Meteo", dataset: "Copernicus DEM GLO-90", kind: "external DEM" });
   assert.equal(profile.available, true);
   assert.equal(profile.statistics.totalDistance, 200);
   assert.equal(profile.statistics.gain, 5);

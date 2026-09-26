@@ -10,7 +10,7 @@ python -m http.server 8000
 
 Open `http://localhost:8000/`. Use `npx wrangler dev` when testing the Worker API and static-assets integration.
 
-Elevation profiles can use the Mapbox Terrain provider when the Worker has a `MAPBOX_ACCESS_TOKEN` secret. Configure production with `npx wrangler secret put MAPBOX_ACCESS_TOKEN`; for local Wrangler testing, provide the same binding through a gitignored `.dev.vars` file. The token remains server-side, and the cockpit retains its unavailable state when the binding or upstream service is unavailable.
+Elevation profiles use the Open-Meteo Elevation API backed by Copernicus DEM GLO-90. Requests are batched and cached by the Worker; no elevation API secret is required. The cockpit retains its unavailable state when the upstream service is unavailable or returns incomplete data.
 
 ## Application structure
 
@@ -24,7 +24,7 @@ Elevation profiles can use the Mapbox Terrain provider when the Worker has a `MA
 - `aqua-shell.js`: persistent floating-window manager, command bar, taskbar, and basemap management.
 - `aqua-shell.css`: full-screen map-first shell and responsive window presentation.
 - `worker/index.js`: Cloudflare Worker entrypoint and static-assets fallback.
-- `worker/routes/elevation.js`: bounded, cached Mapbox Terrain elevation proxy.
+- `worker/routes/elevation.js`: bounded, cached Open-Meteo/Copernicus GLO-90 elevation proxy.
 - `worker/routes/projects.js`: D1/R2 project API routing and handlers.
 - `worker/lib/projects.js`: shared persistence, authorization, and serialization helpers.
 - `migrations/`: D1 schema migrations.

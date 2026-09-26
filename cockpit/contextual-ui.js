@@ -302,9 +302,12 @@
     } else {
       const statistics = profile.statistics;
       const provenance = profile.provenance;
+      const dataset = provenance.dataset ? `<div><dt>Dataset</dt><dd>${escape(provenance.dataset)}</dd></div>` : "";
+      const attribution = provenance.attribution ? `<p class="context-provenance">${escape(provenance.attribution)}</p>` : "";
+      const terrainWarning = /dem|terrain/i.test(`${provenance.kind || ""} ${provenance.dataset || ""}`) ? `<p class="profile-warning">Terrain DEM — not surveyed engineering level data</p>` : "";
       body.innerHTML = `${controls}<div class="profile-status"><b>${escape(view.profileLabel)}</b><span>${profile.samples.length} real source samples</span></div>
         <div class="profile-metrics"><div><span>Distance</span><b>${format(statistics.totalDistance)} m</b></div><div><span>Min / max</span><b>${format(statistics.minimum)} / ${format(statistics.maximum)} m</b></div><div><span>Start / end</span><b>${format(statistics.start)} / ${format(statistics.end)} m</b></div><div><span>Gain / loss</span><b>+${format(statistics.gain)} / -${format(statistics.loss)} m</b></div></div>
-        ${profileChart(profile)}<dl class="profile-provenance"><div><dt>Elevation source</dt><dd>${escape(provenance.source)}</dd></div><div><dt>Data class</dt><dd>${escape(provenance.kind)}</dd></div><div><dt>Units</dt><dd>${escape(provenance.units || "m")}</dd></div><div><dt>Resolution</dt><dd>${escape(provenance.resolution || "Not stated")}</dd></div></dl><p class="profile-warning">Terrain DEM — not surveyed level data</p>`;
+        ${profileChart(profile)}<dl class="profile-provenance"><div><dt>Elevation source</dt><dd>${escape(provenance.source)}</dd></div>${dataset}<div><dt>Data class</dt><dd>${escape(provenance.kind)}</dd></div><div><dt>Resolution</dt><dd>${escape(provenance.resolution || "Not stated")}</dd></div><div><dt>Units</dt><dd>${escape(provenance.units || "m")}</dd></div></dl>${terrainWarning}${attribution}`;
     }
     bindProfileControls();
     bindProfileCursor();
