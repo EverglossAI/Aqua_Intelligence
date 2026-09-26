@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildComparisonSources, compareSources } from "../cockpit/comparison-core.js";
+import { buildComparisonSources, buildSpatialComparison, compareSources, SPATIAL_COMPARISON_DEFAULTS } from "../cockpit/comparison-core.js";
 
 const times = ["2026-09-25T00:00:00Z", "2026-09-25T01:00:00Z", "2026-09-25T02:00:00Z", "2026-09-25T03:00:00Z"];
 const project = {
@@ -62,4 +62,38 @@ test("acoustic sources remain event-only and never report numeric correlation", 
   assert.equal(comparison.correlation.value, null);
   assert.match(comparison.correlation.reason, /event-only/);
   assert.equal(comparison.sourceB.statistics.count, 0);
+});
+
+test("saved elevation profiles are spatial sources and cannot enter temporal comparison", () => {
+  const spatialProject = { ...project, analyses: { elevationProfiles: [{ profileId: "EP-1", name: "Ridge", geometry: [[22, 120], [22, 120.002]], samples: [{ distance: 0, elevation: 10 }, { distance: 206, elevation: 14 }], provenance: { source: "Open-Meteo", dataset: "Copernicus DEM GLO-90" } }] } };
+  const elevation = buildComparisonSources(spatialProject).find(source => source.id === "elevation:EP-1");
+  assert.equal(elevation.domain, "spatial");
+  assert.throws(() => compareSources(elevation, buildComparisonSources(spatialProject)[0]), /Spatial mode/);
+});
+
+test("spatial comparison projects nearby pressure loggers and supports pressure modes", () => {
+  const spatialProject = {
+    telemetry: [
+      { id: "near", type: "pressure", lat: 22.0005, lng: 120.001, source: "synthetic/demo", readings: times.slice(0, 3).map((timestamp, index) => ({ timestamp, pressure: 30 + index * 10 })) },
+      { id: "far", type: "pressure", lat: 22.01, lng: 120.001, readings: [{ timestamp: times[0], pressure: 99 }] }
+    ],
+    analyses: { elevationProfiles: [{ profileId: "EP-1", name: "Ridge", geometry: [[22, 120], [22, 120.002]], samples: [{ distance: 0, elevation: 10 }, { distance: 206, elevation: 14 }], provenance: { source: "Open-Meteo", dataset: "Copernicus DEM GLO-90" } }] }
+  };
+  const sources = buildComparisonSources(spatialProject);
+  const elevation = sources.find(source => source.type === "elevation");
+  const pressure = sources.filter(source => source.type === "pressure");
+  const latest = buildSpatialComparison(elevation, pressure);
+  assert.equal(SPATIAL_COMPARISON_DEFAULTS.corridorMetres, 200);
+  assert.equal(latest.loggers.length, 1);
+  assert.equal(latest.loggers[0].pressure, 50);
+  assert.ok(latest.loggers[0].chainage > 100 && latest.loggers[0].chainage < 110);
+  assert.ok(latest.loggers[0].terrainElevation > 11 && latest.loggers[0].terrainElevation < 13);
+  assert.equal(latest.loggers[0].provenance, "synthetic/demo");
+  assert.equal(latest.engineeringHydraulicGrade.available, false);
+  const average = buildSpatialComparison(elevation, pressure, { pressureMode: "average", start: times[0], end: times[1] });
+  assert.equal(average.loggers[0].pressure, 35);
+  const minimum = buildSpatialComparison(elevation, pressure, { pressureMode: "minimum" });
+  const maximum = buildSpatialComparison(elevation, pressure, { pressureMode: "maximum" });
+  assert.equal(minimum.loggers[0].pressure, 30);
+  assert.equal(maximum.loggers[0].pressure, 50);
 });

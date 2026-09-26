@@ -1,13 +1,21 @@
 (() => {
   "use strict";
 
-  const view = { selection: null, contextCoordinate: null, drawing: false, profileLine: [], profileLayer: null, profileMarker: null, profileRequest: 0, pipeFilters: { dmaId: null, materials: new Set(), diameters: new Set() } };
+  const view = { selection: null, contextCoordinate: null, drawing: false, profileLine: [], profileLayer: null, profileMarker: null, profileRequest: 0, savedProfileId: null, profileDmaId: null, savedLayers: new Map(), pipeFilters: { dmaId: null, materials: new Set(), diameters: new Set() } };
   const element = id => document.getElementById(id);
   const escape = value => String(value ?? "-").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
   const format = (value, digits = 1) => Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "-";
 
   function project() {
     return window.aquaState?.active || null;
+  }
+
+  function savedProfiles() {
+    const active = project();
+    if (!active) return [];
+    active.analyses = active.analyses || {};
+    active.analyses.elevationProfiles = Array.isArray(active.analyses.elevationProfiles) ? active.analyses.elevationProfiles : [];
+    return active.analyses.elevationProfiles;
   }
 
   function coordinateText(coordinate) {
@@ -241,7 +249,112 @@
     return view.profileLayer;
   }
 
+  function clearProfileMarker() {
+    if (view.profileMarker && window.aquaState?.map) window.aquaState.map.removeLayer(view.profileMarker);
+    view.profileMarker = null;
+  }
+
+  function clearTemporaryProfile() {
+    view.profileRequest++;
+    view.drawing = false;
+    view.profileLine = [];
+    view.profile = null;
+    view.savedProfileId = null;
+    view.profileDmaId = null;
+    ensureProfileLayer()?.setLatLngs([]);
+    clearProfileMarker();
+  }
+
+  function compactProfileRecord(existing) {
+    const profile = view.profile;
+    const statistics = profile?.statistics || {};
+    const provenance = profile?.provenance || {};
+    return {
+      profileId: existing?.profileId || `elevation-${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 7)}`,
+      name: existing?.name || (view.profileLabel !== "Drawn map line" ? view.profileLabel : `Elevation profile ${savedProfiles().length + 1}`),
+      projectId: project()?.id || null,
+      dmaId: view.profileDmaId || existing?.dmaId || null,
+      geometry: view.profileLine.map(coordinate => [Number(coordinate[0]), Number(coordinate[1])]),
+      source: view.profileLabel || existing?.source || "Drawn map line",
+      createdAt: existing?.createdAt || new Date().toISOString(),
+      elevationProvider: provenance.source || null,
+      dataset: provenance.dataset || null,
+      resolution: provenance.resolution || null,
+      sampleCount: profile?.samples?.length || 0,
+      distance: statistics.totalDistance ?? null,
+      minimum: statistics.minimum ?? null,
+      maximum: statistics.maximum ?? null,
+      gain: statistics.gain ?? null,
+      loss: statistics.loss ?? null,
+      samples: (profile?.samples || []).map(sample => ({ coordinate: sample.coordinate, distance: sample.distance, elevation: sample.elevation })),
+      provenance,
+      visible: existing?.visible !== false
+    };
+  }
+
+  async function persistProfiles() {
+    return window.AquaProjectPersistence?.save ? window.AquaProjectPersistence.save(project(), { setActive: true }) : false;
+  }
+
+  function renderSavedLayers() {
+    view.savedLayers.forEach(layer => window.aquaState?.map?.removeLayer(layer));
+    view.savedLayers.clear();
+    if (!window.aquaState?.map || typeof L === "undefined") return;
+    savedProfiles().filter(profile => profile.visible !== false && profile.geometry?.length > 1).forEach(profile => {
+      const layer = L.polyline(profile.geometry, { color: "#55d6be", weight: 4, opacity: 0.9 }).addTo(window.aquaState.map);
+      layer.bindTooltip(profile.name || "Saved elevation profile");
+      layer.on("click", () => openSavedProfile(profile.profileId));
+      view.savedLayers.set(profile.profileId, layer);
+    });
+  }
+
+  function profileFromRecord(record) {
+    const samples = Array.isArray(record.samples) ? record.samples : [];
+    return {
+      available: samples.length >= 2,
+      samples,
+      statistics: samples.length >= 2 ? { totalDistance: record.distance, minimum: record.minimum, maximum: record.maximum, gain: record.gain, loss: record.loss, start: samples[0]?.elevation, end: samples.at(-1)?.elevation } : null,
+      provenance: record.provenance || null
+    };
+  }
+
+  async function saveCurrentProfile() {
+    if (view.profileLine.length < 2) return false;
+    const profiles = savedProfiles();
+    const existing = profiles.find(profile => profile.profileId === view.savedProfileId) || profiles.find(profile => JSON.stringify(profile.geometry) === JSON.stringify(view.profileLine));
+    const record = compactProfileRecord(existing);
+    const index = existing ? profiles.indexOf(existing) : -1;
+    if (index >= 0) profiles[index] = record; else profiles.push(record);
+    view.savedProfileId = record.profileId;
+    view.profileLabel = record.name;
+    if (!await persistProfiles()) {
+      if (index >= 0) profiles[index] = existing; else profiles.pop();
+      view.savedProfileId = existing?.profileId || null;
+      return false;
+    }
+    ensureProfileLayer()?.setLatLngs([]);
+    view.profile = profileFromRecord(record);
+    renderSavedLayers();
+    renderProfile();
+    window.dispatchEvent(new CustomEvent("aqua:elevation-profiles-changed"));
+    return true;
+  }
+
+  function openSavedProfile(profileId) {
+    const record = savedProfiles().find(profile => profile.profileId === profileId);
+    if (!record) return;
+    view.savedProfileId = record.profileId;
+    view.profileDmaId = record.dmaId;
+    view.profileLine = record.geometry.map(coordinate => [...coordinate]);
+    view.profileLabel = record.name;
+    view.profile = profileFromRecord(record);
+    ensureProfileLayer()?.setLatLngs([]);
+    renderProfile();
+    window.AquaWindowManager?.restore("elevation-profile");
+  }
+
   function setProfileLine(line, label = "Drawn map line") {
+    view.savedProfileId = null;
     view.profileLine = line;
     view.profileLabel = label;
     ensureProfileLayer()?.setLatLngs(line);
@@ -252,6 +365,7 @@
 
   function openDmaProfile(summary) {
     const line = longestDmaLine(summary);
+    view.profileDmaId = summary.id;
     setProfileLine(line, line.length ? `Longest mapped pipe in ${summary.code}` : summary.code);
   }
 
@@ -274,10 +388,12 @@
     if (!body || !core) return;
     const source = core.resolveElevationSource(project());
     const sourceDescription = core.describeElevationSource(project());
-    let profile = core.buildElevationProfile(view.profileLine, source);
-    const controls = `<div class="profile-controls"><button type="button" class="primary" id="drawElevationProfile">${view.drawing ? "Drawing..." : "Draw profile"}</button><button type="button" class="secondary" id="finishElevationProfile"${view.drawing ? "" : " disabled"}>Finish</button><button type="button" class="secondary" id="clearElevationProfile">Clear</button></div>`;
+    const saved = savedProfiles().find(item => item.profileId === view.savedProfileId);
+    let profile = saved ? view.profile : core.buildElevationProfile(view.profileLine, source);
+    const controls = `<div class="profile-controls"><button type="button" class="primary" id="drawElevationProfile">${view.drawing ? "Drawing..." : "Draw profile"}</button><button type="button" class="secondary" id="finishElevationProfile"${view.drawing ? "" : " disabled"}>Finish</button><button type="button" class="secondary" id="saveElevationProfile"${view.profileLine.length > 1 && !view.drawing ? "" : " disabled"}>${saved ? "Save" : "Save profile"}</button>${saved ? `<button type="button" class="secondary" id="compareElevationProfile">Compare</button><button type="button" class="secondary" id="renameElevationProfile">Rename</button><button type="button" class="secondary" id="toggleElevationProfile">${saved.visible === false ? "Show" : "Hide"}</button>` : ""}<button type="button" class="secondary" id="clearElevationProfile">Clear</button></div>`;
     if (view.profileLine.length < 2) {
-      body.innerHTML = `${controls}<div class="profile-status"><b>${view.drawing ? "Choose at least two points on the map" : "No profile line"}</b><span>${escape(view.profileLabel || "Draw an A-to-B or multi-point line on the map.")}</span></div>`;
+      const savedList = savedProfiles().map(item => `<button type="button" class="saved-profile-row" data-saved-profile="${escape(item.profileId)}"><b>${escape(item.name)}</b><span>${format(item.distance)} m · ${item.sampleCount} samples${item.visible === false ? " · hidden" : ""}</span></button>`).join("");
+      body.innerHTML = `${controls}<div class="profile-status"><b>${view.drawing ? "Choose at least two points on the map" : "No profile line"}</b><span>${escape(view.profileLabel || "Draw an A-to-B or multi-point line on the map.")}</span></div>${savedList ? `<section class="saved-profiles"><h4>Saved profiles</h4>${savedList}</section>` : ""}`;
     } else if (view.drawing) {
       body.innerHTML = `${controls}<div class="profile-status"><b>Profile line in progress</b><span>Finish the line to request terrain elevations.</span></div>`;
     } else if (!profile.available && window.AquaElevationProviders) {
@@ -322,19 +438,63 @@
       view.profileRequest++;
       view.drawing = true;
       view.profileLine = [];
+      view.savedProfileId = null;
+      view.profileDmaId = null;
       view.profileLabel = "Drawn map line";
       ensureProfileLayer()?.setLatLngs([]);
       renderProfile();
     });
     element("finishElevationProfile")?.addEventListener("click", () => { view.drawing = false; renderProfile(); });
-    element("clearElevationProfile")?.addEventListener("click", () => {
-      view.profileRequest++;
-      view.drawing = false;
-      view.profileLine = [];
-      ensureProfileLayer()?.setLatLngs([]);
-      if (view.profileMarker) window.aquaState.map.removeLayer(view.profileMarker);
-      view.profileMarker = null;
+    element("saveElevationProfile")?.addEventListener("click", saveCurrentProfile);
+    element("compareElevationProfile")?.addEventListener("click", () => window.AquaComparison?.openSpatialForSource(`elevation:${view.savedProfileId}`));
+    element("renameElevationProfile")?.addEventListener("click", async () => {
+      const record = savedProfiles().find(profile => profile.profileId === view.savedProfileId);
+      if (!record) return;
+      const name = prompt("Profile name", record.name)?.trim();
+      if (!name) return;
+      record.name = name;
+      view.profileLabel = name;
+      await persistProfiles();
+      renderSavedLayers();
       renderProfile();
+      window.dispatchEvent(new CustomEvent("aqua:elevation-profiles-changed"));
+    });
+    element("toggleElevationProfile")?.addEventListener("click", async () => {
+      const record = savedProfiles().find(profile => profile.profileId === view.savedProfileId);
+      if (!record) return;
+      record.visible = record.visible === false;
+      await persistProfiles();
+      renderSavedLayers();
+      renderProfile();
+    });
+    element("clearElevationProfile")?.addEventListener("click", async () => {
+      const profiles = savedProfiles();
+      const index = profiles.findIndex(profile => profile.profileId === view.savedProfileId);
+      if (index >= 0) {
+        profiles.splice(index, 1);
+        await persistProfiles();
+        renderSavedLayers();
+        window.dispatchEvent(new CustomEvent("aqua:elevation-profiles-changed"));
+      }
+      clearTemporaryProfile();
+      renderProfile();
+    });
+    element("elevationProfileBody")?.querySelectorAll("[data-saved-profile]").forEach(button => button.addEventListener("click", () => openSavedProfile(button.dataset.savedProfile)));
+  }
+
+  function requestProfileClose() {
+    if (view.savedProfileId || view.profileLine.length < 2) return Promise.resolve(true);
+    const modal = element("elevationCloseModal");
+    if (!modal) return Promise.resolve(false);
+    modal.classList.remove("hidden");
+    return new Promise(resolve => {
+      const finish = value => { modal.classList.add("hidden"); resolve(value); };
+      modal.querySelectorAll("[data-elevation-close]").forEach(button => button.onclick = async () => {
+        if (button.dataset.elevationClose === "cancel") return finish(false);
+        if (button.dataset.elevationClose === "clear") { clearTemporaryProfile(); renderProfile(); return finish(true); }
+        if (await saveCurrentProfile()) finish(true);
+      });
+      modal.querySelector('[data-elevation-close="cancel"]')?.focus();
     });
   }
 
@@ -463,19 +623,28 @@
       view.pipeFilters.dmaId = null;
       view.pipeFilters.materials.clear();
       view.pipeFilters.diameters.clear();
-      view.profileLine = [];
+      clearTemporaryProfile();
       applyPipeFilterStyles();
-      setTimeout(renderProfile, 100);
+      setTimeout(() => { renderSavedLayers(); renderProfile(); }, 100);
     });
     bindMap();
+    renderSavedLayers();
     renderProfile();
   }
 
-  window.AquaContextual = { renderAsset, renderDma, setProfileLine, streetViewUrl: coordinate => window.AquaContextualCore.streetViewUrl(coordinate), navigationUrl: coordinate => window.AquaContextualCore.navigationUrl(coordinate) };
+  function handleProjectActivated() {
+    clearTemporaryProfile();
+    renderSavedLayers();
+    renderProfile();
+  }
+
+  window.AquaContextual = { renderAsset, renderDma, setProfileLine, savedProfiles, openSavedProfile, selectTelemetry, streetViewUrl: coordinate => window.AquaContextualCore.streetViewUrl(coordinate), navigationUrl: coordinate => window.AquaContextualCore.navigationUrl(coordinate) };
   window.AquaDmaPipeFilters = {
     matchesFeature: matchesFilteredPipe,
     style(feature, base) { return filtersActive() ? { ...base, opacity: matchesFilteredPipe(feature) ? 0.95 : 0.08, weight: matchesFilteredPipe(feature) ? Math.max(3.5, base.weight || 0) : 1.2 } : base; },
     reapplySelection: reapplySelectedPipe
   };
+  window.addEventListener("aqua:windows-ready", () => window.AquaWindowManager?.setBeforeClose("elevation-profile", requestProfileClose));
+  window.addEventListener("aqua:project-activated", handleProjectActivated);
   window.addEventListener("load", bind);
 })();

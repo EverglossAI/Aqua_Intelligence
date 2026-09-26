@@ -80,6 +80,7 @@
         icon: options.icon || "·",
         element,
         header,
+        beforeClose: options.beforeClose || null,
         minimized: Boolean(saved.minimized),
         closed: Boolean(saved.closed)
       };
@@ -202,9 +203,10 @@
       this.save();
     }
 
-    close(id) {
+    async close(id) {
       const entry = windows.get(id);
       if (!entry) return;
+      if (entry.beforeClose && await entry.beforeClose() === false) return;
       entry.minimized = false;
       entry.closed = true;
       entry.element.classList.add("is-hidden");
@@ -212,6 +214,12 @@
       if (activeWindowId === id) activeWindowId = null;
       this.updateTaskbar(entry);
       this.save();
+    }
+
+    setBeforeClose(id, callback) {
+      const entry = windows.get(id);
+      if (entry) entry.beforeClose = callback;
+      return Boolean(entry);
     }
 
     clampToViewport(entry) {
@@ -397,6 +405,7 @@
     makeChrome();
     makeProjectWindow();
     registerCockpitWindows();
+    window.dispatchEvent(new CustomEvent("aqua:windows-ready"));
     switchBasemap("street", query('[data-basemap="street"]'));
     setTimeout(() => window.aquaMap?.invalidateSize(), 50);
 

@@ -340,6 +340,7 @@ function aquaActivateProject(project){
     var option=document.createElement('option');option.value=project.id;option.textContent=project.name;$('projectSelect').appendChild(option);
   }
   $('projectSelect').value=project.id;
+  window.dispatchEvent(new CustomEvent('aqua:project-activated',{detail:{project:project}}));
 }
 function aquaHidePersistenceError(){var notice=$('persistenceNotice');if(notice)notice.remove()}
 function aquaShowPersistenceError(project,error){

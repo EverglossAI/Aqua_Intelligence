@@ -250,6 +250,7 @@
       <article class="panel comparison-workbench" id="comparisonWorkbench">
         <div class="panel-head"><div><small>MULTI-SOURCE EVIDENCE</small><h2>Compare Monitoring Sources</h2></div></div>
         <div class="comparison-body">
+          <div class="comparison-segmented comparison-domain" role="group" aria-label="Comparison domain"><button type="button" data-comparison-domain="temporal" class="active">Temporal</button><button type="button" data-comparison-domain="spatial">Spatial</button></div>
           <div class="comparison-sources">
             <label>Source A<select id="comparisonSourceA" aria-label="Comparison source A"></select></label>
             <button type="button" id="comparisonPickA" class="secondary">Change A on map</button>
@@ -266,6 +267,13 @@
             <label>Aggregation<select id="comparisonAggregation"><option value="raw">Raw</option><option value="hour">Hourly mean</option><option value="day">Daily mean</option></select></label>
             <label>Scale<select id="comparisonScale"><option value="actual">Actual</option><option value="dual">Dual axis</option><option value="normalized">Normalized</option></select></label>
             <div class="comparison-zoom" aria-label="Shared chart zoom"><button type="button" id="comparisonZoomOut" title="Zoom out" aria-label="Zoom out">−</button><button type="button" id="comparisonZoomReset" title="Reset zoom">1×</button><button type="button" id="comparisonZoomIn" title="Zoom in" aria-label="Zoom in">+</button></div>
+          </div>
+          <div id="spatialComparisonControls" class="spatial-comparison-controls hidden">
+            <label>Pressure value<select id="spatialPressureMode"><option value="latest">Latest</option><option value="timestamp">Selected timestamp</option><option value="average">Period average</option><option value="minimum">Period minimum</option><option value="maximum">Period maximum</option></select></label>
+            <label>Timestamp<input id="spatialTimestamp" type="datetime-local"></label>
+            <label>From<input id="spatialStart" type="datetime-local"></label>
+            <label>To<input id="spatialEnd" type="datetime-local"></label>
+            <label>Corridor (m)<input id="spatialCorridor" type="number" min="1" max="2000" step="25" value="200"></label>
           </div>
           <div id="comparisonSummary" class="comparison-summary"><div class="empty-row">Choose two monitoring sources.</div></div>
           <div class="comparison-chart-wrap"><svg id="comparisonChart" class="comparison-chart" role="img" aria-label="Monitoring source comparison"></svg><div id="comparisonCursor" class="comparison-cursor hidden"></div></div>
@@ -335,6 +343,20 @@
       <div class="file-name">Most Taiwan Water Corporation GIS should use zone 121; use zone 119 for Penghu / western offshore datasets when applicable.</div>
       <div id="gisFileName" class="file-name">No GIS file selected</div>
       <div class="modal-actions"><button id="createProjectBtn" class="primary" data-requires-role="admin">Create & analyse project</button></div>
+    </div>
+  </div>
+</div>
+
+<div id="elevationCloseModal" class="modal hidden" role="dialog" aria-modal="true" aria-labelledby="elevationCloseTitle">
+  <div class="modal-card elevation-close-card">
+    <div class="modal-head"><div><small>ELEVATION PROFILE</small><h2 id="elevationCloseTitle">Keep this elevation profile?</h2></div></div>
+    <div class="modal-body">
+      <p>The current line is temporary. Save it with the project or clear it from the map.</p>
+      <div class="modal-actions elevation-close-actions">
+        <button type="button" class="primary" data-elevation-close="save">Save profile</button>
+        <button type="button" class="secondary" data-elevation-close="clear">Clear</button>
+        <button type="button" class="secondary" data-elevation-close="cancel">Cancel</button>
+      </div>
     </div>
   </div>
 </div>

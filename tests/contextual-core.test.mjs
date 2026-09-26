@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildElevationProfile, buildSampledElevationProfile, describeElevationSource, featureCoordinate, filterDmaPipes, filteredPipeSummary, navigationUrl, presentAssetFields, resolveElevationSource, sampleProfileLine, streetViewUrl, summarizeDma } from "../cockpit/contextual-core.js";
+import { buildElevationProfile, buildSampledElevationProfile, describeElevationSource, featureCoordinate, filterDmaPipes, filteredPipeSummary, interpolateProfileElevation, navigationUrl, presentAssetFields, projectCoordinateToProfile, resolveElevationSource, sampleProfileLine, streetViewUrl, summarizeDma } from "../cockpit/contextual-core.js";
 
 const dma = { type: "Feature", properties: { dma_code: "DMA-1", name: "North" }, geometry: { type: "Polygon", coordinates: [[[120, 22], [120.01, 22], [120.01, 22.01], [120, 22.01], [120, 22]]] } };
 const pipe = (id, latitude, material = "CI", diameter = 100) => ({ type: "Feature", properties: { unific_id: id, pipe_mtr: material, pipe_size: diameter }, geometry: { type: "LineString", coordinates: [[120.001, latitude], [120.009, latitude]] } });
@@ -92,6 +92,19 @@ test("external DEM samples retain cumulative distance and statistics", () => {
   assert.equal(profile.statistics.totalDistance, 200);
   assert.equal(profile.statistics.gain, 5);
   assert.equal(profile.statistics.loss, 3);
+});
+
+test("coordinates project to profile chainage and terrain elevation interpolates", () => {
+  const line = [[22, 120], [22, 120.002]];
+  const projected = projectCoordinateToProfile([22.0005, 120.001], line);
+  assert.ok(projected.distance > 100 && projected.distance < 110);
+  assert.ok(projected.distanceFromLine > 50 && projected.distanceFromLine < 60);
+  assert.ok(Math.abs(projected.coordinate[1] - 120.001) < 1e-10);
+  assert.equal(interpolateProfileElevation([
+    { distance: 0, elevation: 8 },
+    { distance: 100, elevation: 12 },
+    { distance: 200, elevation: 10 }
+  ], 150), 11);
 });
 
 test("DMA pipe filters use OR within groups and AND between groups", () => {

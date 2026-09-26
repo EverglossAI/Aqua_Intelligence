@@ -1,3 +1,7 @@
+import { interpolateProfileElevation, projectCoordinateToProfile } from "./contextual-core.js";
+
+export const SPATIAL_COMPARISON_DEFAULTS = Object.freeze({ corridorMetres: 200 });
+
 function finite(value) {
   const number = Number(value);
   return Number.isFinite(number) ? number : null;
@@ -19,6 +23,38 @@ function telemetryPoints(asset) {
     const value = finite(reading[field] ?? reading.value ?? reading[`${field}_${asset.type === "pressure" ? "m" : "lps"}`]);
     return date && value != null ? { timestamp: date.toISOString(), time: date.getTime(), value } : null;
   }).filter(Boolean).sort((left, right) => left.time - right.time);
+}
+
+function entityCoordinate(entity) {
+  const latitude = finite(entity?.lat ?? entity?.latitude);
+  const longitude = finite(entity?.lng ?? entity?.lon ?? entity?.longitude);
+  return latitude != null && longitude != null ? [latitude, longitude] : null;
+}
+
+function pressureValue(asset, options = {}) {
+  let points = telemetryPoints(asset);
+  const mode = options.pressureMode || "latest";
+  if (!points.length) {
+    const snapshot = finite(asset.pressure ?? asset.value ?? asset.pressure_m ?? asset.avg_pressure);
+    return snapshot == null ? null : { value: snapshot, timestamp: asset.timestamp || null, sampleCount: 1 };
+  }
+  if (mode === "timestamp") {
+    const target = timestamp(options.selectedTimestamp)?.getTime();
+    if (target == null) return null;
+    const point = points.reduce((best, item) => !best || Math.abs(item.time - target) < Math.abs(best.time - target) ? item : best, null);
+    return point ? { value: point.value, timestamp: point.timestamp, sampleCount: 1 } : null;
+  }
+  if (mode === "latest") {
+    const point = points[points.length - 1];
+    return { value: point.value, timestamp: point.timestamp, sampleCount: 1 };
+  }
+  const start = timestamp(options.start)?.getTime() ?? -Infinity;
+  const end = timestamp(options.end)?.getTime() ?? Infinity;
+  points = points.filter(point => point.time >= start && point.time <= end);
+  if (!points.length) return null;
+  const values = points.map(point => point.value);
+  const value = mode === "minimum" ? Math.min(...values) : mode === "maximum" ? Math.max(...values) : values.reduce((sum, item) => sum + item, 0) / values.length;
+  return { value, timestamp: null, sampleCount: points.length };
 }
 
 function sensorEvents(project, sensor) {
@@ -76,7 +112,63 @@ export function buildComparisonSources(project = {}) {
     events: sensorEvents(project, sensor),
     entity: sensor
   }));
-  return [...telemetry, ...acoustic];
+  const elevation = (project.analyses?.elevationProfiles || []).filter(profile => profile.geometry?.length > 1 && profile.samples?.length > 1).map(profile => ({
+    id: sourceId("elevation", profile.profileId),
+    entityId: String(profile.profileId),
+    type: "elevation",
+    domain: "spatial",
+    label: profile.name || "Elevation profile",
+    context: profile.dmaId ? `DMA ${profile.dmaId}` : profile.source || "Saved profile",
+    unit: "m",
+    eventOnly: false,
+    provenance: profile.provenance || { source: profile.elevationProvider, dataset: profile.dataset, resolution: profile.resolution },
+    points: [],
+    events: [],
+    entity: profile
+  }));
+  return [...telemetry, ...acoustic, ...elevation];
+}
+
+export function buildSpatialComparison(elevationSource, pressureSources, options = {}) {
+  if (elevationSource?.type !== "elevation") throw new Error("A saved elevation profile is required for spatial comparison.");
+  const profile = elevationSource.entity;
+  const corridorMetres = finite(options.corridorMetres) ?? SPATIAL_COMPARISON_DEFAULTS.corridorMetres;
+  const loggers = (pressureSources || []).filter(source => source?.type === "pressure").map(source => {
+    const coordinate = entityCoordinate(source.entity);
+    const projected = coordinate ? projectCoordinateToProfile(coordinate, profile.geometry) : null;
+    const pressure = pressureValue(source.entity, options);
+    if (!projected || projected.distanceFromLine > corridorMetres || !pressure) return null;
+    const terrainElevation = interpolateProfileElevation(profile.samples, projected.distance);
+    return {
+      sourceId: source.id,
+      entityId: source.entityId,
+      label: source.label,
+      coordinate,
+      projectedCoordinate: projected.coordinate,
+      chainage: projected.distance,
+      offset: projected.distanceFromLine,
+      terrainElevation,
+      pressure: pressure.value,
+      pressureTimestamp: pressure.timestamp,
+      pressureSampleCount: pressure.sampleCount,
+      provenance: source.provenance
+    };
+  }).filter(Boolean).sort((left, right) => left.chainage - right.chainage);
+  const baseline = loggers[0] || null;
+  loggers.forEach(logger => {
+    logger.terrainElevationDifference = baseline && logger.terrainElevation != null && baseline.terrainElevation != null ? logger.terrainElevation - baseline.terrainElevation : null;
+    logger.pressureDifference = baseline ? logger.pressure - baseline.pressure : null;
+    logger.pressureHeadMinusTerrain = logger.terrainElevation != null ? logger.pressure - logger.terrainElevation : null;
+  });
+  return {
+    domain: "spatial",
+    elevation: profile,
+    elevationSource,
+    loggers,
+    corridorMetres,
+    pressureMode: options.pressureMode || "latest",
+    engineeringHydraulicGrade: { available: false, reason: "Requires a retained hydraulic run and an engineering datum gate." }
+  };
 }
 
 function minutesOfDay(date) {
@@ -160,6 +252,7 @@ function correlation(left, right, eventOnly) {
 export function compareSources(sourceA, sourceB, options = {}) {
   if (!sourceA || !sourceB) throw new Error("Two comparison sources are required.");
   if (sourceA.id === sourceB.id) throw new Error("Choose two different comparison sources.");
+  if (sourceA.domain === "spatial" || sourceB.domain === "spatial") throw new Error("Use Spatial mode to compare an elevation profile with pressure loggers.");
   const aggregation = options.aggregation || "raw";
   const prepare = source => {
     const points = aggregatePoints(filteredItems(source.points || [], options), aggregation);
@@ -178,4 +271,4 @@ export function compareSources(sourceA, sourceB, options = {}) {
   };
 }
 
-if (typeof window !== "undefined") window.AquaComparisonCore = { buildComparisonSources, compareSources };
+if (typeof window !== "undefined") window.AquaComparisonCore = { SPATIAL_COMPARISON_DEFAULTS, buildComparisonSources, buildSpatialComparison, compareSources };

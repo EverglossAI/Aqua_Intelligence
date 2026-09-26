@@ -280,6 +280,24 @@ function nearestOnLine(point, line) {
   return best;
 }
 
+export function projectCoordinateToProfile(coordinate, line) {
+  if (!Array.isArray(coordinate) || coordinate.length < 2 || !Array.isArray(line) || line.length < 2) return null;
+  return nearestOnLine(coordinate, line);
+}
+
+export function interpolateProfileElevation(samples, distance) {
+  const ordered = (samples || []).filter(sample => finite(sample.distance) != null && finite(sample.elevation) != null).sort((left, right) => left.distance - right.distance);
+  const target = finite(distance);
+  if (!ordered.length || target == null) return null;
+  if (target <= ordered[0].distance) return ordered[0].elevation;
+  if (target >= ordered[ordered.length - 1].distance) return ordered[ordered.length - 1].elevation;
+  const upperIndex = ordered.findIndex(sample => sample.distance >= target);
+  const lower = ordered[upperIndex - 1];
+  const upper = ordered[upperIndex];
+  const fraction = upper.distance === lower.distance ? 0 : (target - lower.distance) / (upper.distance - lower.distance);
+  return lower.elevation + (upper.elevation - lower.elevation) * fraction;
+}
+
 export function buildElevationProfile(line, source, options = {}) {
   if (!source || !Array.isArray(line) || line.length < 2) return { available: false, samples: [], statistics: null, provenance: source?.provenance || null };
   const resolution = finite(source.provenance?.resolution);

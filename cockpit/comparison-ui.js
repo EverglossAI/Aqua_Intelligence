@@ -1,9 +1,9 @@
 (() => {
   "use strict";
 
-  const COLORS = { pressure: "#53a8ff", flow: "#55d6be", acoustic: "#ffbf59", "environment-rainfall": "#5ac8fa", "environment-temperature": "#ff7b62", "environment-soil-moisture": "#7ed6a7", "environment-evapotranspiration": "#d6b36a" };
+  const COLORS = { pressure: "#53a8ff", elevation: "#55d6be", flow: "#55d6be", acoustic: "#ffbf59", "environment-rainfall": "#5ac8fa", "environment-temperature": "#ff7b62", "environment-soil-moisture": "#7ed6a7", "environment-evapotranspiration": "#d6b36a" };
   const PLOT = Object.freeze({ left: 76, right: 684, top: 24, bottom: 258, splitTopBottom: 120, splitBottomTop: 154 });
-  const view = { sourceA: null, sourceB: null, layout: "overlay", scaleMode: "actual", zoom: 1, visible: { A: true, B: true }, picking: null, styledLayers: [] };
+  const view = { sourceA: null, sourceB: null, domain: "temporal", layout: "overlay", scaleMode: "actual", zoom: 1, visible: { A: true, B: true }, picking: null, styledLayers: [], spatialMarkers: [] };
 
   const element = id => document.getElementById(id);
   const escape = value => String(value ?? "-").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
@@ -26,13 +26,23 @@
       return options ? `<optgroup label="${labels[type]}">${options}</optgroup>` : "";
     }).join("");
     const environmental = allSources.filter(source => source.type.startsWith("environment-")).map(source => `<option value="${escape(source.id)}"${source.id === selected ? " selected" : ""}>${escape(source.label)}</option>`).join("");
-    return `${monitoring}${environmental ? `<optgroup label="Environmental">${environmental}</optgroup>` : ""}`;
+    const elevation = allSources.filter(source => source.type === "elevation").map(source => `<option value="${escape(source.id)}"${source.id === selected ? " selected" : ""}>${escape(source.label)}</option>`).join("");
+    const allPressure = view.domain === "spatial" && allSources.some(source => source.type === "pressure") ? `<option value="pressure:*"${selected === "pressure:*" ? " selected" : ""}>All nearby pressure loggers</option>` : "";
+    return `${elevation ? `<optgroup label="Elevation profiles">${elevation}</optgroup>` : ""}${allPressure}${monitoring}${environmental ? `<optgroup label="Environmental">${environmental}</optgroup>` : ""}`;
   }
 
   function refreshSelectors() {
-    const allSources = sources();
-    if (!allSources.some(source => source.id === view.sourceA)) view.sourceA = allSources[0]?.id || null;
-    if (!allSources.some(source => source.id === view.sourceB) || view.sourceB === view.sourceA) view.sourceB = allSources.find(source => source.id !== view.sourceA)?.id || null;
+    const available = sources();
+    const allSources = view.domain === "spatial" ? available.filter(source => source.type === "elevation" || source.type === "pressure") : available.filter(source => source.domain !== "spatial");
+    const valid = id => id === "pressure:*" || allSources.some(source => source.id === id);
+    if (view.domain === "spatial") {
+      if (!valid(view.sourceA)) view.sourceA = allSources.find(source => source.type === "elevation")?.id || allSources.find(source => source.type === "pressure")?.id || null;
+      if (!valid(view.sourceB) || view.sourceB === view.sourceA) view.sourceB = allSources.find(source => source.type !== allSources.find(item => item.id === view.sourceA)?.type)?.id || (allSources.some(source => source.type === "pressure") ? "pressure:*" : null);
+      if (allSources.find(source => source.id === view.sourceA)?.type === "elevation" && allSources.some(source => source.type === "pressure")) view.sourceB = valid(view.sourceB) && view.sourceB.startsWith("pressure:") ? view.sourceB : "pressure:*";
+    } else {
+      if (!valid(view.sourceA)) view.sourceA = allSources[0]?.id || null;
+      if (!valid(view.sourceB) || view.sourceB === view.sourceA) view.sourceB = allSources.find(source => source.id !== view.sourceA)?.id || null;
+    }
     const sourceA = element("comparisonSourceA");
     const sourceB = element("comparisonSourceB");
     if (sourceA) sourceA.innerHTML = groupedOptions(allSources, view.sourceA);
@@ -189,8 +199,71 @@
     return `<label class="comparison-summary-card"><input type="checkbox" data-comparison-visible="${key}"${view.visible[key] ? " checked" : ""}><i style="background:${COLORS[source.type]}"></i><strong>${key} · ${escape(source.label)}</strong>${details}<small>${escape(source.unit)}</small></label>`;
   }
 
+  function spatialInputOptions() {
+    const iso = id => element(id)?.value ? new Date(element(id).value).toISOString() : undefined;
+    return {
+      pressureMode: element("spatialPressureMode")?.value || "latest",
+      selectedTimestamp: iso("spatialTimestamp"),
+      start: iso("spatialStart"),
+      end: iso("spatialEnd"),
+      corridorMetres: Number(element("spatialCorridor")?.value) || window.AquaComparisonCore.SPATIAL_COMPARISON_DEFAULTS.corridorMetres
+    };
+  }
+
+  function spatialPath(samples, totalDistance, yScale) {
+    return samples.map((sample, index) => {
+      const x = PLOT.left + sample.distance / Math.max(1, totalDistance) * (PLOT.right - PLOT.left);
+      return `${index ? "L" : "M"}${x.toFixed(1)},${yScale(sample.elevation).toFixed(1)}`;
+    }).join(" ");
+  }
+
+  function chainageAxis(totalDistance) {
+    const ticks = Array.from({ length: 5 }, (_item, index) => {
+      const fraction = index / 4;
+      const x = PLOT.left + fraction * (PLOT.right - PLOT.left);
+      return `<line x1="${x}" x2="${x}" y1="${PLOT.top}" y2="${PLOT.bottom}" stroke="#294150" opacity="0.28"/><text x="${x}" y="274" text-anchor="middle" fill="#9ab7c9" font-size="9">${format(totalDistance * fraction, 0)} m</text>`;
+    }).join("");
+    return `${ticks}<text x="${(PLOT.left + PLOT.right) / 2}" y="294" text-anchor="middle" fill="#b9cfdd" font-size="10">Chainage along saved profile</text>`;
+  }
+
+  function renderSpatial() {
+    const allSources = sources();
+    const selected = [view.sourceA, view.sourceB].map(id => allSources.find(source => source.id === id)).filter(Boolean);
+    const elevation = selected.find(source => source.type === "elevation");
+    const pressureId = [view.sourceA, view.sourceB].find(id => id === "pressure:*" || allSources.find(source => source.id === id)?.type === "pressure");
+    const pressure = pressureId === "pressure:*" ? allSources.filter(source => source.type === "pressure") : allSources.filter(source => source.id === pressureId);
+    if (!elevation || !pressure.length) {
+      element("comparisonSummary").innerHTML = '<div class="empty-row">Choose one saved elevation profile and at least one pressure logger.</div>';
+      element("comparisonChart").innerHTML = "";
+      return;
+    }
+    const comparison = window.AquaComparisonCore.buildSpatialComparison(elevation, pressure, spatialInputOptions());
+    view.spatialComparison = comparison;
+    const samples = comparison.elevation.samples || [];
+    const totalDistance = comparison.elevation.distance || comparison.elevation.statistics?.totalDistance || samples.at(-1)?.distance || 1;
+    const terrainScale = scaleDetails(samples.map(sample => sample.elevation), PLOT.top, PLOT.bottom);
+    const pressureScale = scaleDetails(comparison.loggers.map(logger => logger.pressure), PLOT.top, PLOT.bottom);
+    const terrain = `<path d="${spatialPath(samples, totalDistance, terrainScale.value)}" fill="none" stroke="${COLORS.elevation}" stroke-width="3"/>`;
+    const loggers = comparison.loggers.map(logger => {
+      const x = PLOT.left + logger.chainage / Math.max(1, totalDistance) * (PLOT.right - PLOT.left);
+      const y = pressureScale.value(logger.pressure);
+      return `<circle data-spatial-logger="${escape(logger.entityId)}" cx="${x}" cy="${y}" r="6" fill="${COLORS.pressure}" stroke="#fff" stroke-width="2"><title>${escape(logger.label)} · ${format(logger.pressure)} m · offset ${format(logger.offset)} m</title></circle>`;
+    }).join("");
+    const svg = element("comparisonChart");
+    svg.setAttribute("viewBox", "0 0 760 300");
+    svg.innerHTML = `<rect x="${PLOT.left}" y="${PLOT.top}" width="${PLOT.right - PLOT.left}" height="${PLOT.bottom - PLOT.top}" fill="#07141e" stroke="#294150"/>${valueTicks(terrainScale, PLOT.left, PLOT.top, PLOT.bottom, COLORS.elevation, "left", "Terrain elevation (m)")}${valueTicks(pressureScale, PLOT.right, PLOT.top, PLOT.bottom, COLORS.pressure, "right", "Pressure (m)")}${chainageAxis(totalDistance)}${terrain}${loggers}`;
+    const modeLabel = comparison.pressureMode.replace(/^./, value => value.toUpperCase());
+    element("comparisonSummary").innerHTML = `<div class="comparison-stat"><span>Profile</span><b>${escape(elevation.label)}</b></div><div class="comparison-stat"><span>Corridor</span><b>${format(comparison.corridorMetres, 0)} m · ${comparison.loggers.length} logger(s)</b></div><div class="comparison-stat"><span>Pressure value</span><b>${escape(modeLabel)}</b></div><div class="spatial-results">${comparison.loggers.map(logger => `<button type="button" data-spatial-result="${escape(logger.entityId)}"><b>${escape(logger.label)}</b><span>${format(logger.chainage)} m chainage · ${format(logger.offset)} m offset</span><span>Terrain ${format(logger.terrainElevation)} m · pressure ${format(logger.pressure)} m</span><span>Δ terrain ${format(logger.terrainElevationDifference)} m · Δ pressure ${format(logger.pressureDifference)} m · pressure head minus terrain ${format(logger.pressureHeadMinusTerrain)} m</span></button>`).join("") || '<div class="empty-row">No pressure loggers fall inside this corridor.</div>'}</div><p class="comparison-caveat">Terrain is external DEM evidence, not surveyed pipe elevation. Pressure head minus terrain is descriptive and is not HGL.</p>`;
+    element("comparisonProvenance").innerHTML = `<span><b>${escape(elevation.id)}</b> ${escape(elevation.provenance?.source || elevation.provenance?.provider || "unknown")} · ${escape(elevation.provenance?.dataset || "dataset not stated")} · ${escape(elevation.provenance?.resolution || "resolution not stated")}</span>${comparison.loggers.map(logger => `<span><b>pressure:${escape(logger.entityId)}</b> ${escape(typeof logger.provenance === "string" ? logger.provenance : logger.provenance?.filename || logger.provenance?.type || "unknown")}</span>`).join("")}`;
+  }
+
   function render() {
     refreshSelectors();
+    const spatial = view.domain === "spatial";
+    document.querySelectorAll("[data-comparison-domain]").forEach(button => button.classList.toggle("active", button.dataset.comparisonDomain === view.domain));
+    document.querySelector(".comparison-controls")?.classList.toggle("hidden", spatial);
+    element("spatialComparisonControls")?.classList.toggle("hidden", !spatial);
+    if (spatial) return renderSpatial();
     const allSources = sources();
     const sourceA = allSources.find(source => source.id === view.sourceA);
     const sourceB = allSources.find(source => source.id === view.sourceB);
@@ -287,9 +360,40 @@
     return items.reduce((best, item) => !best || Math.abs(item.time - time) < Math.abs(best.time - time) ? item : best, null);
   }
 
+  function clearSpatialMarkers() {
+    view.spatialMarkers.forEach(marker => window.aquaState?.map?.removeLayer(marker));
+    view.spatialMarkers = [];
+  }
+
+  function spatialLogger(entityId) {
+    return view.spatialComparison?.loggers.find(logger => String(logger.entityId) === String(entityId)) || null;
+  }
+
+  function highlightSpatialLogger(logger) {
+    clearSpatialMarkers();
+    if (!logger || !window.aquaState?.map || typeof L === "undefined") return;
+    view.spatialMarkers.push(
+      L.circleMarker(logger.projectedCoordinate, { radius: 7, color: "#fff", fillColor: COLORS.elevation, fillOpacity: 1, weight: 2 }).addTo(window.aquaState.map),
+      L.circleMarker(logger.coordinate, { radius: 9, color: "#fff", fillColor: COLORS.pressure, fillOpacity: 0.35, weight: 3 }).addTo(window.aquaState.map)
+    );
+  }
+
+  function focusSpatialLogger(entityId) {
+    const logger = spatialLogger(entityId);
+    if (!logger) return;
+    highlightSpatialLogger(logger);
+    window.aquaState?.map?.setView(logger.coordinate, Math.max(window.aquaState.map.getZoom(), 16));
+    window.AquaContextual?.selectTelemetry(logger.entityId);
+  }
+
   function bindCursor() {
     const svg = element("comparisonChart");
     svg?.addEventListener("pointermove", event => {
+      if (view.domain === "spatial") {
+        const logger = spatialLogger(event.target.closest?.("[data-spatial-logger]")?.dataset.spatialLogger);
+        highlightSpatialLogger(logger);
+        return;
+      }
       if (!view.comparison || !view.range) return;
       const bounds = svg.getBoundingClientRect();
       const svgX = (event.clientX - bounds.left) / bounds.width * 760;
@@ -309,10 +413,12 @@
       cursor.classList.remove("hidden");
     });
     svg?.addEventListener("pointerleave", () => {
+      clearSpatialMarkers();
       element("comparisonCursor")?.classList.add("hidden");
       element("comparisonCursorLine")?.setAttribute("opacity", "0");
     });
     svg?.addEventListener("wheel", event => {
+      if (view.domain === "spatial") return;
       event.preventDefault();
       view.zoom = Math.max(1, Math.min(8, view.zoom * (event.deltaY < 0 ? 2 : 0.5)));
       render();
@@ -324,13 +430,20 @@
       if (id === "comparisonSourceA") view.sourceA = event.target.value;
       if (id === "comparisonSourceB") view.sourceB = event.target.value;
       if (id === "comparisonStart" || id === "comparisonEnd") element("comparisonPeriod").value = "custom";
-      if (view.sourceA === view.sourceB) {
+      if (view.domain === "temporal" && view.sourceA === view.sourceB) {
         const alternative = sources().find(source => source.id !== event.target.value)?.id || null;
         if (id === "comparisonSourceA") view.sourceB = alternative;
         else view.sourceA = alternative;
       }
       render();
     }));
+    document.querySelectorAll("[data-comparison-domain]").forEach(button => button.addEventListener("click", () => {
+      view.domain = button.dataset.comparisonDomain;
+      document.querySelectorAll("[data-comparison-domain]").forEach(item => item.classList.toggle("active", item === button));
+      clearSpatialMarkers();
+      render();
+    }));
+    ["spatialPressureMode", "spatialTimestamp", "spatialStart", "spatialEnd", "spatialCorridor"].forEach(id => element(id)?.addEventListener("change", render));
     document.querySelectorAll("[data-comparison-layout]").forEach(button => button.addEventListener("click", () => {
       view.layout = button.dataset.comparisonLayout;
       document.querySelectorAll("[data-comparison-layout]").forEach(item => item.classList.toggle("active", item === button));
@@ -347,7 +460,13 @@
       view.visible[event.target.dataset.comparisonVisible] = event.target.checked;
       renderChart(view.comparison);
     });
+    element("comparisonSummary")?.addEventListener("click", event => {
+      const entityId = event.target.closest?.("[data-spatial-result]")?.dataset.spatialResult;
+      if (entityId) focusSpatialLogger(entityId);
+    });
     element("projectSelect")?.addEventListener("change", () => setTimeout(render, 100));
+    window.addEventListener("aqua:project-activated", render);
+    window.addEventListener("aqua:elevation-profiles-changed", render);
     window.addEventListener("aqua:selection", handleSelection);
     window.addEventListener("keydown", event => {
       if (event.key === "Escape" && view.picking) {
@@ -360,6 +479,6 @@
     render();
   }
 
-  window.AquaComparison = { render, openForSource(id) { view.sourceA = id; render(); window.AquaWindowManager?.restore("comparison"); }, cancelPicking };
+  window.AquaComparison = { render, openForSource(id) { view.sourceA = id; if (id.startsWith("elevation:")) view.domain = "spatial"; render(); window.AquaWindowManager?.restore("comparison"); }, openSpatialForSource(id) { view.domain = "spatial"; view.sourceA = id; render(); window.AquaWindowManager?.restore("comparison"); }, cancelPicking };
   window.addEventListener("load", bind);
 })();
