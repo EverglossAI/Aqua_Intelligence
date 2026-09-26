@@ -2,7 +2,8 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import worker from "../worker/index.js";
 import {
-  createProject, getProject, getProjectData, importProjectAcoustics, listProjects, routeProjectRequest, updateProject
+  createProject, getProject, getProjectData, getSession, importProjectAcoustics,
+  listProjects, routeProjectRequest, updateProject
 } from "../worker/routes/projects.js";
 
 class FakeBucket {
@@ -81,6 +82,13 @@ class FakeDb {
   }
 }
 
+function accessHeaders(email) {
+  return {
+    "CF-Access-Authenticated-User-Email": email,
+    "CF-Access-Jwt-Assertion": "verified-by-cloudflare-access"
+  };
+}
+
 function sampleProject() {
   return {
     id: "lambay-island",
@@ -156,14 +164,62 @@ test("project API stores payloads in R2 and metadata in D1 with optimistic revis
 test("project writes are denied without an authenticated writer", async () => {
   const env = { AQUA_DB: new FakeDb(), AQUA_PROJECTS: new FakeBucket() };
   const response = await createProject({ request: new Request("http://local/api/projects", { method: "POST" }), env });
-  assert.equal(response.status, 401);
+  assert.equal(response.status, 403);
+});
+
+test("browser session exposes centralized roles without exposing service credentials", async () => {
+  const env = {
+    AQUA_PROJECT_WRITE_TOKEN: "migration-secret",
+    AQUA_EDITOR_EMAILS: "editor@example.com",
+    AQUA_ADMIN_EMAILS: "admin@example.com"
+  };
+  const anonymous = await getSession({ request: new Request("http://local/api/session"), env });
+  assert.deepEqual(await anonymous.json(), { authenticated: false, email: null, role: "viewer" });
+  assert.equal(JSON.stringify(await (await getSession({
+    request: new Request("http://local/api/session", { headers: accessHeaders("editor@example.com") }), env
+  })).json()).includes("migration-secret"), false);
+  const editor = await getSession({ request: new Request("http://local/api/session", { headers: accessHeaders("editor@example.com") }), env });
+  assert.deepEqual(await editor.json(), { authenticated: true, email: "editor@example.com", role: "editor" });
+  const admin = await getSession({ request: new Request("http://local/api/session", { headers: accessHeaders("admin@example.com") }), env });
+  assert.deepEqual(await admin.json(), { authenticated: true, email: "admin@example.com", role: "admin" });
+  const viewer = await getSession({ request: new Request("http://local/api/session", { headers: accessHeaders("viewer@example.com") }), env });
+  assert.deepEqual(await viewer.json(), { authenticated: true, email: "viewer@example.com", role: "viewer" });
+  const spoofed = await getSession({
+    request: new Request("http://local/api/session", { headers: { "CF-Access-Authenticated-User-Email": "admin@example.com" } }), env
+  });
+  assert.deepEqual(await spoofed.json(), { authenticated: false, email: null, role: "viewer" });
+});
+
+test("Editor can update but only Admin or bearer automation can import", async () => {
+  const env = {
+    AQUA_DB: new FakeDb(), AQUA_PROJECTS: new FakeBucket(),
+    AQUA_EDITOR_EMAILS: "editor@example.com", AQUA_ADMIN_EMAILS: "admin@example.com",
+    AQUA_PROJECT_WRITE_TOKEN: "migration-secret"
+  };
+  const editorHeaders = accessHeaders("editor@example.com");
+  const deniedImport = await createProject({ request: new Request("http://local/api/projects", { method: "POST", headers: editorHeaders }), env });
+  assert.equal(deniedImport.status, 403);
+  const form = new FormData();
+  form.set("project", JSON.stringify(sampleProject()));
+  form.set("source", new Blob(["zip-data"]), "source.zip");
+  const imported = await createProject({
+    request: new Request("http://local/api/projects", { method: "POST", headers: { authorization: "Bearer migration-secret" }, body: form }), env
+  });
+  assert.equal(imported.status, 201);
+  const updated = await updateProject({
+    request: new Request("http://local/api/projects/lambay-island", {
+      method: "PUT", headers: { ...editorHeaders, "content-type": "application/json" },
+      body: JSON.stringify({ project: sampleProject(), expectedVersion: 1 })
+    }), params: { id: "lambay-island" }, env
+  });
+  assert.equal(updated.status, 200);
 });
 
 test("project reads can be protected by the deployment policy", async () => {
   const env = { AQUA_DB: new FakeDb(), AQUA_PROJECTS: new FakeBucket(), AQUA_REQUIRE_READ_AUTH: "true" };
   const denied = await listProjects({ request: new Request("http://local/api/projects"), env });
   assert.equal(denied.status, 401);
-  const allowed = await listProjects({ request: new Request("http://local/api/projects", { headers: { "CF-Access-Authenticated-User-Email": "engineer@example.com" } }), env });
+  const allowed = await listProjects({ request: new Request("http://local/api/projects", { headers: accessHeaders("engineer@example.com") }), env });
   assert.equal(allowed.status, 200);
 });
 
@@ -221,7 +277,7 @@ test("Worker router dispatches APIs before falling through to static assets", as
   assert.equal(missingApi.status, 404);
 });
 
-test("Writer imports acoustic entities into D1 and preserves original reports in R2", async () => {
+test("Admin imports acoustic entities into D1 and preserves original reports in R2", async () => {
   const env = { AQUA_DB: new FakeDb(), AQUA_PROJECTS: new FakeBucket(), AQUA_ALLOW_LOCAL_WRITES: "true" };
   const projectForm = new FormData();
   projectForm.set("project", JSON.stringify(sampleProject()));
@@ -250,4 +306,16 @@ test("Writer imports acoustic entities into D1 and preserves original reports in
   assert.ok(keys.includes("projects/lambay-island/versions/2/acoustics/normalized/lambay-acoustic-operational-data.json"));
   const project = await getProjectData({ request: new Request("http://local/api/projects/lambay-island/data"), params: { id: "lambay-island" }, env });
   assert.equal((await project.json()).acousticSensor[0].sensorId, "114376");
+});
+
+test("Editor cannot import acoustic operations", async () => {
+  const env = {
+    AQUA_DB: new FakeDb(), AQUA_PROJECTS: new FakeBucket(),
+    AQUA_EDITOR_EMAILS: "editor@example.com"
+  };
+  const response = await importProjectAcoustics({
+    request: new Request("http://local/api/projects/lambay-island/acoustics", { method: "PUT", headers: accessHeaders("editor@example.com") }),
+    params: { id: "lambay-island" }, env
+  });
+  assert.equal(response.status, 403);
 });

@@ -23,7 +23,7 @@
       return await fetch(path, { credentials: "same-origin", ...options, signal: controller.signal });
     } catch (error) {
       if (error.name === "AbortError") throw new AquaCloudError("Project service timed out", 0);
-      throw error;
+      throw new AquaCloudError(error.message || "Project service is unavailable", 0);
     } finally {
       clearTimeout(timeout);
     }
@@ -32,6 +32,28 @@
   async function list() {
     const body = await responseJson(await request("/api/projects"));
     return Array.isArray(body.projects) ? body.projects : [];
+  }
+
+  async function session() {
+    const body = await responseJson(await request("/api/session"));
+    const value = body.session || body;
+    const roleName = String(value.role || "viewer").toLowerCase();
+    const role = roleName === "admin" ? "Admin" : roleName === "editor" ? "Editor" : "Viewer";
+    return {
+      authenticated: Boolean(value.authenticated),
+      email: value.email || value.identity || null,
+      role,
+      permissions: {
+        read: true,
+        edit: role === "Editor" || role === "Admin",
+        import: role === "Admin",
+        administer: role === "Admin"
+      }
+    };
+  }
+
+  async function detail(id) {
+    return (await responseJson(await request(`/api/projects/${encodeURIComponent(id)}`))).project;
   }
 
   async function data(id) {
@@ -57,5 +79,5 @@
     }))).project;
   }
 
-  window.AquaCloudProjects = { AquaCloudError, list, data, create, update };
+  window.AquaCloudProjects = { AquaCloudError, session, list, detail, data, create, update };
 })();

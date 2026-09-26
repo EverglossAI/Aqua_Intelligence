@@ -12,20 +12,57 @@ export function requireBindings(env) {
   if (!env.AQUA_DB || !env.AQUA_PROJECTS) throw new Error("AQUA_DB and AQUA_PROJECTS bindings are required");
 }
 
-export function requireWriteAccess(request, env) {
-  if (env.AQUA_ALLOW_LOCAL_WRITES === "true") return null;
-  const accessUser = request.headers.get("CF-Access-Authenticated-User-Email");
-  const allowed = String(env.AQUA_ALLOWED_WRITERS || "").split(",").map(value => value.trim().toLowerCase()).filter(Boolean);
-  if (accessUser && (!allowed.length || allowed.includes(accessUser.toLowerCase()))) return null;
+const ROLE_LEVEL = Object.freeze({ Viewer: 0, Editor: 1, Admin: 2 });
+
+function emailList(value) {
+  return String(value || "").split(",").map(item => item.trim().toLowerCase()).filter(Boolean);
+}
+
+export function projectSession(request, env) {
+  if (env.AQUA_ALLOW_LOCAL_WRITES === "true") {
+    return { authenticated: true, email: "local-development", role: "Admin", authMethod: "local" };
+  }
+  const accessUser = request.headers.get("CF-Access-Authenticated-User-Email")?.trim().toLowerCase() || "";
+  const accessAssertion = request.headers.get("CF-Access-Jwt-Assertion") || "";
+  if (accessUser && accessAssertion) {
+    const admins = emailList(env.AQUA_ADMIN_EMAILS || env.AQUA_ADMIN_USERS);
+    const editors = emailList(env.AQUA_EDITOR_EMAILS || env.AQUA_EDITOR_USERS || env.AQUA_ALLOWED_WRITERS);
+    const role = admins.includes(accessUser) ? "Admin" : editors.includes(accessUser) ? "Editor" : "Viewer";
+    return { authenticated: true, email: accessUser, role, authMethod: "cloudflare-access" };
+  }
   const token = env.AQUA_PROJECT_WRITE_TOKEN;
-  if (token && request.headers.get("authorization") === `Bearer ${token}`) return null;
-  return apiError(401, "Project write access is required");
+  if (token && request.headers.get("authorization") === `Bearer ${token}`) {
+    return { authenticated: true, email: null, role: "Admin", authMethod: "bearer" };
+  }
+  return { authenticated: false, email: null, role: "Viewer", authMethod: "anonymous" };
+}
+
+export function sessionCapabilities(session) {
+  return {
+    authenticated: session.authenticated,
+    email: session.email,
+    role: session.role.toLowerCase()
+  };
+}
+
+export function requireRole(request, env, requiredRole) {
+  const session = projectSession(request, env);
+  if (ROLE_LEVEL[session.role] >= ROLE_LEVEL[requiredRole]) return null;
+  return apiError(403, `${requiredRole} project access is required`, { role: session.role });
+}
+
+export function requireWriteAccess(request, env) {
+  return requireRole(request, env, "Editor");
+}
+
+export function requireAdminAccess(request, env) {
+  return requireRole(request, env, "Admin");
 }
 
 export function requireReadAccess(request, env) {
   if (env.AQUA_REQUIRE_READ_AUTH !== "true") return null;
-  const accessUser = request.headers.get("CF-Access-Authenticated-User-Email");
-  if (accessUser) return null;
+  const session = projectSession(request, env);
+  if (session.authenticated) return null;
   const token = env.AQUA_PROJECT_READ_TOKEN || env.AQUA_PROJECT_WRITE_TOKEN;
   if (token && request.headers.get("authorization") === `Bearer ${token}`) return null;
   return apiError(401, "Project read access is required");

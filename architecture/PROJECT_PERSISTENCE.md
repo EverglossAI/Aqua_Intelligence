@@ -47,12 +47,23 @@ Each update writes a new normalized snapshot. D1 atomically advances the project
 
 The combined `POST /api/projects` endpoint owns initial source upload, so a separate source endpoint is not required.
 
-Mutation requests require one of:
+`GET /api/session` returns only the browser-safe session shape:
 
-- a Cloudflare Access identity in `CF-Access-Authenticated-User-Email`, optionally restricted by `AQUA_ALLOWED_WRITERS`; or
-- `Authorization: Bearer` matching the `AQUA_PROJECT_WRITE_TOKEN` secret.
+```json
+{"authenticated":true,"email":"engineer@example.com","role":"editor"}
+```
 
-`AQUA_ALLOW_LOCAL_WRITES=true` is only for local Worker development.
+Roles are resolved centrally by the Worker:
+
+- Viewer: read-only project access.
+- Editor: project updates, configuration, DMA styles, analyses, and scenarios.
+- Admin: all Editor rights plus project and acoustic imports.
+
+Browser roles require both `CF-Access-Authenticated-User-Email` and `CF-Access-Jwt-Assertion`. Admins are listed in `AQUA_ADMIN_EMAILS`; Editors are listed in `AQUA_EDITOR_EMAILS`; other authenticated Access users are Viewers. The comma-separated lists are server-side Worker variables and are never returned to the browser. Legacy variable names remain accepted during migration.
+
+`Authorization: Bearer` matching the `AQUA_PROJECT_WRITE_TOKEN` secret remains available only for service and migration automation. It is not a browser credential.
+
+`AQUA_ALLOW_LOCAL_WRITES=true` is only for local Worker development and must not exist in production.
 
 ## Worker routing
 
@@ -74,9 +85,10 @@ Reads are public by default so a fresh browser can discover production projects.
 2. A cached record is used only when its `cloudRevision` equals the D1 `version`.
 3. Missing or stale records are loaded from `GET /api/projects/:id/data` and recached.
 4. If the central index is unavailable, cached records remain usable and the UI displays `Offline / cached`.
-5. Failed updates to an already synchronized project are cached as `pending` against their unchanged base revision and labeled `Not synchronized`.
-6. Pending changes retry when that same cloud revision is reopened online. They cannot overwrite a newer revision.
-7. A stale browser update receives `409 Project revision conflict`; the UI offers to reload the cloud revision instead of repeatedly sending the stale update.
+5. Viewer sessions display `Read only` and do not cache futile writes.
+6. Failed Editor/Admin updates are cached as `pending` against their unchanged base revision and labeled `Pending sync`.
+7. Retry refreshes `GET /api/session`, confirms edit permission, and compares the current cloud revision before sending the pending update.
+8. A stale browser update receives `409 Project revision conflict`; the UI offers to reload the cloud revision instead of repeatedly sending the stale update.
 
 An initial import still requires its original source `File` for retry. If that first cloud transaction fails, the project remains open in the current session with Retry available, but it cannot be reconstructed from a large source binary after a browser restart.
 
@@ -106,9 +118,10 @@ Built-in demonstration projects are marked `localOnly` and remain in IndexedDB.
 ```
 
 4. Apply `migrations/0001_projects.sql` through `wrangler d1 migrations apply aqua-projects --remote`.
-5. Configure Cloudflare Access for project writers, or add `AQUA_PROJECT_WRITE_TOKEN` as an encrypted Worker secret.
-6. Verify `npx wrangler deploy --dry-run`, then deploy the existing `aqua-intelligence` Worker only after review.
-7. Perform the Lambay migration only after the production persistence checkpoint passes.
+5. Create a self-hosted Cloudflare Access application for `koen.evergloss.app/*`. Its Allow policy must include only intended authenticated users, and no alternate unprotected Worker route may remain enabled.
+6. Set `AQUA_ADMIN_EMAILS` and `AQUA_EDITOR_EMAILS` to the approved comma-separated identity lists. Preserve `AQUA_PROJECT_WRITE_TOKEN` as an encrypted secret for automation and confirm `AQUA_ALLOW_LOCAL_WRITES` is absent.
+7. Verify `npx wrangler deploy --dry-run`, then deploy the existing `aqua-intelligence` Worker only after review.
+8. Perform the Lambay migration only after the production persistence checkpoint passes.
 
 ## Lambay migration
 

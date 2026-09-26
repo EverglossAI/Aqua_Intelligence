@@ -256,10 +256,31 @@ V23.dma=function(show){
 const AQUA_DB_VERSION=2;
 const aquaProjectCache=new Map();
 const aquaSaveQueues=new Map();
+let aquaSession={authenticated:false,email:null,role:'Viewer',permissions:{read:true,edit:false,import:false,administer:false}};
 function aquaSetSyncStatus(stateName,text){
   const status=$('projectSyncStatus');if(!status)return;
   status.dataset.state=stateName;status.textContent=text;
 }
+function aquaCanEdit(){return Boolean(aquaSession.permissions?.edit)}
+function aquaCanImport(){return Boolean(aquaSession.permissions?.import)}
+function aquaApplyPermissions(){
+  document.body.dataset.projectRole=aquaSession.role.toLowerCase();
+  document.querySelectorAll('[data-requires-role]').forEach(function(control){
+    var required=control.dataset.requiresRole,allowed=required==='admin'?aquaCanImport():aquaCanEdit();
+    control.disabled=!allowed;
+    control.setAttribute('aria-disabled',String(!allowed));
+    if(!allowed)control.title=required==='admin'?'Admin access is required':'Editor access is required';
+  });
+  var status=$('projectSyncStatus');if(status)status.title=aquaSession.authenticated?(aquaSession.role+(aquaSession.email?' · '+aquaSession.email:'')):'Viewer · not authenticated';
+  if(aquaCanEdit())aquaHidePersistenceError();
+  window.AquaDmaStyles?.render?.();
+}
+async function aquaRefreshSession(){
+  try{aquaSession=await window.AquaCloudProjects.session()}
+  catch(error){aquaSession={authenticated:false,email:null,role:'Viewer',permissions:{read:true,edit:false,import:false,administer:false}}}
+  aquaApplyPermissions();return aquaSession;
+}
+window.AquaAuthorization={get session(){return aquaSession},canEdit:aquaCanEdit,canImport:aquaCanImport,refresh:aquaRefreshSession};
 async function V23db(){
   return new Promise(function(resolve,reject){
     var req=indexedDB.open('AquaIntelligenceDB',AQUA_DB_VERSION);
@@ -323,14 +344,19 @@ function aquaHidePersistenceError(){var notice=$('persistenceNotice');if(notice)
 function aquaShowPersistenceError(project,error){
   aquaHidePersistenceError();
   var conflict=error?.status===409;
+  var readOnly=error?.status===401||error?.status===403;
   var notice=document.createElement('div');notice.id='persistenceNotice';notice.className='persistence-notice';
-  notice.innerHTML='<div><b>Project not synchronized</b><span>'+escapeHtml(conflict?'A newer cloud revision exists. Reload it before making this change again.':(error?.message||'Cloud write failed')+'. The project remains open and its pending changes are cached locally.')+'</span></div><button type="button">'+(conflict?'Reload cloud version':'Retry save')+'</button>';
+  notice.innerHTML='<div><b>'+escapeHtml(conflict?'Conflict':readOnly?'Read only':'Save failed')+'</b><span>'+escapeHtml(conflict?'A newer cloud revision exists. Reload it before making this change again.':readOnly?'Your current Aqua role cannot save project changes.':(error?.message||'Cloud write failed')+'. Pending changes remain cached locally.')+'</span></div>'+(readOnly?'':'<button type="button">'+(conflict?'Reload cloud version':'Retry save')+'</button>');
+  if(readOnly){document.body.appendChild(notice);return}
   notice.querySelector('button').onclick=async function(){
     this.disabled=true;this.textContent=conflict?'Loading…':'Saving…';
     try{
       if(conflict){await aquaReloadCloudProject(project.id);aquaHidePersistenceError();addAi('Loaded the latest cloud revision of <b>'+escapeHtml(project.name)+'</b>. Reapply the local change if it is still required.');return}
-      await V23persistProject(project,{setActive:true});aquaHidePersistenceError();addAi('Project <b>'+escapeHtml(project.name)+'</b> was synchronized successfully.');
-    }catch(retryError){this.disabled=false;this.textContent=conflict?'Reload cloud version':'Retry save';notice.querySelector('span').textContent=(retryError?.message||'Cloud request failed')+'. Pending changes remain cached locally.'}
+      await aquaRetryPendingProject(project);aquaHidePersistenceError();addAi('Project <b>'+escapeHtml(project.name)+'</b> was synchronized successfully.');
+    }catch(retryError){
+      if(retryError?.status===401||retryError?.status===403){aquaSetSyncStatus('readonly','Read only');aquaHidePersistenceError();return}
+      this.disabled=false;this.textContent=conflict?'Reload cloud version':'Retry save';notice.querySelector('span').textContent=(retryError?.message||'Cloud request failed')+'. Pending changes remain cached locally.'
+    }
   };
   document.body.appendChild(notice);
 }
@@ -365,12 +391,21 @@ async function aquaCachePendingProject(project,error){
     try{await aquaCacheProject(project,true)}catch(cacheError){console.warn('Could not cache pending project changes',cacheError)}
   }
 }
+async function aquaRetryPendingProject(project){
+  var session=await aquaRefreshSession();
+  if(!session.permissions?.edit){var denied=new Error('Your current Aqua role is read only');denied.status=403;throw denied}
+  if(!navigator.onLine)throw new window.AquaCloudProjects.AquaCloudError('Connection is offline',0);
+  var cloud=await window.AquaCloudProjects.detail(project.id),cloudRevision=Number(cloud.version||0),baseRevision=Number(project.cloudRevision||0);
+  if(cloudRevision!==baseRevision){var conflict=new Error('Project revision conflict');conflict.status=409;conflict.details={cloudVersion:cloudRevision};throw conflict}
+  return V23persistProject(project,{setActive:true});
+}
 async function aquaPersistProjectNow(project,options){
   var config=options||{},sourceFile=config.sourceFile||project.__aquaPendingSourceFile;
   if(project.localOnly||config.cloud===false){
     var localRecord=await aquaCacheProject(project,config.setActive);aquaHidePersistenceError();return localRecord;
   }
   if(!window.AquaCloudProjects)throw new Error('Central project service is unavailable');
+  if(!aquaCanEdit()){var denied=new Error('Your current Aqua role is read only');denied.status=403;throw denied}
   aquaSetSyncStatus('saving','Saving…');
   var record=aquaSerializableProject(project),metadata;record.syncState='synced';record.syncError='';
   if(project.cloudRevision){
@@ -384,7 +419,7 @@ async function aquaPersistProjectNow(project,options){
   Object.assign(project,{cloudRevision:revision,projectVersion:revision,updated:metadata.updated||record.updated,r2Objects:metadata.r2Objects||project.r2Objects||{},syncState:'synced',syncError:''});
   delete project.__aquaPendingSourceFile;
   try{await aquaCacheProject(project,config.setActive)}catch(cacheError){console.warn('Project is centrally saved but local cache failed',cacheError)}
-  aquaSetSyncStatus('synced','Cloud synced · r'+revision);aquaHidePersistenceError();return aquaSerializableProject(project);
+  aquaSetSyncStatus('saved','Saved · r'+revision);aquaHidePersistenceError();return aquaSerializableProject(project);
 }
 function V23persistProject(project,options){
   if(!project)return Promise.reject(new Error('No project is available to save'));
@@ -395,7 +430,8 @@ function V23persistProject(project,options){
 }
 async function V23persist(){
   if(!state.active)return false;
-  try{await V23persistProject(state.active,{setActive:true});return true}catch(e){console.warn('Aqua cloud persistence unavailable',e);await aquaCachePendingProject(state.active,e);aquaSetSyncStatus('error','Not synchronized');aquaShowPersistenceError(state.active,e);return false}
+  if(!aquaCanEdit()){aquaSetSyncStatus('readonly','Read only');return false}
+  try{await V23persistProject(state.active,{setActive:true});return true}catch(e){console.warn('Aqua cloud persistence unavailable',e);if(e?.status===401||e?.status===403){aquaSetSyncStatus('readonly','Read only');aquaShowPersistenceError(state.active,e);return false}await aquaCachePendingProject(state.active,e);aquaSetSyncStatus(e?.status===409?'conflict':e?.status===0?'pending':'failed',e?.status===409?'Conflict':e?.status===0?'Pending sync':'Save failed');aquaShowPersistenceError(state.active,e);return false}
 }
 function aquaRenderProjectIndex(projects){
   var select=$('projectSelect');select.innerHTML='<option value="">Select project…</option>';
@@ -413,16 +449,16 @@ async function aquaOpenProjectById(projectId){
       await aquaCacheProject(project,true).catch(function(error){console.warn('Could not cache cloud project',error)});
     }catch(error){
       if(!project.__cachedFallback)throw error;
-      project=project.__cachedFallback;openedOffline=true;aquaSetSyncStatus('offline','Offline / cached · r'+project.cloudRevision);
+      project=project.__cachedFallback;openedOffline=true;aquaSetSyncStatus('offline','Offline / cached');
     }
   }else{
     await aquaCacheActiveId(project.id).catch(function(error){console.warn('Could not update active cache project',error)});
   }
   aquaActivateProject(project);renderProject();renderTelemetry();
   if(project.syncState==='pending'&&!openedOffline){
-    aquaSetSyncStatus('error','Pending synchronization · r'+project.cloudRevision);
-    await window.AquaProjectPersistence.save(project,{setActive:true});
-  }else if(project.cloudRevision&&!openedOffline)aquaSetSyncStatus('synced','Cloud synced · r'+project.cloudRevision);
+    if(aquaCanEdit()){aquaSetSyncStatus('pending','Pending sync');await window.AquaProjectPersistence.retry()}
+    else aquaSetSyncStatus('readonly','Read only');
+  }else if(project.cloudRevision&&!openedOffline)aquaSetSyncStatus(aquaCanEdit()?'saved':'readonly',aquaCanEdit()?'Saved · r'+project.cloudRevision:'Read only');
   return project;
 }
 async function aquaReloadCloudProject(projectId){
@@ -430,13 +466,14 @@ async function aquaReloadCloudProject(projectId){
   var loaded=await window.AquaCloudProjects.data(projectId),project=aquaHydrateProject(loaded.project);
   project.cloudRevision=loaded.version;project.projectVersion=loaded.version;project.syncState='synced';project.syncError='';
   await aquaCacheProject(project,true);aquaActivateProject(project);renderProject();renderTelemetry();
-  aquaSetSyncStatus('synced','Cloud synced · r'+loaded.version);return project;
+  aquaSetSyncStatus(aquaCanEdit()?'saved':'readonly',aquaCanEdit()?'Saved · r'+loaded.version:'Read only');return project;
 }
 async function aquaStartupProjects(){
   var cache={projects:[],activeId:null};
   try{cache=await aquaReadCache()}catch(error){console.warn('Could not read Aqua project cache',error)}
   cache.projects.forEach(function(project){aquaProjectCache.set(project.id,project)});
   try{
+    await aquaRefreshSession();
     var cloudProjects=await window.AquaCloudProjects.list(),cloudIds=new Set(cloudProjects.map(function(project){return project.id}));
     var projects=cloudProjects.map(function(metadata){
       var cached=aquaProjectCache.get(metadata.id),revision=Number(metadata.version||0);
@@ -444,7 +481,7 @@ async function aquaStartupProjects(){
       return Object.assign({},metadata,{cloudRevision:revision,projectVersion:revision,layers:[],telemetry:[],__cloudStub:true,__cachedFallback:cached||null});
     });
     projects.push(...cache.projects.filter(function(project){return project.localOnly&&!cloudIds.has(project.id)}));
-    state.projects=projects;aquaRenderProjectIndex(projects);aquaSetSyncStatus('synced','Cloud connected');
+    state.projects=projects;aquaRenderProjectIndex(projects);aquaSetSyncStatus(aquaCanEdit()?'saved':'readonly',aquaCanEdit()?'Saved':'Read only');
     if(cache.activeId&&projects.some(function(project){return project.id===cache.activeId}))await aquaOpenProjectById(cache.activeId);
   }catch(error){
     console.warn('Central project index unavailable; using IndexedDB cache',error);
@@ -457,8 +494,8 @@ async function aquaStartupProjects(){
   };
 }
 window.AquaProjectPersistence={
-  version:AQUA_DB_VERSION,persist:V23persistProject,retry:function(){return V23persist()},serialize:aquaSerializableProject,exportActive:function(){if(!state.active)throw new Error('No active project');return aquaSerializableProject(state.active)},startup:aquaStartupProjects,open:aquaOpenProjectById,cache:aquaCacheProject,
-  save:async function(project,options){try{await V23persistProject(project,options);return true}catch(error){await aquaCachePendingProject(project,error);aquaSetSyncStatus('error','Not synchronized');aquaShowPersistenceError(project,error);return false}}
+  version:AQUA_DB_VERSION,persist:V23persistProject,retry:async function(){if(!state.active)return false;try{await aquaRetryPendingProject(state.active);return true}catch(error){if(error?.status!==401&&error?.status!==403)await aquaCachePendingProject(state.active,error);aquaSetSyncStatus(error?.status===409?'conflict':error?.status===401||error?.status===403?'readonly':error?.status===0?'pending':'failed',error?.status===409?'Conflict':error?.status===401||error?.status===403?'Read only':error?.status===0?'Pending sync':'Save failed');aquaShowPersistenceError(state.active,error);return false}},serialize:aquaSerializableProject,exportActive:function(){if(!state.active)throw new Error('No active project');return aquaSerializableProject(state.active)},startup:aquaStartupProjects,open:aquaOpenProjectById,cache:aquaCacheProject,
+  save:async function(project,options){if(!aquaCanEdit()){aquaSetSyncStatus('readonly','Read only');return false}try{await V23persistProject(project,options);return true}catch(error){if(error?.status!==401&&error?.status!==403)await aquaCachePendingProject(project,error);aquaSetSyncStatus(error?.status===409?'conflict':error?.status===401||error?.status===403?'readonly':error?.status===0?'pending':'failed',error?.status===409?'Conflict':error?.status===401||error?.status===403?'Read only':error?.status===0?'Pending sync':'Save failed');aquaShowPersistenceError(project,error);return false}}
 };
 
 window.addEventListener('load',function(){

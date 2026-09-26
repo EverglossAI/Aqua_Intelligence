@@ -1,8 +1,13 @@
 import {
   apiError, deleteObjects, findProject, insertProjectStatement, json, projectFromRow,
-  projectMetadata, readJson, requireBindings, requireReadAccess, requireWriteAccess,
-  safeFilename, safeProjectId, updateProjectStatement
+  projectMetadata, projectSession, readJson, requireAdminAccess, requireBindings,
+  requireReadAccess, requireWriteAccess, safeFilename, safeProjectId,
+  sessionCapabilities, updateProjectStatement
 } from "../lib/projects.js";
+
+export function getSession({ request, env }) {
+  return json(sessionCapabilities(projectSession(request, env)), 200, { "cache-control": "private, no-store" });
+}
 
 export async function listProjects({ request, env }) {
   const denied = requireReadAccess(request, env);
@@ -18,7 +23,7 @@ export async function listProjects({ request, env }) {
 }
 
 export async function createProject({ request, env }) {
-  const denied = requireWriteAccess(request, env);
+  const denied = requireAdminAccess(request, env);
   if (denied) return denied;
   const uploadedKeys = [];
   try {
@@ -199,7 +204,7 @@ function validAcousticData(data) {
 }
 
 export async function importProjectAcoustics({ request, params, env }) {
-  const denied = requireWriteAccess(request, env);
+  const denied = requireAdminAccess(request, env);
   if (denied) return denied;
   const uploadedKeys = [];
   try {
@@ -271,6 +276,11 @@ function decodeProjectId(value) {
 export async function routeProjectRequest(request, env) {
   const { pathname } = new URL(request.url);
   const method = request.method.toUpperCase();
+
+  if (pathname === "/api/session") {
+    if (method === "GET") return getSession({ request, env });
+    return methodNotAllowed(["GET"]);
+  }
 
   if (pathname === "/api/projects") {
     if (method === "GET") return listProjects({ request, env });

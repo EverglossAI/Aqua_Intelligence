@@ -107,12 +107,13 @@
   function styleInputs(logicalId, compact = false) {
     const style = styleForId(logicalId);
     const opacity = Math.round(Number(style.fillOpacity) * 100);
+    const disabled = window.AquaAuthorization?.canEdit() === false ? " disabled" : "";
     return `<div class="dma-style-fields ${compact ? "is-compact" : ""}" data-dma-style-id="${escape(logicalId)}">
-      <label>Fill colour<input type="color" value="${escape(style.fillColor)}" data-dma-field="fillColor" aria-label="Fill colour"></label>
-      <label class="dma-opacity-control">Fill opacity<input type="range" min="0" max="100" step="1" value="${opacity}" data-dma-field="fillOpacity" aria-label="Fill opacity"><output>${opacity}%</output></label>
-      <label>Outline colour<input type="color" value="${escape(style.outlineColor)}" data-dma-field="outlineColor" aria-label="Outline colour"></label>
-      ${compact ? "" : `<label>Outline weight<input type="number" min="0" max="8" step="0.5" value="${Number(style.outlineWeight)}" data-dma-field="outlineWeight" aria-label="Outline weight"></label>`}
-      <button type="button" class="dma-reset-one" data-logical-id="${escape(logicalId)}">Reset style</button>
+      <label>Fill colour<input type="color" value="${escape(style.fillColor)}" data-dma-field="fillColor" aria-label="Fill colour"${disabled}></label>
+      <label class="dma-opacity-control">Fill opacity<input type="range" min="0" max="100" step="1" value="${opacity}" data-dma-field="fillOpacity" aria-label="Fill opacity"${disabled}><output>${opacity}%</output></label>
+      <label>Outline colour<input type="color" value="${escape(style.outlineColor)}" data-dma-field="outlineColor" aria-label="Outline colour"${disabled}></label>
+      ${compact ? "" : `<label>Outline weight<input type="number" min="0" max="8" step="0.5" value="${Number(style.outlineWeight)}" data-dma-field="outlineWeight" aria-label="Outline weight"${disabled}></label>`}
+      <button type="button" class="dma-reset-one" data-logical-id="${escape(logicalId)}"${disabled}>Reset style</button>
     </div>`;
   }
 
@@ -127,16 +128,17 @@
     }
     panel.classList.remove("hidden");
     const logicals = logicalDmas(project);
+    const disabled = window.AquaAuthorization?.canEdit() === false ? " disabled" : "";
     if (!selectedLogicalId || !project.dmaStyles[selectedLogicalId]) selectedLogicalId = logicals[0].logical_dma_uid;
     const selected = logicals.find(item => item.logical_dma_uid === selectedLogicalId) || logicals[0];
     panel.innerHTML = `<div class="gis-row"><span>Logical DMA styles</span></div>
       <label>DMA<select id="dmaStyleSelect">${logicals.map(item => `<option value="${escape(item.logical_dma_uid)}" ${item.logical_dma_uid === selected.logical_dma_uid ? "selected" : ""}>${escape(item.label || item.dma_code)}</option>`).join("")}</select></label>
       ${styleInputs(selected.logical_dma_uid)}
       <div class="dma-project-actions">
-        <button type="button" id="assignDmaColours">Assign distinct DMA colours</button>
-        <label>All DMA fill opacity<input id="allDmaOpacity" type="range" min="0" max="100" step="1" value="${Math.round(styleForId(selected.logical_dma_uid).fillOpacity * 100)}"><output>${Math.round(styleForId(selected.logical_dma_uid).fillOpacity * 100)}%</output></label>
-        <button type="button" id="setAllDmaOpacity">Set all DMA opacity</button>
-        <button type="button" id="resetAllDmaStyles">Reset DMA styles</button>
+        <button type="button" id="assignDmaColours"${disabled}>Assign distinct DMA colours</button>
+        <label>All DMA fill opacity<input id="allDmaOpacity" type="range" min="0" max="100" step="1" value="${Math.round(styleForId(selected.logical_dma_uid).fillOpacity * 100)}"${disabled}><output>${Math.round(styleForId(selected.logical_dma_uid).fillOpacity * 100)}%</output></label>
+        <button type="button" id="setAllDmaOpacity"${disabled}>Set all DMA opacity</button>
+        <button type="button" id="resetAllDmaStyles"${disabled}>Reset DMA styles</button>
       </div>`;
   }
 
@@ -165,6 +167,7 @@
   }
 
   function updateStyle(logicalId, field, value, persist = true) {
+    if (window.AquaAuthorization?.canEdit() === false) return;
     const project = activeProject();
     if (!project?.dmaStyles?.[logicalId]) return;
     const parsed = field === "fillOpacity" ? Number(value) / 100 : field === "outlineWeight" ? Number(value) : value;
@@ -174,6 +177,7 @@
   }
 
   function resetStyle(logicalId) {
+    if (window.AquaAuthorization?.canEdit() === false) return;
     const project = activeProject();
     if (!project) return;
     project.dmaStyles[logicalId] = { ...DEFAULT_STYLE };
@@ -181,6 +185,7 @@
   }
 
   function assignDistinctColours() {
+    if (window.AquaAuthorization?.canEdit() === false) return;
     const project = activeProject();
     if (!project) return;
     logicalDmas(project).forEach((logical, index) => {
@@ -192,6 +197,7 @@
   }
 
   function setAllOpacity(percent) {
+    if (window.AquaAuthorization?.canEdit() === false) return;
     const project = activeProject();
     if (!project) return;
     logicalDmas(project).forEach(logical => {
@@ -202,6 +208,7 @@
   }
 
   function resetAllStyles() {
+    if (window.AquaAuthorization?.canEdit() === false) return;
     const project = activeProject();
     if (!project) return;
     logicalDmas(project).forEach(logical => { project.dmaStyles[logical.logical_dma_uid] = { ...DEFAULT_STYLE }; });
@@ -271,7 +278,7 @@
   });
 
   window.AquaDmaStyles = {
-    initialize,forFeature:featureStyle,accentForCode,logicalForFeature,apply:applyStyles,flush,
+    initialize,forFeature:featureStyle,accentForCode,logicalForFeature,apply:applyStyles,flush,render:renderPanel,
     get mappings() { return activeProject()?.dmaFeatureMappings || []; },
     get styles() { return activeProject()?.dmaStyles || {}; }
   };

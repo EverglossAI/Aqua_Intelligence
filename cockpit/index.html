@@ -35,17 +35,17 @@
           <select id="projectSelect"><option value="">Select project…</option></select>
           <span id="projectSyncStatus" class="project-sync-status" data-state="connecting">Connecting…</span>
         </div>
-        <button id="newProjectBtn" class="ghost">＋ New Project</button>
+        <button id="newProjectBtn" class="ghost" data-requires-role="admin">＋ New Project</button>
         <button id="demoProjectBtn" class="ghost">Load Demo Data</button>
         <input id="demoBundleInput" type="file" accept=".json,application/json" hidden>
-        <select id="activeCrs" class="crs-select" title="Active project source projection">
+        <select id="activeCrs" class="crs-select" title="Active project source projection" data-requires-role="editor">
           <option value="EPSG:3826">TWD97 / TM2 121</option>
           <option value="EPSG:3825">TWD97 / TM2 119</option>
           <option value="EPSG:4326">WGS84</option>
         </select>
-        <button id="applyCrsBtn" class="ghost">Apply CRS</button>
+        <button id="applyCrsBtn" class="ghost" data-requires-role="editor">Apply CRS</button>
         <button id="llmSettingsBtn" class="ghost">LLM</button>
-        <button id="importTelemetryBtn" class="ghost">Import telemetry</button>
+        <button id="importTelemetryBtn" class="ghost" data-requires-role="admin">Import telemetry</button>
         <input id="telemetryInput" type="file" accept=".csv,.json" hidden>
       </div>
     </header>
@@ -67,7 +67,7 @@
         <div id="projectEmpty" class="empty-state">
           <b>Open a utility network</b>
           <p>Create a project and import a zipped shapefile package. Aqua will classify pipes, meters, valves, hydrants and DMA/region layers.</p>
-          <button class="primary" id="emptyNewProject">Create project</button>
+          <button class="primary" id="emptyNewProject" data-requires-role="admin">Create project</button>
           <button class="secondary demo-btn" id="emptyDemoProject">Load demo data bundle</button>
         </div>
         <div id="projectTree" class="hidden">
@@ -267,7 +267,7 @@
       </label>
       <div class="file-name">Most Taiwan Water Corporation GIS should use zone 121; use zone 119 for Penghu / western offshore datasets when applicable.</div>
       <div id="gisFileName" class="file-name">No GIS file selected</div>
-      <div class="modal-actions"><button id="createProjectBtn" class="primary">Create & analyse project</button></div>
+      <div class="modal-actions"><button id="createProjectBtn" class="primary" data-requires-role="admin">Create & analyse project</button></div>
     </div>
   </div>
 </div>
