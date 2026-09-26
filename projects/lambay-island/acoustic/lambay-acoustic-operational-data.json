@@ -1,0 +1,2031 @@
+{
+  "acousticSensor": [
+    {
+      "entityType": "acousticSensor",
+      "sensorId": "114376",
+      "deviceId": "358299840342592",
+      "deviceType": "G5M Over Acc Radio",
+      "assetId": null,
+      "sopId": "1357534",
+      "status": "Active",
+      "daysInactive": 0,
+      "battery": 3.641091375206006,
+      "batteryVoltage": null,
+      "signals": {
+        "g4Csq": null,
+        "g4Snr": null,
+        "g5Rsrq": -12,
+        "g5Rsrp": -127,
+        "csq": null,
+        "rssi": null,
+        "rssiCondition": null,
+        "radioFrequency": null
+      },
+      "intensity": {
+        "filtered": 7,
+        "minimal": 9,
+        "sampled": 7
+      },
+      "installationDate": "2026-08-18T08:44:10.840Z",
+      "lastActive": "2026-09-25T20:00:00.000Z",
+      "lastCommunication": "2026-09-25T20:02:23.000Z",
+      "lat": 22.336085570271656,
+      "lng": 120.36818923428655,
+      "projectedCoordinates": {
+        "x": 184918.27391801466,
+        "y": 2470905.3628134555
+      },
+      "address": "琉球國中, 158之19, 中正路, 上坪腳, 大福村, 琉球鄉, 屏東縣, 929, 臺灣",
+      "maintenance": {
+        "type": "Installed",
+        "user": "Hou",
+        "date": "2026-08-18T08:44:10.840Z",
+        "comment": null
+      },
+      "hardwareVersion": null,
+      "firmwareVersion": null,
+      "simNumber": "89464283446165654208",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_sensors_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 7,
+        "sha256": "6af3131901015455434420359e388599eb9af6960f5afa0aec7d86f8960377a4",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847100118006",
+      "matchDistance": 6.4,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticSensor",
+      "sensorId": "114375",
+      "deviceId": "358299840339994",
+      "deviceType": "G5M Over Acc Radio",
+      "assetId": null,
+      "sopId": "1357532",
+      "status": "Active",
+      "daysInactive": 0,
+      "battery": 3.6450466947445523,
+      "batteryVoltage": null,
+      "signals": {
+        "g4Csq": null,
+        "g4Snr": null,
+        "g5Rsrq": -9,
+        "g5Rsrp": -121,
+        "csq": null,
+        "rssi": null,
+        "rssiCondition": null,
+        "radioFrequency": null
+      },
+      "intensity": {
+        "filtered": 8,
+        "minimal": 9,
+        "sampled": 8
+      },
+      "installationDate": "2026-08-18T08:39:07.010Z",
+      "lastActive": "2026-09-25T20:00:00.000Z",
+      "lastCommunication": "2026-09-25T20:02:05.000Z",
+      "lat": 22.33464629760415,
+      "lng": 120.3665785677731,
+      "projectedCoordinates": {
+        "x": 184751.6875481209,
+        "y": 2470746.690400982
+      },
+      "address": "140號, 中正路, 上坪腳, 南福村, 琉球鄉, 屏東縣, 929, 臺灣",
+      "maintenance": {
+        "type": "Installed",
+        "user": "Hou",
+        "date": "2026-08-18T08:39:07.010Z",
+        "comment": null
+      },
+      "hardwareVersion": null,
+      "firmwareVersion": null,
+      "simNumber": "89464283446165656963",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_sensors_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 13,
+        "sha256": "6af3131901015455434420359e388599eb9af6960f5afa0aec7d86f8960377a4",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847100118006",
+      "matchDistance": 1.5,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticSensor",
+      "sensorId": "114533",
+      "deviceId": "358299840340067",
+      "deviceType": "G5M Over Acc Radio",
+      "assetId": null,
+      "sopId": "1357542",
+      "status": "Active",
+      "daysInactive": 0,
+      "battery": 3.657132393334554,
+      "batteryVoltage": null,
+      "signals": {
+        "g4Csq": null,
+        "g4Snr": null,
+        "g5Rsrq": -10.5,
+        "g5Rsrp": -123,
+        "csq": null,
+        "rssi": null,
+        "rssiCondition": null,
+        "radioFrequency": null
+      },
+      "intensity": {
+        "filtered": 8,
+        "minimal": 10,
+        "sampled": 8
+      },
+      "installationDate": "2026-08-19T02:58:19.333Z",
+      "lastActive": "2026-09-25T20:00:00.000Z",
+      "lastCommunication": "2026-09-25T20:03:07.000Z",
+      "lat": 22.35039783079398,
+      "lng": 120.36921350285411,
+      "projectedCoordinates": {
+        "x": 185030.4180289293,
+        "y": 2472489.6984645086
+      },
+      "address": "116之1號, 肚仔坪路, 美人洞, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣",
+      "maintenance": {
+        "type": "Installed",
+        "user": "Hou",
+        "date": "2026-08-19T02:58:19.333Z",
+        "comment": null
+      },
+      "hardwareVersion": null,
+      "firmwareVersion": null,
+      "simNumber": "89464283446165656781",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_sensors_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 14,
+        "sha256": "6af3131901015455434420359e388599eb9af6960f5afa0aec7d86f8960377a4",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847220118001",
+      "matchDistance": 1,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticSensor",
+      "sensorId": "114535",
+      "deviceId": "358299840339085",
+      "deviceType": "G5M Over Acc Radio",
+      "assetId": "18474723_001H",
+      "sopId": "1356587",
+      "status": "Active",
+      "daysInactive": 0,
+      "battery": 3.614063358359275,
+      "batteryVoltage": null,
+      "signals": {
+        "g4Csq": null,
+        "g4Snr": null,
+        "g5Rsrq": -10,
+        "g5Rsrp": -102,
+        "csq": null,
+        "rssi": null,
+        "rssiCondition": null,
+        "radioFrequency": null
+      },
+      "intensity": {
+        "filtered": 0,
+        "minimal": 10,
+        "sampled": 0
+      },
+      "installationDate": "2026-08-19T03:04:14.813Z",
+      "lastActive": "2026-09-25T19:00:00.000Z",
+      "lastCommunication": "2026-09-25T22:01:30.000Z",
+      "lat": 22.34950413706225,
+      "lng": 120.36789274646507,
+      "projectedCoordinates": {
+        "x": 184893.96400705609,
+        "y": 2472391.312681978
+      },
+      "address": "100之1號, 肚仔坪路, 美人洞, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣",
+      "maintenance": {
+        "type": "Installed",
+        "user": "Hou",
+        "date": "2026-08-19T03:04:14.813Z",
+        "comment": null
+      },
+      "hardwareVersion": null,
+      "firmwareVersion": null,
+      "simNumber": "89464283446165659769",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_sensors_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 20,
+        "sha256": "6af3131901015455434420359e388599eb9af6960f5afa0aec7d86f8960377a4",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004184847170158004",
+      "matchDistance": 0,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticSensor",
+      "sensorId": "114282",
+      "deviceId": "358299840338970",
+      "deviceType": "G5M Under Acc Radio",
+      "assetId": "18464720_001V",
+      "sopId": "1356534",
+      "status": "Active",
+      "daysInactive": 0,
+      "battery": 3.653177073796008,
+      "batteryVoltage": null,
+      "signals": {
+        "g4Csq": null,
+        "g4Snr": null,
+        "g5Rsrq": -11.5,
+        "g5Rsrp": -120,
+        "csq": null,
+        "rssi": null,
+        "rssiCondition": null,
+        "radioFrequency": null
+      },
+      "intensity": {
+        "filtered": 7,
+        "minimal": 9,
+        "sampled": 7
+      },
+      "installationDate": "2026-08-12T09:33:19.043Z",
+      "lastActive": "2026-09-25T20:00:00.000Z",
+      "lastCommunication": "2026-09-25T20:04:24.000Z",
+      "lat": 22.34674028847293,
+      "lng": 120.36553854122758,
+      "projectedCoordinates": {
+        "x": 184650.18892425534,
+        "y": 2472086.2925960785
+      },
+      "address": "下上福, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣",
+      "maintenance": {
+        "type": "Installed",
+        "user": "Hou",
+        "date": "2026-08-19T03:22:08.103Z",
+        "comment": null
+      },
+      "hardwareVersion": null,
+      "firmwareVersion": null,
+      "simNumber": "89464283446165659587",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_sensors_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 21,
+        "sha256": "6af3131901015455434420359e388599eb9af6960f5afa0aec7d86f8960377a4",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004184847170158004",
+      "matchDistance": 0.7,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticSensor",
+      "sensorId": "114378",
+      "deviceId": "358299840338509",
+      "deviceType": "G5M Over Acc Radio",
+      "assetId": null,
+      "sopId": "1357536",
+      "status": "Active",
+      "daysInactive": 0,
+      "battery": 3.633180736128914,
+      "batteryVoltage": null,
+      "signals": {
+        "g4Csq": null,
+        "g4Snr": null,
+        "g5Rsrq": -8,
+        "g5Rsrp": -103,
+        "csq": null,
+        "rssi": null,
+        "rssiCondition": null,
+        "radioFrequency": null
+      },
+      "intensity": {
+        "filtered": 0,
+        "minimal": 9,
+        "sampled": 0
+      },
+      "installationDate": "2026-08-18T08:51:37.573Z",
+      "lastActive": "2026-09-25T19:00:00.000Z",
+      "lastCommunication": "2026-09-25T22:01:31.000Z",
+      "lat": 22.337302792479914,
+      "lng": 120.36907335743308,
+      "projectedCoordinates": {
+        "x": 185009.91262333034,
+        "y": 2471039.7626769803
+      },
+      "address": "158號, 中正路, 上坪腳, 大福村, 琉球鄉, 屏東縣, 929, 臺灣",
+      "maintenance": {
+        "type": "Installed",
+        "user": "Hou",
+        "date": "2026-08-18T08:51:37.573Z",
+        "comment": null
+      },
+      "hardwareVersion": null,
+      "firmwareVersion": null,
+      "simNumber": "89464283446165659702",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_sensors_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 22,
+        "sha256": "6af3131901015455434420359e388599eb9af6960f5afa0aec7d86f8960377a4",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847100118006",
+      "matchDistance": 1.2,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticSensor",
+      "sensorId": "114281",
+      "deviceId": "358299840342337",
+      "deviceType": "G5M Over Acc Radio",
+      "assetId": "18464721_001H",
+      "sopId": "1356580",
+      "status": "Active",
+      "daysInactive": 0,
+      "battery": 3.6650430324116465,
+      "batteryVoltage": null,
+      "signals": {
+        "g4Csq": null,
+        "g4Snr": null,
+        "g5Rsrq": -4.5,
+        "g5Rsrp": -53,
+        "csq": null,
+        "rssi": null,
+        "rssiCondition": null,
+        "radioFrequency": null
+      },
+      "intensity": {
+        "filtered": 564,
+        "minimal": 459,
+        "sampled": 564
+      },
+      "installationDate": "2026-08-12T09:29:37.447Z",
+      "lastActive": "2026-09-25T20:00:00.000Z",
+      "lastCommunication": "2026-09-25T20:01:17.000Z",
+      "lat": 22.34795555339296,
+      "lng": 120.36607330664992,
+      "projectedCoordinates": {
+        "x": 184705.83771981837,
+        "y": 2472220.625559027
+      },
+      "address": "250之6號, 上杉路, 下上福, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣",
+      "maintenance": {
+        "type": "Installed",
+        "user": "Hou",
+        "date": "2026-08-19T03:07:20.570Z",
+        "comment": null
+      },
+      "hardwareVersion": null,
+      "firmwareVersion": null,
+      "simNumber": "89464283446165654109",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_sensors_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 27,
+        "sha256": "6af3131901015455434420359e388599eb9af6960f5afa0aec7d86f8960377a4",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004184847170158004",
+      "matchDistance": 0,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticSensor",
+      "sensorId": "114377",
+      "deviceId": "358299840339861",
+      "deviceType": "G5M Over Acc Radio",
+      "assetId": null,
+      "sopId": "1357535",
+      "status": "Active",
+      "daysInactive": 0,
+      "battery": 3.6180186778978207,
+      "batteryVoltage": null,
+      "signals": {
+        "g4Csq": null,
+        "g4Snr": null,
+        "g5Rsrq": -8.5,
+        "g5Rsrp": -104,
+        "csq": null,
+        "rssi": null,
+        "rssiCondition": null,
+        "radioFrequency": null
+      },
+      "intensity": {
+        "filtered": 8,
+        "minimal": 9,
+        "sampled": 8
+      },
+      "installationDate": "2026-08-18T08:46:41.670Z",
+      "lastActive": "2026-09-25T20:00:00.000Z",
+      "lastCommunication": "2026-09-25T20:02:26.000Z",
+      "lat": 22.337005077953734,
+      "lng": 120.36893052980304,
+      "projectedCoordinates": {
+        "x": 184995.0619001459,
+        "y": 2471006.8587523256
+      },
+      "address": "156之1號, 中正路, 上坪腳, 大福村, 琉球鄉, 屏東縣, 929, 臺灣",
+      "maintenance": {
+        "type": "Installed",
+        "user": "Hou",
+        "date": "2026-08-18T08:46:41.670Z",
+        "comment": null
+      },
+      "hardwareVersion": null,
+      "firmwareVersion": null,
+      "simNumber": "89464283446165656948",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_sensors_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 28,
+        "sha256": "6af3131901015455434420359e388599eb9af6960f5afa0aec7d86f8960377a4",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847100118006",
+      "matchDistance": 6.1,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticSensor",
+      "sensorId": "114531",
+      "deviceId": "358299840337659",
+      "deviceType": "G5M Over Acc Radio",
+      "assetId": null,
+      "sopId": "1357539",
+      "status": "Active",
+      "daysInactive": 0,
+      "battery": 3.633180736128914,
+      "batteryVoltage": null,
+      "signals": {
+        "g4Csq": null,
+        "g4Snr": null,
+        "g5Rsrq": -6.5,
+        "g5Rsrp": -97,
+        "csq": null,
+        "rssi": null,
+        "rssiCondition": null,
+        "radioFrequency": null
+      },
+      "intensity": {
+        "filtered": 8,
+        "minimal": 9,
+        "sampled": 8
+      },
+      "installationDate": "2026-08-19T02:53:29.763Z",
+      "lastActive": "2026-09-25T20:00:00.000Z",
+      "lastCommunication": "2026-09-25T20:03:09.000Z",
+      "lat": 22.35099533652891,
+      "lng": 120.36988941952586,
+      "projectedCoordinates": {
+        "x": 185100.3146283195,
+        "y": 2472555.56821023
+      },
+      "address": "116之6號, 肚仔坪路, 美人洞, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣",
+      "maintenance": {
+        "type": "Installed",
+        "user": "Hou",
+        "date": "2026-08-19T02:53:29.763Z",
+        "comment": null
+      },
+      "hardwareVersion": null,
+      "firmwareVersion": null,
+      "simNumber": "89464283446165657391",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_sensors_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 29,
+        "sha256": "6af3131901015455434420359e388599eb9af6960f5afa0aec7d86f8960377a4",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847220118001",
+      "matchDistance": 41.8,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.89,
+      "reviewRequired": true
+    },
+    {
+      "entityType": "acousticSensor",
+      "sensorId": "114536",
+      "deviceId": "358299840339986",
+      "deviceType": "G5M Over Acc Radio",
+      "assetId": null,
+      "sopId": "1357544",
+      "status": "Active",
+      "daysInactive": 0,
+      "battery": 3.6681193920527377,
+      "batteryVoltage": null,
+      "signals": {
+        "g4Csq": null,
+        "g4Snr": null,
+        "g5Rsrq": -11.5,
+        "g5Rsrp": -100,
+        "csq": null,
+        "rssi": null,
+        "rssiCondition": null,
+        "radioFrequency": null
+      },
+      "intensity": {
+        "filtered": 8,
+        "minimal": 9,
+        "sampled": 8
+      },
+      "installationDate": "2026-08-19T03:18:14.410Z",
+      "lastActive": "2026-09-25T19:00:00.000Z",
+      "lastCommunication": "2026-09-25T19:02:14.000Z",
+      "lat": 22.348430919565587,
+      "lng": 120.36682600155473,
+      "projectedCoordinates": {
+        "x": 184783.58840080135,
+        "y": 2472272.936289694
+      },
+      "address": "肚仔坪路, 美人洞, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣",
+      "maintenance": {
+        "type": "Installed",
+        "user": "Hou",
+        "date": "2026-08-19T03:18:14.410Z",
+        "comment": null
+      },
+      "hardwareVersion": null,
+      "firmwareVersion": null,
+      "simNumber": "89464283446165657003",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_sensors_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 30,
+        "sha256": "6af3131901015455434420359e388599eb9af6960f5afa0aec7d86f8960377a4",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004184847170158004",
+      "matchDistance": 33.3,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.93,
+      "reviewRequired": false
+    }
+  ],
+  "acousticCouple": [
+    {
+      "entityType": "acousticCouple",
+      "coupleId": "52845",
+      "sensor1Id": "114533",
+      "sensor2Id": "114535",
+      "sensor1OptionalPoint": "1357542",
+      "sensor2OptionalPoint": "1356587",
+      "device1Id": "358299840340067",
+      "device2Id": "358299840339085",
+      "pathLength": 169,
+      "material": "DuctileIron",
+      "lastActivity": "2026-09-25T20:03:10.000Z",
+      "overlapping": false,
+      "addresses": [
+        "116之1號, 肚仔坪路, 美人洞, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣",
+        "100之1號, 肚仔坪路, 美人洞, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣"
+      ],
+      "comment": null,
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_couples_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 28,
+        "sha256": "af528817d9568e00397eef5f3c15ae75fec1ea30f50a5aabb3d9a7cd7fd59da4",
+        "reportDate": "2026-09-26"
+      }
+    },
+    {
+      "entityType": "acousticCouple",
+      "coupleId": "52847",
+      "sensor1Id": "114536",
+      "sensor2Id": "114281",
+      "sensor1OptionalPoint": "1357544",
+      "sensor2OptionalPoint": "1356580",
+      "device1Id": "358299840339986",
+      "device2Id": "358299840342337",
+      "pathLength": 129,
+      "material": "DuctileIron",
+      "lastActivity": "2026-09-25T19:02:16.000Z",
+      "overlapping": false,
+      "addresses": [
+        "肚仔坪路, 美人洞, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣",
+        "250之6號, 上杉路, 下上福, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣"
+      ],
+      "comment": null,
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_couples_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 29,
+        "sha256": "af528817d9568e00397eef5f3c15ae75fec1ea30f50a5aabb3d9a7cd7fd59da4",
+        "reportDate": "2026-09-26"
+      }
+    },
+    {
+      "entityType": "acousticCouple",
+      "coupleId": "52848",
+      "sensor1Id": "114281",
+      "sensor2Id": "114282",
+      "sensor1OptionalPoint": "1356580",
+      "sensor2OptionalPoint": "1356534",
+      "device1Id": "358299840342337",
+      "device2Id": "358299840338970",
+      "pathLength": 153,
+      "material": "DuctileIron",
+      "lastActivity": "2026-09-25T20:04:34.000Z",
+      "overlapping": false,
+      "addresses": [
+        "250之6號, 上杉路, 下上福, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣",
+        "下上福, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣"
+      ],
+      "comment": null,
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_couples_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 36,
+        "sha256": "af528817d9568e00397eef5f3c15ae75fec1ea30f50a5aabb3d9a7cd7fd59da4",
+        "reportDate": "2026-09-26"
+      }
+    },
+    {
+      "entityType": "acousticCouple",
+      "coupleId": "52846",
+      "sensor1Id": "114535",
+      "sensor2Id": "114536",
+      "sensor1OptionalPoint": "1356587",
+      "sensor2OptionalPoint": "1357544",
+      "device1Id": "358299840339085",
+      "device2Id": "358299840339986",
+      "pathLength": 191,
+      "material": "DuctileIron",
+      "lastActivity": "2026-09-24T19:03:20.000Z",
+      "overlapping": false,
+      "addresses": [
+        "100之1號, 肚仔坪路, 美人洞, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣",
+        "肚仔坪路, 美人洞, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣"
+      ],
+      "comment": null,
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_couples_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 37,
+        "sha256": "af528817d9568e00397eef5f3c15ae75fec1ea30f50a5aabb3d9a7cd7fd59da4",
+        "reportDate": "2026-09-26"
+      }
+    },
+    {
+      "entityType": "acousticCouple",
+      "coupleId": "52844",
+      "sensor1Id": "114531",
+      "sensor2Id": "114533",
+      "sensor1OptionalPoint": "1357539",
+      "sensor2OptionalPoint": "1357542",
+      "device1Id": "358299840337659",
+      "device2Id": "358299840340067",
+      "pathLength": 101,
+      "material": "DuctileIron",
+      "lastActivity": "2026-09-25T20:03:11.000Z",
+      "overlapping": false,
+      "addresses": [
+        "116之6號, 肚仔坪路, 美人洞, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣",
+        "116之1號, 肚仔坪路, 美人洞, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣"
+      ],
+      "comment": null,
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_couples_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 39,
+        "sha256": "af528817d9568e00397eef5f3c15ae75fec1ea30f50a5aabb3d9a7cd7fd59da4",
+        "reportDate": "2026-09-26"
+      }
+    },
+    {
+      "entityType": "acousticCouple",
+      "coupleId": "52792",
+      "sensor1Id": "114282",
+      "sensor2Id": "114281",
+      "sensor1OptionalPoint": "1356534",
+      "sensor2OptionalPoint": "1356580",
+      "device1Id": "358299840338970",
+      "device2Id": "358299840342337",
+      "pathLength": 153,
+      "material": "DuctileIron",
+      "lastActivity": "2026-09-25T20:04:34.000Z",
+      "overlapping": false,
+      "addresses": [
+        "下上福, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣",
+        "250之6號, 上杉路, 下上福, 杉福村, 琉球鄉, 屏東縣, 929, 臺灣"
+      ],
+      "comment": null,
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_couples_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 55,
+        "sha256": "af528817d9568e00397eef5f3c15ae75fec1ea30f50a5aabb3d9a7cd7fd59da4",
+        "reportDate": "2026-09-26"
+      }
+    },
+    {
+      "entityType": "acousticCouple",
+      "coupleId": "52812",
+      "sensor1Id": "114376",
+      "sensor2Id": "114375",
+      "sensor1OptionalPoint": "1357534",
+      "sensor2OptionalPoint": "1357532",
+      "device1Id": "358299840342592",
+      "device2Id": "358299840339994",
+      "pathLength": 239,
+      "material": "DuctileIron",
+      "lastActivity": "2026-09-25T20:02:25.000Z",
+      "overlapping": false,
+      "addresses": [
+        "琉球國中, 158之19, 中正路, 上坪腳, 大福村, 琉球鄉, 屏東縣, 929, 臺灣",
+        "140號, 中正路, 上坪腳, 南福村, 琉球鄉, 屏東縣, 929, 臺灣"
+      ],
+      "comment": null,
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_couples_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 58,
+        "sha256": "af528817d9568e00397eef5f3c15ae75fec1ea30f50a5aabb3d9a7cd7fd59da4",
+        "reportDate": "2026-09-26"
+      }
+    },
+    {
+      "entityType": "acousticCouple",
+      "coupleId": "52811",
+      "sensor1Id": "114377",
+      "sensor2Id": "114376",
+      "sensor1OptionalPoint": "1357535",
+      "sensor2OptionalPoint": "1357534",
+      "device1Id": "358299840339861",
+      "device2Id": "358299840342592",
+      "pathLength": 139,
+      "material": "DuctileIron",
+      "lastActivity": "2026-09-25T20:02:28.000Z",
+      "overlapping": false,
+      "addresses": [
+        "156之1號, 中正路, 上坪腳, 大福村, 琉球鄉, 屏東縣, 929, 臺灣",
+        "琉球國中, 158之19, 中正路, 上坪腳, 大福村, 琉球鄉, 屏東縣, 929, 臺灣"
+      ],
+      "comment": null,
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_couples_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 59,
+        "sha256": "af528817d9568e00397eef5f3c15ae75fec1ea30f50a5aabb3d9a7cd7fd59da4",
+        "reportDate": "2026-09-26"
+      }
+    },
+    {
+      "entityType": "acousticCouple",
+      "coupleId": "52810",
+      "sensor1Id": "114378",
+      "sensor2Id": "114377",
+      "sensor1OptionalPoint": "1357536",
+      "sensor2OptionalPoint": "1357535",
+      "device1Id": "358299840338509",
+      "device2Id": "358299840339861",
+      "pathLength": 49,
+      "material": "DuctileIron",
+      "lastActivity": "2026-09-24T20:02:38.000Z",
+      "overlapping": false,
+      "addresses": [
+        "158號, 中正路, 上坪腳, 大福村, 琉球鄉, 屏東縣, 929, 臺灣",
+        "156之1號, 中正路, 上坪腳, 大福村, 琉球鄉, 屏東縣, 929, 臺灣"
+      ],
+      "comment": null,
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_couples_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 60,
+        "sha256": "af528817d9568e00397eef5f3c15ae75fec1ea30f50a5aabb3d9a7cd7fd59da4",
+        "reportDate": "2026-09-26"
+      }
+    }
+  ],
+  "acousticAlert": [
+    {
+      "entityType": "acousticAlert",
+      "alertId": "206053",
+      "coupleId": "52790",
+      "sensor1Id": null,
+      "sensor2Id": null,
+      "alertType": "Leak",
+      "priority": "A",
+      "probability": 89,
+      "status": "New",
+      "stateGroup": "active",
+      "daysDetected": 44,
+      "detectionDate": "2026-08-13T00:00:00.000Z",
+      "closureDate": null,
+      "lat": 22.34566290819631,
+      "lng": 120.36576302921121,
+      "projectedCoordinates": {
+        "x": 184672.8098631105,
+        "y": 2471966.898278322
+      },
+      "distances": {
+        "metres": 16,
+        "feet": 52.49
+      },
+      "address": "Liuqiu, Shanfu Village, Liuqiu Township, Pingtung County, Taiwan 929",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 14,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004184847170158004",
+      "matchDistance": 0,
+      "matchMethod": "spatial",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "204908",
+      "coupleId": "52728",
+      "sensor1Id": "113779",
+      "sensor2Id": "113778",
+      "alertType": "Leak",
+      "priority": "A",
+      "probability": 80,
+      "status": "Located",
+      "stateGroup": "active",
+      "daysDetected": 51,
+      "detectionDate": "2026-08-06T00:00:00.000Z",
+      "closureDate": null,
+      "lat": 22.326045259235094,
+      "lng": 120.3576623796377,
+      "projectedCoordinates": {
+        "x": 183829.15280778744,
+        "y": 2469798.194898263
+      },
+      "distances": {
+        "metres": 147,
+        "feet": 482.28
+      },
+      "address": "Zhongzheng Rd, Tianfu Village, Liuqiu Township, Pingtung County, Taiwan 929",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": 22.326045259235094,
+        "lng": 120.3576623796377
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 15,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004183646980118001",
+      "matchDistance": 0,
+      "matchMethod": "spatial",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "204913",
+      "coupleId": "52728",
+      "sensor1Id": "113779",
+      "sensor2Id": "113778",
+      "alertType": "Leak",
+      "priority": "A",
+      "probability": 66,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 0,
+      "detectionDate": "2026-08-06T00:00:00.000Z",
+      "closureDate": "2026-08-06T00:00:00.000Z",
+      "lat": 22.32615304512524,
+      "lng": 120.35766066855044,
+      "projectedCoordinates": {
+        "x": 183829.02736454675,
+        "y": 2469810.130630881
+      },
+      "distances": {
+        "metres": 159,
+        "feet": 521.65
+      },
+      "address": "Zhongzheng Rd, Tianfu Village, Liuqiu Township, Pingtung County, Taiwan 929",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 16,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004183646980118001",
+      "matchDistance": 0,
+      "matchMethod": "spatial",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "204321",
+      "coupleId": "52700",
+      "sensor1Id": "113776",
+      "sensor2Id": "113777",
+      "alertType": "Leak",
+      "priority": "A",
+      "probability": 91,
+      "status": "Located",
+      "stateGroup": "active",
+      "daysDetected": 54,
+      "detectionDate": "2026-08-03T00:00:00.000Z",
+      "closureDate": null,
+      "lat": 22.350574792557275,
+      "lng": 120.3801397455107,
+      "projectedCoordinates": {
+        "x": 186155.90861775592,
+        "y": 2472504.6222751
+      },
+      "distances": {
+        "metres": 1,
+        "feet": 3.28
+      },
+      "address": "Liuqiu, Shanfu Village, Liuqiu Township, Pingtung County, Taiwan 929",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": 22.350574792557275,
+        "lng": 120.3801397455107
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 17,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "134100418604722011B003",
+      "matchDistance": 0,
+      "matchMethod": "spatial",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "210662",
+      "coupleId": "52844",
+      "sensor1Id": "114531",
+      "sensor2Id": "114533",
+      "alertType": "Consumption",
+      "priority": "A",
+      "probability": 11,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 8,
+      "detectionDate": "2026-09-04T00:00:00.000Z",
+      "closureDate": "2026-09-12T00:00:00.000Z",
+      "lat": 22.35047480396792,
+      "lng": 120.3693118063498,
+      "projectedCoordinates": {
+        "x": 185040.57901996456,
+        "y": 2472498.1792320986
+      },
+      "distances": {
+        "metres": 84,
+        "feet": 275.59
+      },
+      "address": "929, Taiwan, Pingtung County, Liuqiu Township, Shanfu Village, ????112?",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": "reverting back to New state. Formerly was Shadow of leak 207434",
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [
+        {
+          "type": "shadow-of",
+          "alertId": "207434",
+          "coupleId": null
+        }
+      ],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 18,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847220118001",
+      "matchDistance": 0,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "207435",
+      "coupleId": "52844",
+      "sensor1Id": "114531",
+      "sensor2Id": "114533",
+      "alertType": "Leak",
+      "priority": "A",
+      "probability": 12,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 25,
+      "detectionDate": "2026-08-20T00:00:00.000Z",
+      "closureDate": "2026-09-14T00:00:00.000Z",
+      "lat": 22.350970785095463,
+      "lng": 120.36986890655608,
+      "projectedCoordinates": {
+        "x": 185098.19041273248,
+        "y": 2472552.8584987214
+      },
+      "distances": {
+        "metres": 3,
+        "feet": 9.84
+      },
+      "address": "929, Taiwan, Pingtung County, Liuqiu Township, Shanfu Village, ????116?6?",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 19,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847220118001",
+      "matchDistance": 38.3,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.91,
+      "reviewRequired": true
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "207438",
+      "coupleId": "52844",
+      "sensor1Id": "114531",
+      "sensor2Id": "114533",
+      "alertType": "Consumption",
+      "priority": "B",
+      "probability": 52,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 0,
+      "detectionDate": "2026-08-19T00:00:00.000Z",
+      "closureDate": "2026-08-19T00:00:00.000Z",
+      "lat": 22.35099533652891,
+      "lng": 120.36988941952586,
+      "projectedCoordinates": {
+        "x": 185100.3146283195,
+        "y": 2472555.56821023
+      },
+      "distances": {
+        "metres": -4,
+        "feet": -13.12
+      },
+      "address": "929, Taiwan, Pingtung County, Liuqiu Township, Shanfu Village, ????116?6?",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": "Dup of leak 207439 in couple 52844",
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [
+        {
+          "type": "duplicate-of",
+          "alertId": "207439",
+          "coupleId": "52844"
+        }
+      ],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 20,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847220118001",
+      "matchDistance": 41.8,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.89,
+      "reviewRequired": true
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "207439",
+      "coupleId": "52844",
+      "sensor1Id": "114531",
+      "sensor2Id": "114533",
+      "alertType": "Consumption",
+      "priority": "B",
+      "probability": 71,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 0,
+      "detectionDate": "2026-08-19T00:00:00.000Z",
+      "closureDate": "2026-08-19T00:00:00.000Z",
+      "lat": 22.35099533652891,
+      "lng": 120.36988941952586,
+      "projectedCoordinates": {
+        "x": 185100.3146283195,
+        "y": 2472555.56821023
+      },
+      "distances": {
+        "metres": -4,
+        "feet": -13.12
+      },
+      "address": "929, Taiwan, Pingtung County, Liuqiu Township, Shanfu Village, ????116?6?",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 21,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847220118001",
+      "matchDistance": 41.8,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.89,
+      "reviewRequired": true
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "210659",
+      "coupleId": "52845",
+      "sensor1Id": "114533",
+      "sensor2Id": "114535",
+      "alertType": "Leak",
+      "priority": "B",
+      "probability": 17,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 4,
+      "detectionDate": "2026-09-04T00:00:00.000Z",
+      "closureDate": "2026-09-08T00:00:00.000Z",
+      "lat": 22.349618494831375,
+      "lng": 120.36806687727628,
+      "projectedCoordinates": {
+        "x": 184911.9528246478,
+        "y": 2472403.8984596943
+      },
+      "distances": {
+        "metres": 147,
+        "feet": 482.28
+      },
+      "address": "No. 151?, Xiangbu Rd, Shanfu Village, Liuqiu Township, Pingtung County, Taiwan 929",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 22,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847220118001",
+      "matchDistance": 1.1,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "211525",
+      "coupleId": "52845",
+      "sensor1Id": "114533",
+      "sensor2Id": "114535",
+      "alertType": "Consumption",
+      "priority": "B",
+      "probability": 28,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 1,
+      "detectionDate": "2026-09-08T00:00:00.000Z",
+      "closureDate": "2026-09-09T00:00:00.000Z",
+      "lat": 22.350372403721003,
+      "lng": 120.36915999120717,
+      "projectedCoordinates": {
+        "x": 185024.89449186815,
+        "y": 2472486.906040112
+      },
+      "distances": {
+        "metres": 6,
+        "feet": 19.69
+      },
+      "address": "929, Taiwan, Pingtung County, Liuqiu Township, Shanfu Village, ????112-2?",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": "Shadow of leak 207435 in couple 52844",
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [
+        {
+          "type": "shadow-of",
+          "alertId": "207435",
+          "coupleId": "52844"
+        }
+      ],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 23,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847220118001",
+      "matchDistance": 0,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "206253",
+      "coupleId": "52784",
+      "sensor1Id": null,
+      "sensor2Id": null,
+      "alertType": "Leak",
+      "priority": "B",
+      "probability": 36,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 4,
+      "detectionDate": "2026-08-13T00:00:00.000Z",
+      "closureDate": "2026-08-17T00:00:00.000Z",
+      "lat": 22.34217198797292,
+      "lng": 120.36444559310581,
+      "projectedCoordinates": {
+        "x": 184535.47821289825,
+        "y": 2471580.924784695
+      },
+      "distances": {
+        "metres": 1,
+        "feet": 3.28
+      },
+      "address": "Liuqiu, Shanfu Village, Liuqiu Township, Pingtung County, Taiwan 929",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 24,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004184447130118002",
+      "matchDistance": 0.1,
+      "matchMethod": "spatial",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "204329",
+      "coupleId": "52700",
+      "sensor1Id": "113776",
+      "sensor2Id": "113777",
+      "alertType": "Leak",
+      "priority": "B",
+      "probability": 29,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 8,
+      "detectionDate": "2026-08-03T00:00:00.000Z",
+      "closureDate": "2026-08-11T00:00:00.000Z",
+      "lat": 22.350852112645597,
+      "lng": 120.38049286231399,
+      "projectedCoordinates": {
+        "x": 186192.40606444873,
+        "y": 2472535.1799435182
+      },
+      "distances": {
+        "metres": 59,
+        "feet": 193.57
+      },
+      "address": "Liuqiu, Shanfu Village, Liuqiu Township, Pingtung County, Taiwan 929",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": "Dup of leak 204322 in couple 52699",
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [
+        {
+          "type": "duplicate-of",
+          "alertId": "204322",
+          "coupleId": "52699"
+        }
+      ],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 25,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "072900618614724015C014",
+      "matchDistance": 1.3,
+      "matchMethod": "spatial",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "205291",
+      "coupleId": "52726",
+      "sensor1Id": "113782",
+      "sensor2Id": "113780",
+      "alertType": "Leak",
+      "priority": "B",
+      "probability": 29,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 1,
+      "detectionDate": "2026-08-08T00:00:00.000Z",
+      "closureDate": "2026-08-09T00:00:00.000Z",
+      "lat": 22.32372610176509,
+      "lng": 120.35747045651078,
+      "projectedCoordinates": {
+        "x": 183808.28716499225,
+        "y": 2469541.4820648595
+      },
+      "distances": {
+        "metres": -23,
+        "feet": -75.46
+      },
+      "address": "No. 5?9?, Zhongzheng Rd, Nanfu Village, Liuqiu Township, Pingtung County, Taiwan 929",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 26,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004183646950118004",
+      "matchDistance": 2.2,
+      "matchMethod": "spatial",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "206058",
+      "coupleId": "52784",
+      "sensor1Id": null,
+      "sensor2Id": null,
+      "alertType": "Leak",
+      "priority": "C",
+      "probability": 26,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 2,
+      "detectionDate": "2026-08-12T00:00:00.000Z",
+      "closureDate": "2026-08-14T00:00:00.000Z",
+      "lat": 22.342419475557968,
+      "lng": 120.3647923147245,
+      "projectedCoordinates": {
+        "x": 184571.3084025243,
+        "y": 2471608.17820541
+      },
+      "distances": {
+        "metres": 49,
+        "feet": 160.76
+      },
+      "address": "Liuqiu, Shanfu Village, Liuqiu Township, Pingtung County, Taiwan 929",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 51,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004184447130118002",
+      "matchDistance": 0,
+      "matchMethod": "spatial",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "206065",
+      "coupleId": "52786",
+      "sensor1Id": null,
+      "sensor2Id": null,
+      "alertType": "Leak",
+      "priority": "C",
+      "probability": 37,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 0,
+      "detectionDate": "2026-08-12T00:00:00.000Z",
+      "closureDate": "2026-08-12T00:00:00.000Z",
+      "lat": 22.34444269303459,
+      "lng": 120.36759039456193,
+      "projectedCoordinates": {
+        "x": 184860.46922051004,
+        "y": 2471830.9943721327
+      },
+      "distances": {
+        "metres": 62,
+        "feet": 203.41
+      },
+      "address": "Liuqiu, Shanfu Village, Liuqiu Township, Pingtung County, Taiwan 929",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 52,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004184447130118002",
+      "matchDistance": 0,
+      "matchMethod": "spatial",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "206453",
+      "coupleId": "52786",
+      "sensor1Id": null,
+      "sensor2Id": null,
+      "alertType": "Leak",
+      "priority": "C",
+      "probability": 2,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 0,
+      "detectionDate": "2026-08-14T00:00:00.000Z",
+      "closureDate": "2026-08-14T00:00:00.000Z",
+      "lat": 22.34426942828076,
+      "lng": 120.36739874439449,
+      "projectedCoordinates": {
+        "x": 184840.6477217577,
+        "y": 2471811.8918516603
+      },
+      "distances": {
+        "metres": 34,
+        "feet": 111.55
+      },
+      "address": "Liuqiu, Shanfu Village, Liuqiu Township, Pingtung County, Taiwan 929",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 53,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004184447130118002",
+      "matchDistance": 0,
+      "matchMethod": "spatial",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "210880",
+      "coupleId": "52847",
+      "sensor1Id": "114536",
+      "sensor2Id": "114281",
+      "alertType": "Consumption",
+      "priority": "C",
+      "probability": 22,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 2,
+      "detectionDate": "2026-09-05T00:00:00.000Z",
+      "closureDate": "2026-09-07T00:00:00.000Z",
+      "lat": 22.34849768911865,
+      "lng": 120.36639558161976,
+      "projectedCoordinates": {
+        "x": 184739.28528786424,
+        "y": 2472280.515965338
+      },
+      "distances": {
+        "metres": 60,
+        "feet": 196.85
+      },
+      "address": "929, Taiwan, Pingtung County, Liuqiu Township, Shanfu Village, ????60?",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 54,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004184847170158004",
+      "matchDistance": 0,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "210302",
+      "coupleId": "52845",
+      "sensor1Id": "114533",
+      "sensor2Id": "114535",
+      "alertType": "Leak",
+      "priority": "C",
+      "probability": 10,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 1,
+      "detectionDate": "2026-09-02T00:00:00.000Z",
+      "closureDate": "2026-09-03T00:00:00.000Z",
+      "lat": 22.35039783079398,
+      "lng": 120.36921350285411,
+      "projectedCoordinates": {
+        "x": 185030.4180289293,
+        "y": 2472489.6984645086
+      },
+      "distances": {
+        "metres": -16,
+        "feet": -52.49
+      },
+      "address": "929, Taiwan, Pingtung County, Liuqiu Township, Shanfu Village, ????112-2?",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": "Shadow of leak 207435 in couple 52844",
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [
+        {
+          "type": "shadow-of",
+          "alertId": "207435",
+          "coupleId": "52844"
+        }
+      ],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 55,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847220118001",
+      "matchDistance": 1,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "210658",
+      "coupleId": "52845",
+      "sensor1Id": "114533",
+      "sensor2Id": "114535",
+      "alertType": "Leak",
+      "priority": "C",
+      "probability": 32,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 0,
+      "detectionDate": "2026-09-04T00:00:00.000Z",
+      "closureDate": "2026-09-04T00:00:00.000Z",
+      "lat": 22.349991290915536,
+      "lng": 120.368594966252,
+      "projectedCoordinates": {
+        "x": 184966.51965657313,
+        "y": 2472444.9496730077
+      },
+      "distances": {
+        "metres": 78,
+        "feet": 255.91
+      },
+      "address": "929, Taiwan, Pingtung County, Liuqiu Township, Shanfu Village, ????102?",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 56,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847220118001",
+      "matchDistance": 0,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "206452",
+      "coupleId": "52787",
+      "sensor1Id": null,
+      "sensor2Id": null,
+      "alertType": "Leak",
+      "priority": "C",
+      "probability": 30,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 0,
+      "detectionDate": "2026-08-14T00:00:00.000Z",
+      "closureDate": "2026-08-14T00:00:00.000Z",
+      "lat": 22.34487266965839,
+      "lng": 120.36814245659733,
+      "projectedCoordinates": {
+        "x": 184917.53404941707,
+        "y": 2471878.3666023593
+      },
+      "distances": {
+        "metres": 19,
+        "feet": 62.34
+      },
+      "address": "Liuqiu, Shanfu Village, Liuqiu Township, Pingtung County, Taiwan 929",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": "Shadow of leak 206453 in couple 52786",
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [
+        {
+          "type": "shadow-of",
+          "alertId": "206453",
+          "coupleId": "52786"
+        }
+      ],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 57,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1341004184447130118002",
+      "matchDistance": 0,
+      "matchMethod": "spatial",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "213010",
+      "coupleId": "52810",
+      "sensor1Id": "114378",
+      "sensor2Id": "114377",
+      "alertType": "Leak",
+      "priority": "C",
+      "probability": 14,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 0,
+      "detectionDate": "2026-09-16T00:00:00.000Z",
+      "closureDate": "2026-09-16T00:00:00.000Z",
+      "lat": 22.33707252330948,
+      "lng": 120.36890983412835,
+      "projectedCoordinates": {
+        "x": 184992.96128639407,
+        "y": 2471014.335807268
+      },
+      "distances": {
+        "metres": 34,
+        "feet": 111.55
+      },
+      "address": "Liuqiu, Shanfu Village, Liuqiu Township, Pingtung County, Taiwan 929",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": null,
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 58,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847100118006",
+      "matchDistance": 0,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    },
+    {
+      "entityType": "acousticAlert",
+      "alertId": "211089",
+      "coupleId": "52844",
+      "sensor1Id": "114531",
+      "sensor2Id": "114533",
+      "alertType": "Leak",
+      "priority": "C",
+      "probability": 10,
+      "status": "Closed",
+      "stateGroup": "historical",
+      "daysDetected": 0,
+      "detectionDate": "2026-09-06T00:00:00.000Z",
+      "closureDate": "2026-09-06T00:00:00.000Z",
+      "lat": 22.35039783079398,
+      "lng": 120.36921350285411,
+      "projectedCoordinates": {
+        "x": 185030.4180289293,
+        "y": 2472489.6984645086
+      },
+      "distances": {
+        "metres": 123,
+        "feet": 403.54
+      },
+      "address": "929, Taiwan, Pingtung County, Liuqiu Township, Shanfu Village, ????112-2?",
+      "workArea": null,
+      "sapNumber": null,
+      "commentDate": null,
+      "comments": "Shadow of leak 207434 in couple 52845",
+      "repair": {
+        "essence": null,
+        "lat": null,
+        "lng": null
+      },
+      "relationships": [
+        {
+          "type": "shadow-of",
+          "alertId": "207434",
+          "coupleId": "52845"
+        }
+      ],
+      "sourceSystem": "Auto",
+      "source": {
+        "type": "imported-operational-report",
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sourceRow": 59,
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "reportDate": "2026-09-26"
+      },
+      "matchedPipeId": "1340007184847220118001",
+      "matchDistance": 1,
+      "matchMethod": "spatial+material+couple-path",
+      "confidence": 0.98,
+      "reviewRequired": false
+    }
+  ],
+  "acousticSummary": {
+    "totalLambaySensors": 10,
+    "activeSensors": 10,
+    "couples": 9,
+    "activeAlerts": 3,
+    "historicalAlerts": 19,
+    "leakAlerts": 17,
+    "consumptionAlerts": 5,
+    "repeatAlertCouples": 6,
+    "highIntensitySensors": 0,
+    "communicationBatteryWarnings": 0,
+    "unmatchedSensors": 0,
+    "unmatchedAlerts": 0,
+    "duplicateShadowRelationships": 7
+  },
+  "acousticProvenance": {
+    "classification": "imported-operational-data",
+    "importedAt": "2026-09-26T01:49:08.511Z",
+    "spatialSelection": {
+      "method": "project-pipe-bounds-with-1000m-padding",
+      "bounds": {
+        "minLat": 22.31348747877375,
+        "maxLat": 22.434581107052846,
+        "minLng": 120.34577822649737,
+        "maxLng": 120.50245412809348
+      }
+    },
+    "sourceArtifacts": [
+      {
+        "filename": "TW_EMS_Taiwan_sensors_report_20260926.xlsx",
+        "sheet": "Report",
+        "sha256": "6af3131901015455434420359e388599eb9af6960f5afa0aec7d86f8960377a4",
+        "rows": 29
+      },
+      {
+        "filename": "TW_EMS_Taiwan_couples_report_20260926.xlsx",
+        "sheet": "Report",
+        "sha256": "af528817d9568e00397eef5f3c15ae75fec1ea30f50a5aabb3d9a7cd7fd59da4",
+        "rows": 59
+      },
+      {
+        "filename": "TW_EMS_Taiwan_alerts_report_20260926.xlsx",
+        "sheet": "Report",
+        "sha256": "8cff04f27af904bd604bbc1f3f740bdcc8d997484d92157b9a80eefc96580933",
+        "rows": 58
+      }
+    ]
+  }
+}

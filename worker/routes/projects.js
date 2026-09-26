@@ -162,6 +162,103 @@ export async function getProjectData({ request, params, env }) {
   }
 }
 
+function acousticStatements(env, projectId, data) {
+  const statements = [
+    env.AQUA_DB.prepare("DELETE FROM acoustic_sensors WHERE project_id = ?").bind(projectId),
+    env.AQUA_DB.prepare("DELETE FROM acoustic_couples WHERE project_id = ?").bind(projectId),
+    env.AQUA_DB.prepare("DELETE FROM acoustic_alerts WHERE project_id = ?").bind(projectId)
+  ];
+  for (const sensor of data.acousticSensor) statements.push(env.AQUA_DB.prepare(`INSERT INTO acoustic_sensors (
+    project_id, sensor_id, status, latitude, longitude, matched_pipe_id, confidence, review_required, payload
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(
+    projectId, sensor.sensorId, sensor.status || "", sensor.lat, sensor.lng, sensor.matchedPipeId,
+    Number(sensor.confidence || 0), sensor.reviewRequired ? 1 : 0, JSON.stringify(sensor)
+  ));
+  for (const couple of data.acousticCouple) statements.push(env.AQUA_DB.prepare(`INSERT INTO acoustic_couples (
+    project_id, couple_id, sensor_1_id, sensor_2_id, material, last_activity, overlapping, payload
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)`).bind(
+    projectId, couple.coupleId, couple.sensor1Id, couple.sensor2Id, couple.material,
+    couple.lastActivity, couple.overlapping ? 1 : 0, JSON.stringify(couple)
+  ));
+  for (const alert of data.acousticAlert) statements.push(env.AQUA_DB.prepare(`INSERT INTO acoustic_alerts (
+    project_id, alert_id, couple_id, alert_type, status, state_group, probability, detection_date,
+    matched_pipe_id, confidence, review_required, payload
+  ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`).bind(
+    projectId, alert.alertId, alert.coupleId, alert.alertType, alert.status, alert.stateGroup,
+    alert.probability, alert.detectionDate, alert.matchedPipeId, Number(alert.confidence || 0),
+    alert.reviewRequired ? 1 : 0, JSON.stringify(alert)
+  ));
+  return statements;
+}
+
+function validAcousticData(data) {
+  return data && Array.isArray(data.acousticSensor) && Array.isArray(data.acousticCouple) && Array.isArray(data.acousticAlert)
+    && data.acousticSensor.every(item => item.entityType === "acousticSensor" && item.sensorId)
+    && data.acousticCouple.every(item => item.entityType === "acousticCouple" && item.coupleId)
+    && data.acousticAlert.every(item => item.entityType === "acousticAlert" && item.alertId);
+}
+
+export async function importProjectAcoustics({ request, params, env }) {
+  const denied = requireWriteAccess(request, env);
+  if (denied) return denied;
+  const uploadedKeys = [];
+  try {
+    requireBindings(env);
+    const id = safeProjectId(params.id);
+    const current = await findProject(env, id);
+    if (!current) return apiError(404, "Project not found");
+    if (!request.headers.get("content-type")?.includes("multipart/form-data")) return apiError(415, "Expected multipart acoustic import");
+    const form = await request.formData();
+    const dataFile = form.get("data");
+    const sourceFiles = form.getAll("source").filter(file => file && typeof file.arrayBuffer === "function");
+    if (!dataFile || typeof dataFile.text !== "function") return apiError(400, "Normalized acoustic data is required");
+    let data;
+    try { data = JSON.parse(await dataFile.text()); }
+    catch { return apiError(400, "Normalized acoustic data must be valid JSON"); }
+    if (!validAcousticData(data)) return apiError(400, "Normalized acoustic entities are invalid");
+    if (sourceFiles.length !== 3) return apiError(400, "All three original acoustic reports are required");
+
+    const currentR2Objects = JSON.parse(current.r2_objects || "{}");
+    const currentObject = await env.AQUA_PROJECTS.get(currentR2Objects.normalized);
+    if (!currentObject) return apiError(404, "Current project payload is unavailable");
+    const project = await new Response(currentObject.body).json();
+    const version = Number(current.version) + 1;
+    const prefix = `projects/${id}/versions/${version}/acoustics`;
+    const sourceKeys = [];
+    for (const file of sourceFiles) {
+      const key = `${prefix}/source/${safeFilename(file.name)}`;
+      await env.AQUA_PROJECTS.put(key, file.stream(), { httpMetadata: { contentType: file.type || "application/octet-stream" } });
+      uploadedKeys.push(key);
+      sourceKeys.push(key);
+    }
+    const acousticKey = `${prefix}/normalized/lambay-acoustic-operational-data.json`;
+    await env.AQUA_PROJECTS.put(acousticKey, JSON.stringify(data), { httpMetadata: { contentType: "application/json" } });
+    uploadedKeys.push(acousticKey);
+    Object.assign(project, data, { version, cloudRevision: version });
+    project.provenance = { ...(project.provenance || {}), acoustic: data.acousticProvenance };
+    const projectKey = `projects/${id}/versions/${version}/normalized/project.json`;
+    const r2Objects = {
+      ...currentR2Objects,
+      normalized: projectKey,
+      acoustic: { normalized: acousticKey, sources: sourceKeys }
+    };
+    project.r2Objects = r2Objects;
+    await env.AQUA_PROJECTS.put(projectKey, JSON.stringify(project), { httpMetadata: { contentType: "application/json" } });
+    uploadedKeys.push(projectKey);
+    const metadata = projectMetadata(project, r2Objects, version);
+    const results = await env.AQUA_DB.batch([
+      updateProjectStatement(env, metadata, Number(current.version)),
+      ...acousticStatements(env, id, data)
+    ]);
+    if (!results[0]?.meta?.changes) throw new Error("Project revision changed during acoustic import");
+    return json({ projectId: id, version, r2Objects: r2Objects.acoustic, summary: data.acousticSummary });
+  } catch (error) {
+    await deleteObjects(env, uploadedKeys);
+    console.error("Could not import project acoustics", error);
+    return apiError(500, "Could not import project acoustics");
+  }
+}
+
 function methodNotAllowed(allowed) {
   return json({ error: "Method not allowed" }, 405, { allow: allowed.join(", ") });
 }
@@ -186,6 +283,13 @@ export async function routeProjectRequest(request, env) {
     if (method !== "GET") return methodNotAllowed(["GET"]);
     const id = decodeProjectId(dataMatch[1]);
     return id.error || getProjectData({ request, env, params: { id: id.value } });
+  }
+
+  const acousticMatch = pathname.match(/^\/api\/projects\/([^/]+)\/acoustics$/);
+  if (acousticMatch) {
+    if (method !== "PUT") return methodNotAllowed(["PUT"]);
+    const id = decodeProjectId(acousticMatch[1]);
+    return id.error || importProjectAcoustics({ request, env, params: { id: id.value } });
   }
 
   const projectMatch = pathname.match(/^\/api\/projects\/([^/]+)$/);

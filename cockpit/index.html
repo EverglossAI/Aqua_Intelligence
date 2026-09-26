@@ -118,7 +118,11 @@
             <label><input type="checkbox" data-layer-toggle="dma" checked> DMA</label>
             <label><input type="checkbox" data-telemetry-toggle="flow" checked> DMA inlet meters</label>
             <label><input type="checkbox" data-telemetry-toggle="pressure" checked> Pressure loggers</label>
-            <label><input type="checkbox" data-telemetry-toggle="acoustic"> Acoustic sensors</label>
+            <label><input type="checkbox" data-acoustic-toggle="sensors" checked> Acoustic sensors</label>
+            <label><input type="checkbox" data-acoustic-toggle="couples" checked> Sensor couples</label>
+            <label><input type="checkbox" data-acoustic-toggle="active" checked> Active alerts</label>
+            <label><input type="checkbox" data-acoustic-toggle="located" checked> Located alerts</label>
+            <label><input type="checkbox" data-acoustic-toggle="closed"> Closed alert history</label>
             <label><input type="checkbox" data-layer-toggle="analysis" checked> Analysis</label>
             <div class="gis-row top-gap"><span>Select</span>
               <select id="selectionMode"><option value="any">Any</option><option value="point">Points</option><option value="pipe">Pipes</option><option value="dma">DMA</option></select>
@@ -227,6 +231,7 @@
       <article class="panel acoustic-workbench" id="acousticWorkbench">
         <div class="panel-head"><div><small>ACOUSTIC INTELLIGENCE</small><h2>Sensor Planning & Data Analysis</h2></div></div>
         <div class="workbench-body">
+          <div id="acousticOperationsResults" class="workbench-results"><div class="empty-row">Open Lambay Island to load imported acoustic operations.</div></div>
           <div class="acoustic-controls">
             <label>Deployment strategy<select id="sensorType"><option value="mixed">Mixed / Auto</option><option value="hydrophone">Hydrophones</option><option value="accelerometer">Accelerometers</option></select></label>
             <label>Available quantity<input id="sensorQty" type="number" min="1" value="20"></label>
@@ -291,6 +296,7 @@
 <script src="./app.js"></script>
 <script src="./v4.js"></script>
 <script src="./lambay-demo.js"></script>
+<script src="./lambay-acoustics.js"></script>
 <script src="./lambay-dma-styles.js"></script>
 <script src="../aqua-shell.js"></script>
 </body>

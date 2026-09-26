@@ -2,7 +2,7 @@ import test from "node:test";
 import assert from "node:assert/strict";
 import worker from "../worker/index.js";
 import {
-  createProject, getProject, getProjectData, listProjects, routeProjectRequest, updateProject
+  createProject, getProject, getProjectData, importProjectAcoustics, listProjects, routeProjectRequest, updateProject
 } from "../worker/routes/projects.js";
 
 class FakeBucket {
@@ -20,7 +20,8 @@ class FakeBucket {
 }
 
 class FakeDb {
-  constructor() { this.rows = new Map(); }
+  constructor() { this.rows = new Map(); this.acousticSensors = new Map(); this.acousticCouples = new Map(); this.acousticAlerts = new Map(); }
+  async batch(statements) { return Promise.all(statements.map(statement => statement.run())); }
   prepare(sql) {
     const database = this;
     const statement = {
@@ -29,6 +30,26 @@ class FakeDb {
       async first() { return database.rows.get(this.values[0]) || null; },
       async all() { return { results: [...database.rows.values()].sort((left, right) => right.updated_at.localeCompare(left.updated_at)) }; },
       async run() {
+        if (/^DELETE FROM acoustic_/i.test(sql.trim())) {
+          const collection = /acoustic_sensors/i.test(sql) ? database.acousticSensors : /acoustic_couples/i.test(sql) ? database.acousticCouples : database.acousticAlerts;
+          for (const [key, row] of collection) if (row.project_id === this.values[0]) collection.delete(key);
+          return { meta: { changes: 1 } };
+        }
+        if (/^INSERT INTO acoustic_sensors/i.test(sql.trim())) {
+          const value = this.values;
+          database.acousticSensors.set(`${value[0]}:${value[1]}`, { project_id: value[0], sensor_id: value[1], payload: value[8] });
+          return { meta: { changes: 1 } };
+        }
+        if (/^INSERT INTO acoustic_couples/i.test(sql.trim())) {
+          const value = this.values;
+          database.acousticCouples.set(`${value[0]}:${value[1]}`, { project_id: value[0], couple_id: value[1], payload: value[7] });
+          return { meta: { changes: 1 } };
+        }
+        if (/^INSERT INTO acoustic_alerts/i.test(sql.trim())) {
+          const value = this.values;
+          database.acousticAlerts.set(`${value[0]}:${value[1]}`, { project_id: value[0], alert_id: value[1], payload: value[11] });
+          return { meta: { changes: 1 } };
+        }
         if (/^INSERT INTO projects/i.test(sql.trim())) {
           const value = this.values;
           database.rows.set(value[0], {
@@ -198,4 +219,35 @@ test("Worker router dispatches APIs before falling through to static assets", as
     ASSETS: { fetch: () => { throw new Error("API must not fall through to assets"); } }
   });
   assert.equal(missingApi.status, 404);
+});
+
+test("Writer imports acoustic entities into D1 and preserves original reports in R2", async () => {
+  const env = { AQUA_DB: new FakeDb(), AQUA_PROJECTS: new FakeBucket(), AQUA_ALLOW_LOCAL_WRITES: "true" };
+  const projectForm = new FormData();
+  projectForm.set("project", JSON.stringify(sampleProject()));
+  projectForm.set("source", new Blob(["zip-data"]), "source.zip");
+  await createProject({ request: new Request("http://local/api/projects", { method: "POST", body: projectForm }), env });
+  const acoustic = {
+    acousticSensor: [{ entityType: "acousticSensor", sensorId: "114376", status: "Active", lat: 22.33, lng: 120.36, matchedPipeId: "p-1", confidence: .98, reviewRequired: false }],
+    acousticCouple: [{ entityType: "acousticCouple", coupleId: "52812", sensor1Id: "114376", sensor2Id: "114375", material: "DuctileIron" }],
+    acousticAlert: [{ entityType: "acousticAlert", alertId: "206053", coupleId: "52790", alertType: "Leak", status: "New", stateGroup: "active", probability: 89, relationships: [] }],
+    acousticSummary: { totalLambaySensors: 1 }, acousticProvenance: { classification: "imported-operational-data" }
+  };
+  const form = new FormData();
+  form.set("data", new Blob([JSON.stringify(acoustic)], { type: "application/json" }), "acoustic.json");
+  for (const name of ["sensors.xlsx", "couples.xlsx", "alerts.xlsx"]) form.append("source", new Blob([name]), name);
+  const response = await importProjectAcoustics({
+    request: new Request("http://local/api/projects/lambay-island/acoustics", { method: "PUT", body: form }),
+    params: { id: "lambay-island" }, env
+  });
+  assert.equal(response.status, 200);
+  assert.equal((await response.json()).version, 2);
+  assert.equal(env.AQUA_DB.acousticSensors.size, 1);
+  assert.equal(env.AQUA_DB.acousticCouples.size, 1);
+  assert.equal(env.AQUA_DB.acousticAlerts.size, 1);
+  const keys = [...env.AQUA_PROJECTS.objects.keys()];
+  assert.equal(keys.filter(key => key.includes("/acoustics/source/")).length, 3);
+  assert.ok(keys.includes("projects/lambay-island/versions/2/acoustics/normalized/lambay-acoustic-operational-data.json"));
+  const project = await getProjectData({ request: new Request("http://local/api/projects/lambay-island/data"), params: { id: "lambay-island" }, env });
+  assert.equal((await project.json()).acousticSensor[0].sensorId, "114376");
 });
