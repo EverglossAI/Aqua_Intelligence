@@ -76,21 +76,30 @@
     renderDetail(result);
   }
 
+  function selectBasePipe(feature) {
+    let selected = false;
+    window.aquaState?.kindLayers?.pipe?.eachLayer(wrapper => wrapper.eachLayer?.(layer => {
+      if (!selected && layer.__aquaFeature === feature) { selected = true; layer.fire("click"); }
+    }));
+    return selected;
+  }
+
   function renderOverlay(rows) {
     const layer = ensureLayer();
     if (!layer) return;
     layer.clearLayers();
     rows.forEach(result => {
       const feature = result.pipe?.feature || result.pipe;
+      const filterMatch = window.AquaDmaPipeFilters?.matchesFeature?.(feature) !== false;
       const mapFeature = L.geoJSON(feature, {
         style: {
           color: COLORS[result.classification],
           weight: result.classification === "Critical" ? 7 : result.classification === "High" ? 6 : 4,
-          opacity: result.classification === "Insufficient evidence" ? 0.25 : 0.9
+          opacity: filterMatch ? result.classification === "Insufficient evidence" ? 0.25 : 0.9 : 0.06
         },
         onEachFeature: (_feature, leaflet) => {
           leaflet.bindTooltip(`${escape(result.pipeId)} · ${result.classification} · priority ${result.investigationPriority} · confidence ${result.evidenceConfidence.score}%`);
-          leaflet.on("click", () => focusResult(result));
+          leaflet.on("click", () => { if (!selectBasePipe(feature)) focusResult(result); });
         }
       });
       mapFeature.addTo(layer);
@@ -99,6 +108,7 @@
     if (visible && !window.aquaState.map.hasLayer(layer)) layer.addTo(window.aquaState.map);
     if (!visible && window.aquaState.map.hasLayer(layer)) window.aquaState.map.removeLayer(layer);
     layer.eachLayer(item => item.bringToFront?.());
+    window.AquaDmaPipeFilters?.reapplySelection?.();
   }
 
   function panelMarkup(rows) {
@@ -173,6 +183,6 @@
     });
   }
 
-  window.AquaLeakRisk = { render, focusResult, get results() { return results; } };
+  window.AquaLeakRisk = { render, focusResult, refreshOverlay() { renderOverlay(window.AquaLeakRiskCore.filterLeakRisk(results, filters())); }, get results() { return results; } };
   window.addEventListener("load", bind);
 })();

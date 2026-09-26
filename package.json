@@ -4,7 +4,7 @@
   "type": "module",
   "scripts": {
     "test": "node --test tests/*.test.mjs",
-    "check": "node --check cockpit/app.js && node --check cockpit/cloud-projects.js && node --check cockpit/lambay-demo.js && node --check cockpit/lambay-acoustics.js && node --check cockpit/lambay-dma-styles.js && node --check cockpit/comparison-core.js && node --check cockpit/comparison-ui.js && node --check cockpit/leak-risk-core.js && node --check cockpit/leak-risk-ui.js && node --check cockpit/contextual-core.js && node --check cockpit/contextual-ui.js && node --check aqua-shell.js && node --check worker/index.js && node --check worker/lib/projects.js && node --check worker/routes/projects.js && node --check scripts/acoustic-import.mjs && node --check scripts/import-lambay-acoustics.mjs"
+    "check": "node --check cockpit/app.js && node --check cockpit/cloud-projects.js && node --check cockpit/lambay-demo.js && node --check cockpit/lambay-acoustics.js && node --check cockpit/lambay-dma-styles.js && node --check cockpit/comparison-core.js && node --check cockpit/comparison-ui.js && node --check cockpit/elevation-providers.js && node --check cockpit/leak-risk-core.js && node --check cockpit/leak-risk-ui.js && node --check cockpit/contextual-core.js && node --check cockpit/contextual-ui.js && node --check aqua-shell.js && node --check worker/index.js && node --check worker/lib/projects.js && node --check worker/routes/elevation.js && node --check worker/routes/projects.js && node --check scripts/acoustic-import.mjs && node --check scripts/import-lambay-acoustics.mjs"
   },
   "dependencies": {
     "exceljs": "^4.4.0"

@@ -1,6 +1,6 @@
 import test from "node:test";
 import assert from "node:assert/strict";
-import { buildElevationProfile, describeElevationSource, featureCoordinate, navigationUrl, presentAssetFields, resolveElevationSource, streetViewUrl, summarizeDma } from "../cockpit/contextual-core.js";
+import { buildElevationProfile, buildSampledElevationProfile, describeElevationSource, featureCoordinate, filterDmaPipes, filteredPipeSummary, navigationUrl, presentAssetFields, resolveElevationSource, sampleProfileLine, streetViewUrl, summarizeDma } from "../cockpit/contextual-core.js";
 
 const dma = { type: "Feature", properties: { dma_code: "DMA-1", name: "North" }, geometry: { type: "Polygon", coordinates: [[[120, 22], [120.01, 22], [120.01, 22.01], [120, 22.01], [120, 22]]] } };
 const pipe = (id, latitude, material = "CI", diameter = 100) => ({ type: "Feature", properties: { unific_id: id, pipe_mtr: material, pipe_size: diameter }, geometry: { type: "LineString", coordinates: [[120.001, latitude], [120.009, latitude]] } });
@@ -68,4 +68,35 @@ test("map actions preserve exact latitude and longitude", () => {
   assert.equal(streetViewUrl(coordinate), "https://www.google.com/maps/@?api=1&map_action=pano&viewpoint=22.350123,120.919876");
   assert.equal(navigationUrl(coordinate), "https://www.google.com/maps/dir/?api=1&destination=22.350123,120.919876");
   assert.equal(featureCoordinate({ geometry: { type: "Point", coordinates: [] } }), null);
+});
+
+test("external elevation providers receive bounded evenly spaced samples", () => {
+  const points = sampleProfileLine([[22, 120], [22, 120.01]], { sampleCount: 60 });
+  assert.equal(points.length, 60);
+  assert.deepEqual([points[0].lat, points[0].lng], [22, 120]);
+  assert.ok(Math.abs(points.at(-1).lng - 120.01) < 1e-10);
+  assert.ok(points[30].distance > points[29].distance);
+  assert.equal(sampleProfileLine([[22, 120], [22, 121]], { sampleCount: 500 }).length, 200);
+});
+
+test("external DEM samples retain cumulative distance and statistics", () => {
+  const profile = buildSampledElevationProfile([
+    { lat: 22, lng: 120, distance: 0, elevation: 8 },
+    { lat: 22, lng: 120.001, distance: 100, elevation: 13 },
+    { lat: 22, lng: 120.002, distance: 200, elevation: 10 }
+  ], { source: "Mapbox Terrain DEM", kind: "external DEM" });
+  assert.equal(profile.available, true);
+  assert.equal(profile.statistics.totalDistance, 200);
+  assert.equal(profile.statistics.gain, 5);
+  assert.equal(profile.statistics.loss, 3);
+});
+
+test("DMA pipe filters use OR within groups and AND between groups", () => {
+  const pipes = [pipe("P-1", 22.002, "PVC", 100), pipe("P-2", 22.004, "DIP", 150), pipe("P-3", 22.006, "PVC", 80)];
+  assert.deepEqual(filterDmaPipes(pipes, { materials: ["PVC", "CI"] }).map(item => item.properties.unific_id), ["P-1", "P-3"]);
+  assert.deepEqual(filterDmaPipes(pipes, { diameters: [100, 150] }).map(item => item.properties.unific_id), ["P-1", "P-2"]);
+  const combined = filteredPipeSummary(pipes, { materials: ["PVC", "DIP"], diameters: [80, 100] });
+  assert.deepEqual(combined.pipes.map(item => item.properties.unific_id), ["P-1", "P-3"]);
+  assert.equal(combined.count, 2);
+  assert.ok(combined.totalLength > 0);
 });

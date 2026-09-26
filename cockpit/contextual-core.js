@@ -119,6 +119,26 @@ function pipeLength(feature) {
   return geometryLines(feature).reduce((total, line) => total + line.slice(1).reduce((sum, coordinate, index) => sum + distanceMetres([line[index][1], line[index][0]], [coordinate[1], coordinate[0]]), 0), 0);
 }
 
+export function pipeFilterAttributes(feature) {
+  const material = property(feature?.properties, ["pipe_mtr", "material", "mat", "pipe_type"]);
+  const diameter = finite(property(feature?.properties, ["pipe_size", "diameter", "dia", "size"]));
+  return { material: material == null ? null : String(material).trim().toUpperCase(), diameter: diameter == null ? null : String(diameter) };
+}
+
+export function filterDmaPipes(features, filters = {}) {
+  const materials = new Set([...(filters.materials || [])].map(value => String(value).trim().toUpperCase()));
+  const diameters = new Set([...(filters.diameters || [])].map(value => String(Number(value))));
+  return (features || []).filter(feature => {
+    const attributes = pipeFilterAttributes(feature);
+    return (!materials.size || materials.has(attributes.material)) && (!diameters.size || diameters.has(attributes.diameter));
+  });
+}
+
+export function filteredPipeSummary(features, filters = {}) {
+  const pipes = filterDmaPipes(features, filters);
+  return { pipes, count: pipes.length, totalLength: pipes.reduce((sum, feature) => sum + pipeLength(feature), 0) };
+}
+
 function breakdown(features, fields) {
   const counts = new Map();
   features.forEach(feature => {
@@ -196,6 +216,39 @@ function elevationStatistics(samples) {
     start: elevations[0], end: elevations[elevations.length - 1], gain, loss,
     totalDistance: samples[samples.length - 1].distance
   };
+}
+
+export function sampleProfileLine(line, options = {}) {
+  if (!Array.isArray(line) || line.length < 2) return [];
+  const segments = line.slice(1).map((end, index) => ({ start: line[index], end, length: distanceMetres(line[index], end) }));
+  const totalDistance = segments.reduce((sum, segment) => sum + segment.length, 0);
+  if (!totalDistance) return [];
+  const requested = Math.round(finite(options.sampleCount) ?? Math.max(50, Math.min(200, totalDistance / 20)));
+  const sampleCount = Math.max(2, Math.min(200, requested));
+  return Array.from({ length: sampleCount }, (_item, index) => {
+    const distance = totalDistance * index / (sampleCount - 1);
+    let traversed = 0;
+    const segment = segments.find(item => {
+      const contains = distance <= traversed + item.length;
+      if (!contains) traversed += item.length;
+      return contains;
+    }) || segments[segments.length - 1];
+    const fraction = segment.length ? Math.max(0, Math.min(1, (distance - traversed) / segment.length)) : 0;
+    return {
+      lat: segment.start[0] + (segment.end[0] - segment.start[0]) * fraction,
+      lng: segment.start[1] + (segment.end[1] - segment.start[1]) * fraction,
+      distance
+    };
+  });
+}
+
+export function buildSampledElevationProfile(points, provenance) {
+  const samples = (points || []).map(point => ({
+    coordinate: [finite(point.lat), finite(point.lng)],
+    distance: finite(point.distance),
+    elevation: finite(point.elevation)
+  })).filter(sample => sample.coordinate.every(value => value != null) && sample.distance != null && sample.elevation != null).sort((left, right) => left.distance - right.distance);
+  return { available: samples.length >= 2, samples, statistics: samples.length >= 2 ? elevationStatistics(samples) : null, provenance: provenance || null };
 }
 
 function nearestOnLine(point, line) {
@@ -289,4 +342,4 @@ export function summarizeDma(project = {}, feature, riskResults = []) {
   };
 }
 
-if (typeof window !== "undefined") window.AquaContextualCore = { assetIdentity, buildElevationProfile, describeElevationSource, distanceMetres, entityCoordinate, featureCoordinate, navigationUrl, pointInFeature, presentAssetFields, resolveElevationSource, streetViewUrl, summarizeDma };
+if (typeof window !== "undefined") window.AquaContextualCore = { assetIdentity, buildElevationProfile, buildSampledElevationProfile, describeElevationSource, distanceMetres, entityCoordinate, featureCoordinate, filterDmaPipes, filteredPipeSummary, navigationUrl, pipeFilterAttributes, pointInFeature, presentAssetFields, resolveElevationSource, sampleProfileLine, streetViewUrl, summarizeDma };

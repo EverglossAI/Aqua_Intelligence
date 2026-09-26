@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const view = { selection: null, contextCoordinate: null, drawing: false, profileLine: [], profileLayer: null, profileMarker: null };
+  const view = { selection: null, contextCoordinate: null, drawing: false, profileLine: [], profileLayer: null, profileMarker: null, profileRequest: 0, pipeFilters: { dmaId: null, materials: new Set(), diameters: new Set() } };
   const element = id => document.getElementById(id);
   const escape = value => String(value ?? "-").replace(/[&<>"']/g, character => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#039;" }[character]));
   const format = (value, digits = 1) => Number.isFinite(Number(value)) ? Number(value).toFixed(digits) : "-";
@@ -118,8 +118,66 @@
     return `<button type="button" data-dma-telemetry="${escape(asset.id || asset._id)}"><b>${escape(asset.id || asset._id)}</b><span>${escape(asset.role || asset.type)}</span></button>`;
   }
 
-  function breakdownMarkup(rows) {
-    return rows.length ? rows.map(row => `<span>${escape(row.value)} <b>${row.count}</b></span>`).join("") : '<span class="context-empty">Unavailable</span>';
+  function breakdownMarkup(rows, group) {
+    if (!group) return rows.length ? rows.map(row => `<span>${escape(row.value)} <b>${row.count}</b></span>`).join("") : '<span class="context-empty">Unavailable</span>';
+    const selected = view.pipeFilters[group];
+    return rows.length ? rows.map(row => {
+      const value = String(row.value).toUpperCase();
+      return `<button type="button" class="dma-filter-chip${selected.has(value) ? " active" : ""}" data-pipe-filter-group="${group}" data-pipe-filter-value="${escape(row.value)}" aria-pressed="${selected.has(value)}">${escape(row.value)}${group === "diameters" ? " mm" : ""} <b>${row.count}</b></button>`;
+    }).join("") : '<span class="context-empty">Unavailable</span>';
+  }
+
+  function filtersActive() {
+    return view.pipeFilters.materials.size > 0 || view.pipeFilters.diameters.size > 0;
+  }
+
+  function filterSummary(summary) {
+    if (!filtersActive()) return "";
+    const result = window.AquaContextualCore.filteredPipeSummary(summary.pipes, view.pipeFilters);
+    const labels = [...view.pipeFilters.materials, ...[...view.pipeFilters.diameters].map(value => `${value} mm`)];
+    return `<div class="dma-filter-summary"><b>${escape(labels.join(" · "))}</b><span>${result.count} pipes · ${format(result.totalLength / 1000, 2)} km</span><button type="button" id="clearDmaPipeFilters">Clear filters</button></div>`;
+  }
+
+  function matchesFilteredPipe(feature) {
+    if (!filtersActive() || !view.dma) return true;
+    if (!view.dma.pipes.includes(feature)) return false;
+    return window.AquaContextualCore.filterDmaPipes([feature], view.pipeFilters).length === 1;
+  }
+
+  function reapplySelectedPipe() {
+    const selected = window.aquaState?.selected;
+    if (selected?.layer?.kind === "pipe" && selected.leaflet?.setStyle) {
+      selected.leaflet.setStyle({ color: "#ffffff", weight: 5, fillOpacity: 0.35, opacity: 1 });
+      selected.leaflet.bringToFront?.();
+    }
+  }
+
+  function applyPipeFilterStyles() {
+    window.aquaState?.kindLayers?.pipe?.eachLayer(wrapper => wrapper.eachLayer?.(layer => {
+      const feature = layer.__aquaFeature;
+      if (!feature || !layer.setStyle) return;
+      const base = window.aquaFeatureStyle?.("pipe", feature) || { color: "#36a3ff", weight: 2.3, opacity: 0.72 };
+      layer.setStyle(base);
+    }));
+    window.AquaLeakRisk?.refreshOverlay?.();
+    reapplySelectedPipe();
+  }
+
+  function bindDmaFilters(selection) {
+    element("dmaDetailsBody")?.querySelectorAll("[data-pipe-filter-group]").forEach(button => button.addEventListener("click", () => {
+      const group = button.dataset.pipeFilterGroup;
+      const value = String(button.dataset.pipeFilterValue).toUpperCase();
+      const selected = view.pipeFilters[group];
+      if (selected.has(value)) selected.delete(value); else selected.add(value);
+      renderDma(selection);
+      applyPipeFilterStyles();
+    }));
+    element("clearDmaPipeFilters")?.addEventListener("click", () => {
+      view.pipeFilters.materials.clear();
+      view.pipeFilters.diameters.clear();
+      renderDma(selection);
+      applyPipeFilterStyles();
+    });
   }
 
   function renderDma(selection) {
@@ -127,16 +185,23 @@
     const body = element("dmaDetailsBody");
     if (!core || !body) return;
     const summary = core.summarizeDma(project(), selection.entity, window.AquaLeakRisk?.results || []);
+    if (view.pipeFilters.dmaId !== summary.id) {
+      view.pipeFilters.dmaId = summary.id;
+      view.pipeFilters.materials.clear();
+      view.pipeFilters.diameters.clear();
+    }
     view.dma = summary;
     const elevation = summary.elevation ? `${format(summary.elevation.minimum)}-${format(summary.elevation.maximum)} m · ${escape(summary.elevation.provenance.source)}` : "Elevation data unavailable";
     body.innerHTML = `<div class="context-heading"><div><small>DMA ${escape(summary.code)}</small><h3>${escape(summary.name)}</h3></div><span>${summary.pipeCount} mapped pipes</span></div>
       <div class="dma-metrics"><div><span>Pipe length</span><b>${format(summary.totalPipeLength / 1000, 2)} km</b></div><div><span>Pressure loggers</span><b>${summary.pressureLoggers.length}</b></div><div><span>Flow meters</span><b>${summary.flowMeters.length}</b></div><div><span>Acoustic sensors</span><b>${summary.acousticSensors.length}</b></div><div><span>Active alerts</span><b>${summary.activeAlerts.length}</b></div><div><span>Historical alerts</span><b>${summary.historicalAlerts.length}</b></div></div>
-      <section class="context-section"><h4>Pipe materials</h4><div class="context-breakdown">${breakdownMarkup(summary.materials)}</div></section>
-      <section class="context-section"><h4>Pipe diameters</h4><div class="context-breakdown">${breakdownMarkup(summary.diameters)}</div></section>
+      <section class="context-section"><h4>Pipe materials</h4><div class="context-breakdown">${breakdownMarkup(summary.materials, "materials")}</div></section>
+      <section class="context-section"><h4>Pipe diameters</h4><div class="context-breakdown">${breakdownMarkup(summary.diameters, "diameters")}</div></section>
+      ${filterSummary(summary)}
       <section class="context-section"><h4>Investigation priority</h4><div class="context-breakdown"><span>Critical <b>${summary.priority.critical}</b></span><span>High <b>${summary.priority.high}</b></span><span>Elevated <b>${summary.priority.elevated}</b></span><span>Maximum <b>${summary.priority.maximum ?? "-"}</b></span></div></section>
       <section class="context-section"><h4>Monitoring sources</h4><div class="context-related">${[...summary.inletMeters, ...summary.pressureLoggers.filter(item => !summary.inletMeters.includes(item)), ...summary.flowMeters.filter(item => !summary.inletMeters.includes(item))].map(telemetryButton).join("") || '<p class="context-empty">No linked monitoring sources.</p>'}</div></section>
       <section class="context-section"><h4>Elevation</h4><p>${elevation}</p><button type="button" class="secondary" id="openDmaElevation">Open Elevation Profile</button></section>`;
     body.querySelectorAll("[data-dma-telemetry]").forEach(button => button.addEventListener("click", () => selectTelemetry(button.dataset.dmaTelemetry)));
+    bindDmaFilters(selection);
     element("openDmaElevation")?.addEventListener("click", () => openDmaProfile(summary));
     window.AquaWindowManager?.restore("dma-details");
   }
@@ -199,18 +264,39 @@
     return `<div class="profile-chart-wrap"><svg id="elevationChart" class="profile-chart" viewBox="0 0 ${width} ${height}" role="img" aria-label="Elevation profile"><polyline points="${points}" fill="none" stroke="#55d6be" stroke-width="3"/><line id="elevationCursor" x1="28" x2="28" y1="14" y2="164" stroke="#fff" opacity="0"/></svg><div id="elevationCursorLabel" class="profile-cursor hidden"></div></div>`;
   }
 
-  function renderProfile() {
+  async function renderProfile() {
     const body = element("elevationProfileBody");
     const core = window.AquaContextualCore;
     if (!body || !core) return;
     const source = core.resolveElevationSource(project());
     const sourceDescription = core.describeElevationSource(project());
-    const profile = core.buildElevationProfile(view.profileLine, source);
-    view.profile = profile;
+    let profile = core.buildElevationProfile(view.profileLine, source);
     const controls = `<div class="profile-controls"><button type="button" class="primary" id="drawElevationProfile">${view.drawing ? "Drawing..." : "Draw profile"}</button><button type="button" class="secondary" id="finishElevationProfile"${view.drawing ? "" : " disabled"}>Finish</button><button type="button" class="secondary" id="clearElevationProfile">Clear</button></div>`;
     if (view.profileLine.length < 2) {
       body.innerHTML = `${controls}<div class="profile-status"><b>${view.drawing ? "Choose at least two points on the map" : "No profile line"}</b><span>${escape(view.profileLabel || "Draw an A-to-B or multi-point line on the map.")}</span></div>`;
-    } else if (!source || !profile.available) {
+    } else if (view.drawing) {
+      body.innerHTML = `${controls}<div class="profile-status"><b>Profile line in progress</b><span>Finish the line to request terrain elevations.</span></div>`;
+    } else if (!profile.available && window.AquaElevationProviders) {
+      const request = ++view.profileRequest;
+      body.innerHTML = `${controls}<div class="profile-status"><b>Loading terrain elevation...</b><span>${escape(view.profileLabel || "Drawn map line")}</span></div>`;
+      bindProfileControls();
+      try { profile = await window.AquaElevationProviders.fetchProfile(view.profileLine); }
+      catch (_error) { profile = null; }
+      if (request !== view.profileRequest) return;
+      renderProfileResult(body, controls, profile, sourceDescription);
+      return;
+    } else {
+      renderProfileResult(body, controls, profile, sourceDescription);
+      return;
+    }
+    view.profile = profile;
+    bindProfileControls();
+    bindProfileCursor();
+  }
+
+  function renderProfileResult(body, controls, profile, sourceDescription) {
+    view.profile = profile;
+    if (!profile?.available) {
       const rejectedProvenance = sourceDescription ? `<dl class="profile-provenance"><div><dt>Source</dt><dd>${escape(sourceDescription.source)}</dd></div><div><dt>Resolution</dt><dd>${escape(sourceDescription.resolution || "Not stated")}</dd></div><div><dt>Date / version</dt><dd>${escape([sourceDescription.date, sourceDescription.version].filter(Boolean).join(" / ") || "Not stated")}</dd></div><div><dt>Class</dt><dd>${escape(sourceDescription.classification)} · excluded</dd></div></dl>` : "";
       body.innerHTML = `${controls}<div class="profile-unavailable"><b>Elevation data unavailable</b><span>${escape(view.profileLabel || "Drawn map line")}</span><p>The route is retained, but no verified surveyed, DEM, LiDAR, or measured elevations are available. Hydraulic model assumptions are excluded.</p></div>${rejectedProvenance}`;
     } else {
@@ -218,7 +304,7 @@
       const provenance = profile.provenance;
       body.innerHTML = `${controls}<div class="profile-status"><b>${escape(view.profileLabel)}</b><span>${profile.samples.length} real source samples</span></div>
         <div class="profile-metrics"><div><span>Distance</span><b>${format(statistics.totalDistance)} m</b></div><div><span>Min / max</span><b>${format(statistics.minimum)} / ${format(statistics.maximum)} m</b></div><div><span>Start / end</span><b>${format(statistics.start)} / ${format(statistics.end)} m</b></div><div><span>Gain / loss</span><b>+${format(statistics.gain)} / -${format(statistics.loss)} m</b></div></div>
-        ${profileChart(profile)}<dl class="profile-provenance"><div><dt>Source</dt><dd>${escape(provenance.source)}</dd></div><div><dt>Resolution</dt><dd>${escape(provenance.resolution || "Not stated")}</dd></div><div><dt>Date / version</dt><dd>${escape([provenance.date, provenance.version].filter(Boolean).join(" / ") || "Not stated")}</dd></div><div><dt>Class</dt><dd>${escape(provenance.kind)} · real source</dd></div></dl>`;
+        ${profileChart(profile)}<dl class="profile-provenance"><div><dt>Elevation source</dt><dd>${escape(provenance.source)}</dd></div><div><dt>Data class</dt><dd>${escape(provenance.kind)}</dd></div><div><dt>Units</dt><dd>${escape(provenance.units || "m")}</dd></div><div><dt>Resolution</dt><dd>${escape(provenance.resolution || "Not stated")}</dd></div></dl><p class="profile-warning">Terrain DEM — not surveyed level data</p>`;
     }
     bindProfileControls();
     bindProfileCursor();
@@ -226,6 +312,7 @@
 
   function bindProfileControls() {
     element("drawElevationProfile")?.addEventListener("click", () => {
+      view.profileRequest++;
       view.drawing = true;
       view.profileLine = [];
       view.profileLabel = "Drawn map line";
@@ -234,6 +321,7 @@
     });
     element("finishElevationProfile")?.addEventListener("click", () => { view.drawing = false; renderProfile(); });
     element("clearElevationProfile")?.addEventListener("click", () => {
+      view.profileRequest++;
       view.drawing = false;
       view.profileLine = [];
       ensureProfileLayer()?.setLatLngs([]);
@@ -364,7 +452,11 @@
     element("projectSelect")?.addEventListener("change", () => {
       view.selection = null;
       view.dma = null;
+      view.pipeFilters.dmaId = null;
+      view.pipeFilters.materials.clear();
+      view.pipeFilters.diameters.clear();
       view.profileLine = [];
+      applyPipeFilterStyles();
       setTimeout(renderProfile, 100);
     });
     bindMap();
@@ -372,5 +464,10 @@
   }
 
   window.AquaContextual = { renderAsset, renderDma, setProfileLine, streetViewUrl: coordinate => window.AquaContextualCore.streetViewUrl(coordinate), navigationUrl: coordinate => window.AquaContextualCore.navigationUrl(coordinate) };
+  window.AquaDmaPipeFilters = {
+    matchesFeature: matchesFilteredPipe,
+    style(feature, base) { return filtersActive() ? { ...base, opacity: matchesFilteredPipe(feature) ? 0.95 : 0.08, weight: matchesFilteredPipe(feature) ? Math.max(3.5, base.weight || 0) : 1.2 } : base; },
+    reapplySelection: reapplySelectedPipe
+  };
   window.addEventListener("load", bind);
 })();

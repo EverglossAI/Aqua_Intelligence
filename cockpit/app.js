@@ -927,7 +927,8 @@ function aquaFeatureStyle(kind,feature){
     const style=window.AquaDmaStyles.forFeature(feature);
     if(style)return style;
   }
-  return aquaBaseStyle(kind);
+  const base=aquaBaseStyle(kind);
+  return kind==='pipe'&&window.AquaDmaPipeFilters?.style?window.AquaDmaPipeFilters.style(feature,base):base;
 }
 function aquaSelectionLabel(key){
   return String(key).replace(/_/g,' ').replace(/([a-z])([A-Z])/g,'$1 $2').toLowerCase().replace(/\b\w/g,c=>c.toUpperCase());

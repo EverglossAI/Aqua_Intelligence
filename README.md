@@ -10,17 +10,21 @@ python -m http.server 8000
 
 Open `http://localhost:8000/`. Use `npx wrangler dev` when testing the Worker API and static-assets integration.
 
+Elevation profiles can use the Mapbox Terrain provider when the Worker has a `MAPBOX_ACCESS_TOKEN` secret. Configure production with `npx wrangler secret put MAPBOX_ACCESS_TOKEN`; for local Wrangler testing, provide the same binding through a gitignored `.dev.vars` file. The token remains server-side, and the cockpit retains its unavailable state when the binding or upstream service is unavailable.
+
 ## Application structure
 
 - `cockpit/index.html`: active NRW cockpit markup and engineering workbenches.
 - `cockpit/app.js`: GIS import, projects, telemetry, NRW analysis, topology, DMA, risk, and deterministic command routing.
 - `cockpit/cloud-projects.js`: same-origin project API client and revision handling.
+- `cockpit/elevation-providers.js`: browser-side elevation provider registry and profile cache.
 - `cockpit/lambay-acoustics.js`: imported Lambay sensor/couple/alert layers, linked selection, and deterministic operational summaries.
 - `cockpit/v4.js`: GIS-to-EPANET hydraulics and acoustic planning/analysis.
 - `cockpit/styles.css`: cockpit controls and engineering-result styling.
 - `aqua-shell.js`: persistent floating-window manager, command bar, taskbar, and basemap management.
 - `aqua-shell.css`: full-screen map-first shell and responsive window presentation.
 - `worker/index.js`: Cloudflare Worker entrypoint and static-assets fallback.
+- `worker/routes/elevation.js`: bounded, cached Mapbox Terrain elevation proxy.
 - `worker/routes/projects.js`: D1/R2 project API routing and handlers.
 - `worker/lib/projects.js`: shared persistence, authorization, and serialization helpers.
 - `migrations/`: D1 schema migrations.

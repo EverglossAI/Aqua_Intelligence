@@ -2,6 +2,7 @@
   "use strict";
 
   const COLORS = { pressure: "#53a8ff", flow: "#55d6be", acoustic: "#ffbf59" };
+  const PLOT = Object.freeze({ left: 76, right: 684, top: 24, bottom: 258, splitTopBottom: 120, splitBottomTop: 154 });
   const view = { sourceA: null, sourceB: null, layout: "overlay", scaleMode: "actual", zoom: 1, visible: { A: true, B: true }, picking: null, styledLayers: [] };
 
   const element = id => document.getElementById(id);
@@ -68,18 +69,21 @@
     return { start: fullEnd - width, end: fullEnd };
   }
 
-  function scale(values, minimumPixel, maximumPixel) {
+  function scaleDetails(values, minimumPixel, maximumPixel, padded = true) {
     const clean = values.filter(Number.isFinite);
-    const minimum = clean.length ? Math.min(...clean) : 0;
-    const maximum = clean.length ? Math.max(...clean) : 1;
-    const spread = maximum - minimum || 1;
-    return value => maximumPixel - (value - minimum) / spread * (maximumPixel - minimumPixel);
+    let minimum = clean.length ? Math.min(...clean) : 0;
+    let maximum = clean.length ? Math.max(...clean) : 1;
+    if (minimum === maximum) { minimum -= 0.5; maximum += 0.5; }
+    const padding = padded ? (maximum - minimum) * 0.06 : 0;
+    minimum -= padding;
+    maximum += padding;
+    return { minimum, maximum, value: number => maximumPixel - (number - minimum) / (maximum - minimum) * (maximumPixel - minimumPixel) };
   }
 
   function linePath(points, range, yScale, top, bottom) {
     const visible = points.filter(point => point.time >= range.start && point.time <= range.end);
     return visible.map((point, index) => {
-      const x = 48 + (point.time - range.start) / Math.max(1, range.end - range.start) * 690;
+      const x = PLOT.left + (point.time - range.start) / Math.max(1, range.end - range.start) * (PLOT.right - PLOT.left);
       const y = Math.max(top, Math.min(bottom, yScale(point.value)));
       return `${index ? "L" : "M"}${x.toFixed(1)},${y.toFixed(1)}`;
     }).join(" ");
@@ -87,9 +91,45 @@
 
   function eventMarks(source, range, top, bottom, color) {
     return source.events.filter(event => event.time >= range.start && event.time <= range.end).map(event => {
-      const x = 48 + (event.time - range.start) / Math.max(1, range.end - range.start) * 690;
+      const x = PLOT.left + (event.time - range.start) / Math.max(1, range.end - range.start) * (PLOT.right - PLOT.left);
       return `<g><line x1="${x}" x2="${x}" y1="${top}" y2="${bottom}" stroke="${color}" stroke-width="2" stroke-dasharray="4 4"/><circle cx="${x}" cy="${top + 8}" r="5" fill="${color}"><title>${escape(event.label)} · ${escape(event.timestamp)}</title></circle></g>`;
     }).join("");
+  }
+
+  function sourceAxisLabel(source) {
+    const labels = { pressure: "Pressure", flow: "Flow", acoustic: "Events" };
+    return `${labels[source.type] || source.label} (${source.unit})`;
+  }
+
+  function valueTicks(details, x, top, bottom, color, side = "left", label = "") {
+    const anchor = side === "right" ? "start" : "end";
+    const offset = side === "right" ? 7 : -7;
+    const ticks = Array.from({ length: 5 }, (_item, index) => {
+      const fraction = index / 4;
+      const y = bottom - fraction * (bottom - top);
+      const value = details.minimum + fraction * (details.maximum - details.minimum);
+      return `<line x1="${PLOT.left}" x2="${PLOT.right}" y1="${y}" y2="${y}" stroke="#294150" stroke-width="1" opacity="${index === 0 ? 0.8 : 0.45}"/><line x1="${x}" x2="${x + (side === "right" ? 4 : -4)}" y1="${y}" y2="${y}" stroke="${color}"/><text x="${x + offset}" y="${y + 3}" text-anchor="${anchor}" fill="${color}" font-size="9">${format(value, Math.abs(value) < 10 ? 1 : 0)}</text>`;
+    }).join("");
+    const labelX = side === "right" ? 744 : 12;
+    return `${ticks}<text x="${labelX}" y="${(top + bottom) / 2}" text-anchor="middle" fill="${color}" font-size="10" transform="rotate(-90 ${labelX} ${(top + bottom) / 2})">${escape(label)}</text>`;
+  }
+
+  function timeLabel(time, duration) {
+    const date = new Date(time);
+    if (duration <= 36 * 3600000) return date.toLocaleTimeString([], { hour: "2-digit", minute: "2-digit" });
+    if (duration <= 14 * 86400000) return date.toLocaleString([], { month: "short", day: "numeric", hour: "2-digit", minute: "2-digit" });
+    return date.toLocaleDateString([], { month: "short", day: "numeric" });
+  }
+
+  function timeAxis(range) {
+    const duration = Math.max(1, range.end - range.start);
+    const ticks = Array.from({ length: 5 }, (_item, index) => {
+      const fraction = index / 4;
+      const x = PLOT.left + fraction * (PLOT.right - PLOT.left);
+      const time = range.start + fraction * duration;
+      return `<line x1="${x}" x2="${x}" y1="${PLOT.top}" y2="${PLOT.bottom}" stroke="#294150" opacity="0.28"/><text x="${x}" y="274" text-anchor="middle" fill="#9ab7c9" font-size="9">${escape(timeLabel(time, duration))}</text>`;
+    }).join("");
+    return `${ticks}<text x="${(PLOT.left + PLOT.right) / 2}" y="294" text-anchor="middle" fill="#b9cfdd" font-size="10">Date/time</text>`;
   }
 
   function renderChart(comparison) {
@@ -100,29 +140,43 @@
     const split = view.layout === "split";
     view.scaleMode = element("comparisonScale")?.value || "actual";
     const allValues = [comparison.sourceA, comparison.sourceB].flatMap(source => source.points.map(point => point.value));
-    const commonScale = scale(allValues, 24, 276);
+    const normalized = view.scaleMode === "normalized";
+    const sameUnit = comparison.sourceA.unit === comparison.sourceB.unit;
+    const dualAxis = view.scaleMode === "dual" || !sameUnit;
+    const commonScale = scaleDetails(normalized ? [0, 100] : allValues, PLOT.top, PLOT.bottom, !normalized);
     const sourcesToDraw = [
-      { key: "A", source: comparison.sourceA, color: COLORS[comparison.sourceA.type], top: 24, bottom: split ? 132 : 276 },
-      { key: "B", source: comparison.sourceB, color: COLORS[comparison.sourceB.type], top: split ? 168 : 24, bottom: 276 }
+      { key: "A", source: comparison.sourceA, color: COLORS[comparison.sourceA.type], top: PLOT.top, bottom: split ? PLOT.splitTopBottom : PLOT.bottom },
+      { key: "B", source: comparison.sourceB, color: COLORS[comparison.sourceB.type], top: split ? PLOT.splitBottomTop : PLOT.top, bottom: PLOT.bottom }
     ];
+    const scales = {};
     const content = sourcesToDraw.map(item => {
-      if (!view.visible[item.key]) return "";
       const values = item.source.points.map(point => point.value);
-      const normalizedValues = values.length ? values.map(value => {
-        const minimum = Math.min(...values);
-        const spread = Math.max(...values) - minimum || 1;
-        return (value - minimum) / spread * 100;
-      }) : [];
-      const normalizedByValue = value => {
-        const index = values.indexOf(value);
-        return scale([0, 100], item.top, item.bottom)(normalizedValues[index] ?? 0);
-      };
-      const yScale = view.scaleMode === "actual" ? commonScale : view.scaleMode === "normalized" ? normalizedByValue : scale(values, item.top, item.bottom);
+      const sourceDomain = scaleDetails(values, item.top, item.bottom);
+      const normalizationMinimum = values.length ? Math.min(...values) : 0;
+      const normalizationSpread = values.length ? Math.max(...values) - normalizationMinimum || 1 : 1;
+      const normalizedScale = scaleDetails([0, 100], item.top, item.bottom, false);
+      const actualScale = split || dualAxis ? sourceDomain : commonScale;
+      const details = normalized ? normalizedScale : actualScale;
+      scales[item.key] = details;
+      if (!view.visible[item.key]) return "";
+      const yScale = normalized ? value => normalizedScale.value((value - normalizationMinimum) / normalizationSpread * 100) : details.value;
       const path = item.source.eventOnly ? "" : `<path d="${linePath(item.source.points, range, yScale, item.top, item.bottom)}" fill="none" stroke="${item.color}" stroke-width="2.5"/>`;
       return `${split ? `<text x="12" y="${item.top + 10}" fill="${item.color}" font-size="10">${item.key}</text>` : ""}${path}${eventMarks(item.source, range, item.top, item.bottom, item.color)}`;
     }).join("");
+    let axes;
+    if (normalized) {
+      axes = valueTicks(commonScale, PLOT.left, PLOT.top, PLOT.bottom, "#b9cfdd", "left", "Normalized scale (%)");
+    } else if (split) {
+      axes = valueTicks(scales.A, PLOT.left, PLOT.top, PLOT.splitTopBottom, sourcesToDraw[0].color, "left", sourceAxisLabel(comparison.sourceA))
+        + valueTicks(scales.B, PLOT.left, PLOT.splitBottomTop, PLOT.bottom, sourcesToDraw[1].color, "left", sourceAxisLabel(comparison.sourceB));
+    } else if (!dualAxis) {
+      axes = valueTicks(commonScale, PLOT.left, PLOT.top, PLOT.bottom, sourcesToDraw[0].color, "left", sourceAxisLabel(comparison.sourceA));
+    } else {
+      axes = valueTicks(scales.A, PLOT.left, PLOT.top, PLOT.bottom, sourcesToDraw[0].color, "left", sourceAxisLabel(comparison.sourceA))
+        + valueTicks(scales.B, PLOT.right, PLOT.top, PLOT.bottom, sourcesToDraw[1].color, "right", sourceAxisLabel(comparison.sourceB));
+    }
     svg.setAttribute("viewBox", "0 0 760 300");
-    svg.innerHTML = `<rect x="48" y="24" width="690" height="252" fill="#07141e" stroke="#294150"/><line id="comparisonCursorLine" x1="48" x2="48" y1="24" y2="276" stroke="#ffffff" stroke-width="1" opacity="0"/>${content}`;
+    svg.innerHTML = `<rect x="${PLOT.left}" y="${PLOT.top}" width="${PLOT.right - PLOT.left}" height="${PLOT.bottom - PLOT.top}" fill="#07141e" stroke="#294150"/>${axes}${timeAxis(range)}<line id="comparisonCursorLine" x1="${PLOT.left}" x2="${PLOT.left}" y1="${PLOT.top}" y2="${PLOT.bottom}" stroke="#ffffff" stroke-width="1" opacity="0"/>${content}`;
   }
 
   function summaryCard(key, source) {
@@ -236,8 +290,9 @@
     svg?.addEventListener("pointermove", event => {
       if (!view.comparison || !view.range) return;
       const bounds = svg.getBoundingClientRect();
-      const fraction = Math.max(0, Math.min(1, (event.clientX - bounds.left) / bounds.width));
-      const x = 48 + fraction * 690;
+      const svgX = (event.clientX - bounds.left) / bounds.width * 760;
+      const fraction = Math.max(0, Math.min(1, (svgX - PLOT.left) / (PLOT.right - PLOT.left)));
+      const x = PLOT.left + fraction * (PLOT.right - PLOT.left);
       const time = view.range.start + fraction * (view.range.end - view.range.start);
       const line = element("comparisonCursorLine");
       line?.setAttribute("x1", x); line?.setAttribute("x2", x); line?.setAttribute("opacity", "0.8");
