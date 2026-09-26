@@ -287,6 +287,21 @@
         <div class="panel-head"><div><small>TERRAIN INVESTIGATION</small><h2>Elevation Profile</h2></div></div>
         <div id="elevationProfileBody" class="contextual-body"><div class="empty-row">Draw a line or open a DMA profile.</div></div>
       </article>
+
+      <article class="panel environmental-workbench" id="environmentalContextWorkbench">
+        <div class="panel-head"><div><small>EXTERNAL MODEL / REANALYSIS</small><h2>Environmental Context</h2></div></div>
+        <div class="environmental-body">
+          <div class="environmental-controls">
+            <div id="environmentalPresets" class="environmental-segmented" role="group" aria-label="Environmental period">
+              <button type="button" data-environment-days="1">24h</button><button type="button" data-environment-days="3">3d</button><button type="button" data-environment-days="7">7d</button><button type="button" data-environment-days="14">14d</button><button type="button" data-environment-days="30" class="active">30d</button><button type="button" data-environment-days="custom">Custom</button>
+            </div>
+            <label>From<input id="environmentalStart" type="date"></label><label>To<input id="environmentalEnd" type="date"></label>
+            <button type="button" id="loadEnvironmentalContext" class="primary">Load context</button>
+          </div>
+          <div id="environmentalStatus" class="environmental-status"><b>Select a mapped location.</b><span>Environmental context does not change investigation priority.</span></div>
+          <div id="environmentalContent"></div>
+        </div>
+      </article>
     </section>
 
   </main>
@@ -299,6 +314,7 @@
   <button type="button" role="menuitem" data-map-action="navigate">Navigate here</button>
   <button type="button" role="menuitem" data-map-action="copy">Copy coordinates</button>
   <button type="button" role="menuitem" data-map-action="profile">Start elevation profile here</button>
+  <button type="button" role="menuitem" data-map-action="environment">Environmental context here</button>
 </div>
 
 <div id="projectModal" class="modal hidden">
@@ -346,6 +362,7 @@
 <script type="module" src="./comparison-core.js"></script>
 <script type="module" src="./leak-risk-core.js"></script>
 <script type="module" src="./contextual-core.js"></script>
+<script type="module" src="./environmental-core.js"></script>
 <script src="./cloud-projects.js"></script>
 <script src="./app.js"></script>
 <script src="./v4.js"></script>
@@ -355,6 +372,7 @@
 <script src="./comparison-ui.js"></script>
 <script src="./leak-risk-ui.js"></script>
 <script src="./elevation-providers.js"></script>
+<script src="./environmental-ui.js"></script>
 <script src="./contextual-ui.js"></script>
 <script src="../aqua-shell.js"></script>
 </body>

@@ -1,7 +1,7 @@
 (() => {
   "use strict";
 
-  const COLORS = { pressure: "#53a8ff", flow: "#55d6be", acoustic: "#ffbf59" };
+  const COLORS = { pressure: "#53a8ff", flow: "#55d6be", acoustic: "#ffbf59", "environment-rainfall": "#5ac8fa", "environment-temperature": "#ff7b62", "environment-soil-moisture": "#7ed6a7", "environment-evapotranspiration": "#d6b36a" };
   const PLOT = Object.freeze({ left: 76, right: 684, top: 24, bottom: 258, splitTopBottom: 120, splitBottomTop: 154 });
   const view = { sourceA: null, sourceB: null, layout: "overlay", scaleMode: "actual", zoom: 1, visible: { A: true, B: true }, picking: null, styledLayers: [] };
 
@@ -10,7 +10,7 @@
   const format = (value, digits = 2) => Number.isFinite(value) ? Number(value).toFixed(digits) : "-";
 
   function sources() {
-    return window.AquaComparisonCore?.buildComparisonSources(window.aquaState?.active || {}) || [];
+    return [...(window.AquaComparisonCore?.buildComparisonSources(window.aquaState?.active || {}) || []), ...(window.AquaEnvironmental?.comparisonSources || [])];
   }
 
   function sourceForEntity(kind, entity) {
@@ -21,10 +21,12 @@
 
   function groupedOptions(allSources, selected) {
     const labels = { pressure: "Pressure loggers", flow: "Flow meters", acoustic: "Acoustic sensors" };
-    return ["pressure", "flow", "acoustic"].map(type => {
+    const monitoring = ["pressure", "flow", "acoustic"].map(type => {
       const options = allSources.filter(source => source.type === type).map(source => `<option value="${escape(source.id)}"${source.id === selected ? " selected" : ""}>${escape(source.label)}${source.context ? ` · ${escape(source.context)}` : ""}</option>`).join("");
       return options ? `<optgroup label="${labels[type]}">${options}</optgroup>` : "";
     }).join("");
+    const environmental = allSources.filter(source => source.type.startsWith("environment-")).map(source => `<option value="${escape(source.id)}"${source.id === selected ? " selected" : ""}>${escape(source.label)}</option>`).join("");
+    return `${monitoring}${environmental ? `<optgroup label="Environmental">${environmental}</optgroup>` : ""}`;
   }
 
   function refreshSelectors() {
@@ -207,7 +209,7 @@
     const correlation = comparison.correlation.value == null ? comparison.correlation.reason : `${comparison.correlation.value.toFixed(3)} (${comparison.correlation.sampleCount} aligned)`;
     const overlap = comparison.overlap.start ? `${new Date(comparison.overlap.start).toLocaleString()} to ${new Date(comparison.overlap.end).toLocaleString()}` : "No overlapping period";
     element("comparisonSummary").innerHTML = `${summaryCard("A", comparison.sourceA)}${summaryCard("B", comparison.sourceB)}<div class="comparison-stat"><span>Overlap</span><b>${escape(overlap)}</b></div><div class="comparison-stat"><span>Correlation</span><b>${escape(correlation)}</b></div>`;
-    element("comparisonProvenance").innerHTML = comparison.provenance.map(item => `<span><b>${escape(item.id)}</b> ${escape(typeof item.provenance === "string" ? item.provenance : item.provenance?.filename || item.provenance?.type || "unknown")}${item.eventOnly ? " · event-only" : ""}</span>`).join("");
+    element("comparisonProvenance").innerHTML = comparison.provenance.map(item => `<span><b>${escape(item.id)}</b> ${escape(typeof item.provenance === "string" ? item.provenance : item.provenance?.filename || item.provenance?.dataset || item.provenance?.provider || item.provenance?.type || "unknown")}${item.eventOnly ? " · event-only" : ""}</span>`).join("");
     element("comparisonZoomReset").textContent = `${view.zoom}×`;
     renderChart(comparison);
   }

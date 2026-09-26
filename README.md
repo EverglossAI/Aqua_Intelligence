@@ -12,12 +12,16 @@ Open `http://localhost:8000/`. Use `npx wrangler dev` when testing the Worker AP
 
 Elevation profiles use the Open-Meteo Elevation API backed by Copernicus DEM GLO-90. Requests are batched and cached by the Worker; no elevation API secret is required. The cockpit retains its unavailable state when the upstream service is unavailable or returns incomplete data.
 
+Environmental Context uses the same-origin `/api/environment` Worker route. Completed historical windows use Open-Meteo ERA5 reanalysis; current windows use Open-Meteo forecast models. Each normalized coordinate/date query is one SHA-256 cache object, so its Worker subrequest cost does not grow with the number of hourly samples. Rainfall, temperature, shallow soil moisture, and reference evapotranspiration are external model context rather than field measurements. Wet-transition and event-lag outputs are descriptive only and contribute exactly zero to Leak Risk investigation priority.
+
 ## Application structure
 
 - `cockpit/index.html`: active NRW cockpit markup and engineering workbenches.
 - `cockpit/app.js`: GIS import, projects, telemetry, NRW analysis, topology, DMA, risk, and deterministic command routing.
 - `cockpit/cloud-projects.js`: same-origin project API client and revision handling.
 - `cockpit/elevation-providers.js`: browser-side elevation provider registry and profile cache.
+- `cockpit/environmental-core.js`: environmental summaries, wet-transition thresholds, lag windows, event grouping, and Compare source adapters.
+- `cockpit/environmental-ui.js`: floating Environmental Context investigation workflow and charts.
 - `cockpit/lambay-acoustics.js`: imported Lambay sensor/couple/alert layers, linked selection, and deterministic operational summaries.
 - `cockpit/v4.js`: GIS-to-EPANET hydraulics and acoustic planning/analysis.
 - `cockpit/styles.css`: cockpit controls and engineering-result styling.
@@ -25,6 +29,7 @@ Elevation profiles use the Open-Meteo Elevation API backed by Copernicus DEM GLO
 - `aqua-shell.css`: full-screen map-first shell and responsive window presentation.
 - `worker/index.js`: Cloudflare Worker entrypoint and static-assets fallback.
 - `worker/routes/elevation.js`: bounded, cached Open-Meteo/Copernicus GLO-90 elevation proxy.
+- `worker/routes/environment.js`: bounded, query-cached Open-Meteo weather/reanalysis proxy.
 - `worker/routes/projects.js`: D1/R2 project API routing and handlers.
 - `worker/lib/projects.js`: shared persistence, authorization, and serialization helpers.
 - `migrations/`: D1 schema migrations.

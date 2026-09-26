@@ -323,6 +323,7 @@
       ["asset-details", "#assetDetailsWorkbench", "Asset Details", "Asset", "i", () => innerWidth - 430, 92, 400, 560, false],
       ["dma-details", "#dmaDetailsWorkbench", "DMA Details", "DMA", "D", 26, 105, 440, 610, false],
       ["elevation-profile", "#elevationProfileWorkbench", "Elevation Profile", "Elevation", "↗", () => innerWidth / 2 - 370, 110, 740, 520, false],
+      ["environmental-context", "#environmentalContextWorkbench", "Environmental Context", "Environment", "W", () => innerWidth / 2 - 410, 92, 820, 650, false],
       ["layers", ".gis-control", "Map Layers", "Layers", "L", 30, 125, 300, 430, false]
     ];
     registrations.forEach(([id, selector, title, shortTitle, icon, left, top, width, height, open]) => {

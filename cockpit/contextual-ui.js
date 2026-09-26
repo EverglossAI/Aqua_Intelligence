@@ -89,6 +89,7 @@
         <button type="button" data-asset-action="compare"${comparable ? "" : " disabled"}>Compare with...</button>
         <button type="button" data-asset-action="events"${evidence.alerts.length ? "" : " disabled"}>Related events (${evidence.alerts.length})</button>
         <button type="button" data-asset-action="priority"${hasRisk ? "" : " disabled"}>Investigation priority</button>
+        <button type="button" data-asset-action="environment"${coordinate ? "" : " disabled"}>Environmental context</button>
         <button type="button" data-asset-action="connected">View connected assets</button>
       </div>
       <div id="assetRelatedBody" class="context-related hidden"></div>`;
@@ -106,6 +107,7 @@
       const result = window.AquaLeakRisk?.results?.find(item => String(item.pipeId) === String(evidence.pipeId));
       if (result) window.AquaLeakRisk.focusResult(result);
     });
+    body.querySelector('[data-asset-action="environment"]')?.addEventListener("click", () => window.AquaEnvironmental?.open({ coordinate, label: `${identity.type} ${identity.id}`, pipeId: evidence.pipeId, alerts: evidence.alerts }));
     body.querySelector('[data-asset-action="connected"]')?.addEventListener("click", () => {
       const related = element("assetRelatedBody");
       related.classList.toggle("hidden");
@@ -199,10 +201,12 @@
       ${filterSummary(summary)}
       <section class="context-section"><h4>Investigation priority</h4><div class="context-breakdown"><span>Critical <b>${summary.priority.critical}</b></span><span>High <b>${summary.priority.high}</b></span><span>Elevated <b>${summary.priority.elevated}</b></span><span>Maximum <b>${summary.priority.maximum ?? "-"}</b></span></div></section>
       <section class="context-section"><h4>Monitoring sources</h4><div class="context-related">${[...summary.inletMeters, ...summary.pressureLoggers.filter(item => !summary.inletMeters.includes(item)), ...summary.flowMeters.filter(item => !summary.inletMeters.includes(item))].map(telemetryButton).join("") || '<p class="context-empty">No linked monitoring sources.</p>'}</div></section>
-      <section class="context-section"><h4>Elevation</h4><p>${elevation}</p><button type="button" class="secondary" id="openDmaElevation">Open Elevation Profile</button></section>`;
+      <section class="context-section"><h4>Elevation</h4><p>${elevation}</p><button type="button" class="secondary" id="openDmaElevation">Open Elevation Profile</button></section>
+      <section class="context-section"><h4>Environmental evidence</h4><p>Review weather-model context and event timing separately from investigation priority.</p><button type="button" class="secondary" id="openDmaEnvironment">Open Environmental Context</button></section>`;
     body.querySelectorAll("[data-dma-telemetry]").forEach(button => button.addEventListener("click", () => selectTelemetry(button.dataset.dmaTelemetry)));
     bindDmaFilters(selection);
     element("openDmaElevation")?.addEventListener("click", () => openDmaProfile(summary));
+    element("openDmaEnvironment")?.addEventListener("click", () => window.AquaEnvironmental?.open({ coordinate: core.featureCoordinate(summary.feature), label: `DMA ${summary.code}`, dma: summary.name, alerts: [...summary.activeAlerts, ...summary.historicalAlerts] }));
     window.AquaWindowManager?.restore("dma-details");
   }
 
@@ -437,6 +441,7 @@
         view.drawing = true;
         setProfileLine([view.contextCoordinate], "Drawn map line");
       }
+      if (action === "environment") window.AquaEnvironmental?.open({ coordinate: view.contextCoordinate, label: "Map location", alerts: [] });
       hideContextMenu();
     });
     document.addEventListener("pointerdown", event => {

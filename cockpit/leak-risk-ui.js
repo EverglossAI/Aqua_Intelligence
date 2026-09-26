@@ -58,11 +58,13 @@
       </dl>
       <p class="selection-source">${escape(evidence.susceptibility.material)}${evidence.susceptibility.diameter == null ? "" : ` · ${escape(evidence.susceptibility.diameter)} mm`} · Hydraulic ${escape(evidence.hydraulicStatus)}</p>
       <div class="risk-linked-evidence"><b>Linked operational evidence</b>${alertRows || '<span class="selection-empty">No linked acoustic alert.</span>'}</div>
+      <button type="button" class="secondary selection-environment">Environmental context</button>
       <p class="risk-disclaimer">Investigation priority ranks evidence for field review. It is not a leak confirmation.</p>`;
     card.querySelectorAll("[data-risk-alert]").forEach(button => button.addEventListener("click", () => {
       const alert = (window.aquaState?.active?.acousticAlert || []).find(item => String(item.alertId) === button.dataset.riskAlert);
       if (alert) window.AquaAcoustics?.selectAlert(alert);
     }));
+    card.querySelector(".selection-environment")?.addEventListener("click", () => window.AquaEnvironmental?.openForRisk(result));
   }
 
   function focusResult(result) {
